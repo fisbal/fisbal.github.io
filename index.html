@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>MartinB OS Hub</title>
+<meta name="description" content="Toutes les apps MartinB au même endroit : web, Android (APK) et Windows. Toujours la dernière version.">
+<meta name="theme-color" content="#0b0a08">
+<meta property="og:title" content="MartinB OS Hub">
+<meta property="og:description" content="Toutes les apps MartinB : web, Android et Windows.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b0a08'/%3E%3Ctext x='32' y='42' font-family='Georgia,serif' font-size='26' font-weight='700' text-anchor='middle' fill='%23c9a227'%3EOS%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: wordmark header, live launcher (one row per app, buttons by platform) read straight from GitHub, then Martin's private Claude pages folded at the bottom. Single dark MartinB look. */
+:root{
+  --bg:#0b0a08; --surface:#15130f; --surface-2:#1d1a14; --line:rgba(201,162,39,.18);
+  --ink:#f3efe6; --muted:#a39b8a; --gold:#c9a227; --gold-soft:rgba(201,162,39,.12);
+  --ok:#4fc48a; --warn:#e8b64a;
+  --apk:#7fcf8f; --win:#7fb3e8; --web:#e8c87f; --claude:#d9a07a; --code:#a9a29a;
+  --f-display:"Cinzel","Trajan Pro",Georgia,serif;
+  --f-body:"Figtree","Segoe UI",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+.wrap{max-width:960px;margin:0 auto;padding-block:max(28px,env(safe-area-inset-top,0px)) max(48px,env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;border-bottom:1px solid var(--line);padding-bottom:18px}
+.mark{font-family:var(--f-display);font-weight:700;font-size:clamp(30px,7vw,46px);letter-spacing:.04em;line-height:1;margin:0}
+.mark span{color:var(--gold)}
+.sub{color:var(--muted);font-size:13px;margin:6px 0 0}
+.status{font-family:var(--f-mono);font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.status i{width:8px;height:8px;border-radius:50%;background:var(--warn)}
+.status.ok i{background:var(--ok)}
+h2{font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin:30px 0 12px}
+.hint{color:var(--muted);font-size:13px;margin:-4px 0 14px;max-width:68ch}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.search{width:100%;background:var(--surface);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:11px 14px;font:16px var(--f-body);margin-bottom:12px}
+.search::placeholder{color:var(--muted)}
+.apps{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.app{display:grid;grid-template-columns:1fr auto;gap:8px 16px;align-items:center;padding:14px 16px;background:var(--surface);border-top:1px solid rgba(255,255,255,.05)}
+.app:first-child{border-top:0}
+.info{min-width:0}
+.name{font-weight:600;font-size:17px;margin:0}
+.name .os{color:var(--gold)}
+.desc{color:var(--muted);font-size:13px;margin:1px 0 0}
+.meta{font-family:var(--f-mono);font-size:11.5px;color:var(--muted);margin:3px 0 0;font-variant-numeric:tabular-nums}
+.new{color:var(--ok);font-weight:500}
+.btns{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.btn{display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--ink);background:var(--surface-2);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:8px 12px;font:500 13.5px var(--f-body);white-space:nowrap}
+.btn i{width:7px;height:7px;border-radius:50%;flex:none}
+.btn:hover{border-color:var(--gold)}
+.t-web i{background:var(--web)}.t-apk i,.t-play i{background:var(--apk)}.t-win i{background:var(--win)}.t-claude i{background:var(--claude)}.t-code i{background:var(--code)}
+@media (max-width:640px){.app{grid-template-columns:1fr}.btns{justify-content:flex-start}}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted);margin-top:10px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:7px;height:7px;border-radius:50%}
+.empty{color:var(--muted);padding:14px 16px;margin:0}
+.skel{height:64px;background:linear-gradient(90deg,var(--surface),var(--surface-2),var(--surface));background-size:200% 100%}
+@media (prefers-reduced-motion:no-preference){.skel{animation:sh 1.4s infinite}@keyframes sh{to{background-position:-200% 0}}.btn{transition:border-color .15s}}
+details{margin-top:30px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+summary{cursor:pointer;padding:14px 16px;font-family:var(--f-display);font-size:14px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
+details .apps{border:0;border-top:1px solid var(--line);border-radius:0 0 14px 14px}
+.help{color:var(--muted);font-size:13px;max-width:68ch}
+.help b{color:var(--ink)}
+footer{color:var(--muted);font-size:12px;margin-top:34px;border-top:1px solid var(--line);padding-top:14px}
+footer a{color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1 class="mark">MartinB<span>OS</span> Hub</h1>
+      <p class="sub">Toutes les apps MartinB · web, Android et Windows</p>
+    </div>
+    <div class="status" id="status"><i></i><span>Connexion à GitHub…</span></div>
+  </header>
+
+  <h2>Apps</h2>
+  <p class="hint">Cette page lit GitHub à chaque ouverture : une nouvelle version ou une nouvelle app apparaît ici automatiquement.</p>
+  <input class="search" id="q" type="search" placeholder="Chercher une app…" aria-label="Chercher une app" autocomplete="off">
+  <div class="apps" id="apps"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
+  <div class="legend">
+    <span><i style="background:var(--web)"></i>Web (tout téléphone ou PC)</span>
+    <span><i style="background:var(--apk)"></i>Android</span>
+    <span><i style="background:var(--win)"></i>Windows</span>
+    <span><i style="background:var(--code)"></i>Code source</span>
+  </div>
+
+  <h2>Installer un APK</h2>
+  <p class="help">Touche <b>APK</b>, puis ouvre le fichier depuis l'app <b>Fichiers</b> (pas depuis Chrome). Si Android le demande, autorise « Installer des applis inconnues ». Une nouvelle version s'installe par-dessus l'ancienne et garde tes données.</p>
+
+  <details id="private">
+    <summary>Pages Claude (privé, Martin seulement)</summary>
+    <div class="apps" id="claude"></div>
+  </details>
+
+  <footer>Par Martin B · Québec · <a href="https://github.com/fisbal" target="_blank" rel="noopener">github.com/fisbal</a></footer>
+</div>
+
+<script>
+const USER="fisbal";
+const API="https://api.github.com";
+const PAGES="https://fisbal.github.io/";
+const CACHE_KEY="mbhub-v1", CACHE_MS=10*60*1000;
+
+/* Names and descriptions for known repos. Any other public repo with a release or a site shows up automatically. */
+const KNOWN={
+  "alpha-omega2":{n:"Alpha & Omega",d:"Étude du Nouveau Testament verset par verset, FR/EN.",o:1},
+  "marbleos":{n:"MarbleOS",os:1,d:"Tireur de billes 3D, style Zuma.",o:2},
+  "navalos":{n:"NavalOS",os:1,d:"Grades, insignes et savoir de la Marine royale canadienne.",o:3},
+  "millionos":{n:"MillionOS",os:1,d:"Quiz militaire style « Qui veut gagner des millions ».",o:4},
+  "prodfos":{n:"ProDFOS",os:1,d:"Lecteur PDF avec IA DocMind.",o:5},
+  "holochrono":{n:"HoloChrono",d:"Horloge holographique, heure de Québec (Second Life).",o:20,web:"https://fisbal.github.io/holochrono/holochrono_clock.html"}
+};
+const HIDDEN=new Set(["github-slideshow","alpha-omega","fisbal.github.io"]);
+
+/* Apps that live outside GitHub */
+const EXTERNAL=[
+  {n:"SonicOS",os:1,d:"Lecteur de musique.",o:6,links:[["play","https://play.google.com/store/apps/details?id=com.martinb.sonicos","Play Store"]]},
+  {n:"ShareTVOS",os:1,d:"Soirées YouTube synchronisées.",o:7,links:[["web","https://sharetvos.vercel.app"]]}
+];
+
+/* Snapshot used if GitHub can't be reached (rate limit, offline) */
+const SNAPSHOT=[
+  {repo:"Alpha-Omega2",pages:1,rel:{tag:"latest",date:"2026-10-19T21:02:30Z",apk:"https://github.com/fisbal/Alpha-Omega2/releases/download/latest/AlphaOmega-android.apk",win:"https://github.com/fisbal/Alpha-Omega2/releases/download/latest/AlphaOmega-windows-setup.exe"}},
+  {repo:"MarbleOS",pages:0,rel:{tag:"v1.0.1",date:"2026-10-22T00:42:28Z",apk:"https://github.com/fisbal/MarbleOS/releases/latest/download/MarbleOS.apk"}},
+  {repo:"navalos",pages:1},
+  {repo:"MillionOS",pages:1},
+  {repo:"prodfos",pages:1,rel:{tag:"latest",date:"2026-10-11T21:29:58Z",page:"https://github.com/fisbal/prodfos/releases/tag/latest"}},
+  {repo:"holochrono",pages:1}
+];
+
+const A="https://claude.ai/code/artifact/";
+const CLAUDE=[
+  {n:"MartinB OS Hub (privé)",links:[["claude",A+"2e75aaf4-d4af-40b0-8564-aeb3e6207ee3","Ouvrir"]]},
+  {n:"Sky Control 3D",links:[["claude",A+"4832191a-52e9-41a7-a1de-54ac1a0abedd","Jeu"],["claude",A+"3df8a55e-28dd-482f-bb8b-7f93e9109d21","Hangar"]]},
+  {n:"MarbleOS",os:1,links:[["claude",A+"c56c908b-eb68-481b-96f6-01bed1d14817","Temple"],["claude",A+"73a335fd-f258-4b62-bbc0-4532cad025ea","Solitaire"]]},
+  {n:"Alpha & Omega",links:[["claude",A+"f199d4ac-75d7-4995-99ff-d88d7aa0c1ef"]]},
+  {n:"NavalOS",os:1,links:[["claude",A+"1a410e5d-68b8-4a6b-a320-e4ff488c5b57"]]},
+  {n:"MillionOS",os:1,links:[["claude",A+"20bdf9fe-a84a-4e78-a960-bad6e5c9c5c5"]]},
+  {n:"TechFix",links:[["claude",A+"f979472e-6ed8-4232-84a7-fe9f0542e170"]]},
+  {n:"PrésenceOS",os:1,links:[["claude",A+"c4684611-3a28-4ce7-bd4c-494a82761d4b","Démo"]]},
+  {n:"Devenir Canadien",links:[["claude",A+"65b5d06f-1712-45e5-86cb-cd32e2a8802a"]]}
+];
+
+const T={web:"Web",apk:"APK",win:"Windows",claude:"Claude",code:"Code",play:"Play Store"};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const MOIS=["janv.","févr.","mars","avr.","mai","juin","juil.","août","sept.","oct.","nov.","déc."];
+const fmt=iso=>{const d=new Date(iso);return `${d.getDate()} ${MOIS[d.getMonth()]} ${d.getFullYear()}`};
+const isNew=iso=>iso&&(Date.now()-new Date(iso))<7*864e5;
+
+function nameHTML(a){
+  if(a.os&&a.n.includes("OS")){const i=a.n.lastIndexOf("OS");return esc(a.n.slice(0,i))+'<span class="os">OS</span>'+esc(a.n.slice(i+2));}
+  return esc(a.n);
+}
+function row(a){
+  const btns=a.links.map(([t,u,l])=>`<a class="btn t-${t}" href="${esc(u)}" target="_blank" rel="noopener"><i></i>${esc(l||T[t])}</a>`).join("");
+  const meta=a.meta?`<p class="meta">${a.fresh?'<span class="new">● Nouveau · </span>':''}${esc(a.meta)}</p>`:"";
+  const desc=a.d?`<p class="desc">${esc(a.d)}</p>`:"";
+  return `<div class="app"><div class="info"><h3 class="name">${nameHTML(a)}</h3>${desc}${meta}</div><div class="btns">${btns}</div></div>`;
+}
+
+/* Turn raw repo + release info into a launcher row */
+function toApp(r){
+  const k=KNOWN[r.repo.toLowerCase()]||{};
+  const links=[];
+  if(k.web) links.push(["web",k.web]); else if(r.pages) links.push(["web",PAGES+r.repo+"/"]);
+  let meta="", fresh=false;
+  if(r.rel){
+    if(r.rel.apk) links.push(["apk",r.rel.apk]);
+    if(r.rel.win) links.push(["win",r.rel.win]);
+    if(!r.rel.apk&&!r.rel.win&&r.rel.page) links.push(["apk",r.rel.page,"Téléchargements"]);
+    meta=(r.rel.tag==="latest"?"Dernier build":r.rel.tag)+" · "+fmt(r.rel.date);
+    fresh=isNew(r.rel.date);
+  } else if(r.pushed){ meta="Mis à jour le "+fmt(r.pushed); fresh=isNew(r.pushed); }
+  links.push(["code","https://github.com/"+USER+"/"+r.repo]);
+  return {n:k.n||r.repo,os:k.os||/OS$/.test(r.repo),d:k.d||r.desc||"",o:k.o||50,meta,fresh,links};
+}
+
+function assetUrl(rel,name){
+  /* Stable link: /latest/download/ for normal releases, /download/<tag>/ for rolling tags */
+  return rel.latest&&rel.tag!=="latest"
+    ? `https://github.com/${USER}/${rel.repo}/releases/latest/download/${encodeURIComponent(name)}`
+    : `https://github.com/${USER}/${rel.repo}/releases/download/${encodeURIComponent(rel.tag)}/${encodeURIComponent(name)}`;
+}
+
+async function gh(path){
+  const res=await fetch(API+path,{headers:{Accept:"application/vnd.github+json"}});
+  if(!res.ok) throw new Error(res.status);
+  return res.json();
+}
+
+async function loadLive(){
+  const repos=(await gh(`/users/${USER}/repos?per_page=100&sort=pushed`)).filter(r=>!r.fork&&!r.archived&&!HIDDEN.has(r.name.toLowerCase()));
+  const out=await Promise.all(repos.map(async r=>{
+    const item={repo:r.name,pages:r.has_pages,desc:r.description,pushed:r.pushed_at};
+    try{
+      const rels=(await gh(`/repos/${USER}/${r.name}/releases?per_page=5`)).filter(x=>!x.draft);
+      if(rels.length){
+        const x=rels[0], rel={repo:r.name,tag:x.tag_name,date:x.published_at,latest:!x.prerelease,page:x.html_url};
+        for(const a of x.assets||[]){
+          if(/\.apk$/i.test(a.name)&&!rel.apk) rel.apk=assetUrl(rel,a.name);
+          else if(/\.(exe|msi)$/i.test(a.name)&&!rel.win) rel.win=assetUrl(rel,a.name);
+          else if(/win.*\.zip$/i.test(a.name)&&!rel.win) rel.win=assetUrl(rel,a.name);
+        }
+        item.rel=rel;
+      }
+    }catch(e){}
+    return item;
+  }));
+  /* Keep only repos that have something to open or install */
+  return out.filter(x=>x.pages||x.rel||KNOWN[x.repo.toLowerCase()]);
+}
+
+let ALL=[];
+function render(){
+  const q=document.getElementById("q").value.trim().toLowerCase();
+  const list=q?ALL.filter(a=>(a.n+" "+a.d).toLowerCase().includes(q)):ALL;
+  document.getElementById("apps").innerHTML=list.map(row).join("")||'<p class="empty">Aucune app trouvée.</p>';
+}
+function setData(items,label,ok){
+  ALL=[...items.map(toApp),...EXTERNAL].sort((a,b)=>a.o-b.o||a.n.localeCompare(b.n));
+  const s=document.getElementById("status");
+  s.className="status"+(ok?" ok":"");
+  s.querySelector("span").textContent=label;
+  render();
+}
+document.getElementById("q").addEventListener("input",render);
+document.getElementById("claude").innerHTML=CLAUDE.map(row).join("");
+
+(async()=>{
+  let cached=null;
+  try{cached=JSON.parse(localStorage.getItem(CACHE_KEY)||"null")}catch(e){}
+  if(cached&&Date.now()-cached.t<CACHE_MS){ setData(cached.items,"À jour · vérifié à "+new Date(cached.t).toLocaleTimeString("fr-CA",{hour:"2-digit",minute:"2-digit"}),true); return; }
+  if(cached) setData(cached.items,"Mise à jour…",false); else setData(SNAPSHOT,"Mise à jour…",false);
+  try{
+    const items=await loadLive();
+    try{localStorage.setItem(CACHE_KEY,JSON.stringify({t:Date.now(),items}))}catch(e){}
+    setData(items,"À jour avec GitHub",true);
+  }catch(e){
+    setData(cached?cached.items:SNAPSHOT,"GitHub injoignable · dernière liste connue",false);
+  }
+})();
+</script>
+</body>
+</html>
