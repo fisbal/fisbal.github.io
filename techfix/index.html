@@ -1,0 +1,163 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>TechFix</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+
+<div class="app">
+  <header class="app-header">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="tfGold" x1="4" y1="4" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#f4d68f"/>
+            <stop offset="0.55" stop-color="#d4a94a"/>
+            <stop offset="1" stop-color="#9c7326"/>
+          </linearGradient>
+        </defs>
+        <path d="M20 3 L34.5 9.5 V21 C34.5 29 28.5 34.5 20 37.5 C11.5 34.5 5.5 29 5.5 21 V9.5 Z" stroke="url(#tfGold)" stroke-width="2" fill="none" stroke-linejoin="round"/>
+        <path d="M11.5 21.5h5l2.6-6.6 3.4 12.6 2.7-6h6.3" stroke="url(#tfGold)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="brand-word"><span class="tf-tech">Tech</span><span class="tf-fix gold-text">Fix</span></div>
+      <span class="brand-tag">Diagnostic Intelligence</span>
+    </div>
+
+    <div class="global-search">
+      <span class="ico" data-icon="search"></span>
+      <input type="text" id="global-search-input" placeholder="Search the knowledge base… (press / to focus)" />
+      <span class="kbd-hint">/</span>
+    </div>
+
+    <div class="header-status">
+      <span class="status-pill always" id="scan-summary-pill"><span class="status-dot"></span> Not scanned yet</span>
+    </div>
+  </header>
+
+  <nav class="app-nav">
+    <div class="nav-section-label">Diagnose</div>
+    <button class="nav-item" data-view="scan"><span class="ico" data-icon="scan"></span><span>Live Scan</span></button>
+    <button class="nav-item" data-view="wizard"><span class="ico" data-icon="wand"></span><span>Diagnose Wizard</span></button>
+    <button class="nav-item" data-view="log"><span class="ico" data-icon="log"></span><span>Analyze Log</span></button>
+    <div class="nav-section-label">Reference</div>
+    <button class="nav-item" data-view="kb"><span class="ico" data-icon="book"></span><span>Knowledge Base</span><span class="nav-count" id="nav-kb-count"></span></button>
+    <button class="nav-item" data-view="saved"><span class="ico" data-icon="bookmark"></span><span>Saved Fixes</span><span class="nav-count" id="nav-saved-count"></span></button>
+    <div class="nav-foot">TechFix diagnoses using signals your browser can see, and a curated fault database spanning 1980–today. It never reaches outside this page.</div>
+  </nav>
+
+  <main class="app-main">
+
+    <section class="view" id="view-scan">
+      <div class="view-head">
+        <div class="view-eyebrow">Live Device Scan</div>
+        <h1 class="view-title">What's actually going on with this device</h1>
+        <p class="view-sub">TechFix reads real, live signals this browser exposes — memory, storage pressure, network quality, battery — and proactively flags anything worth attention, matched against the knowledge base.</p>
+      </div>
+
+      <div class="panel" style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+        <div style="font-size:13px; color:var(--text-dim); max-width:52ch;">Nothing here reaches outside this browser tab or contacts any server — every reading comes from standard, permission-safe browser APIs on the device you're viewing this page from.</div>
+        <button class="btn primary" id="scan-btn"><span class="ico" data-icon="refresh"></span><span class="btn-label">Re-scan this device</span></button>
+      </div>
+
+      <div class="stat-grid" id="scan-stats"></div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><span class="ico" data-icon="activity"></span>Proactive findings</div>
+        </div>
+        <div id="scan-findings"></div>
+      </div>
+
+      <div class="panel ai-handoff">
+        <div class="panel-title"><span class="ico" data-icon="report"></span>Stuck? Hand this to an AI</div>
+        <p>Copy a clean, plain-text summary of everything on this page — paste it into a chat with Claude or any assistant, along with what you were doing when the problem started, for help beyond TechFix's built-in fixes.</p>
+        <button class="btn primary" id="scan-copy-report-btn"><span class="ico" data-icon="copy"></span><span>Copy diagnostic report</span></button>
+      </div>
+    </section>
+
+    <section class="view" id="view-wizard">
+      <div class="view-head">
+        <div class="view-eyebrow">Guided Diagnosis</div>
+        <h1 class="view-title">Diagnose Wizard</h1>
+        <p class="view-sub">Answer two quick questions and TechFix narrows a 100-entry fault database down to the fixes that actually apply.</p>
+      </div>
+      <div class="wizard-progress" id="wizard-progress"></div>
+      <div class="panel" id="wizard-body"></div>
+      <div class="wizard-actions">
+        <button class="btn ghost" id="wiz-back"><span class="ico" data-icon="chevron" style="transform:scaleX(-1); display:inline-flex;"></span><span>Back</span></button>
+        <button class="btn" id="wiz-restart" style="display:none;"><span class="ico" data-icon="refresh"></span><span>Start over</span></button>
+      </div>
+    </section>
+
+    <section class="view" id="view-log">
+      <div class="view-head">
+        <div class="view-eyebrow">Log Analysis</div>
+        <h1 class="view-title">Analyze a log file</h1>
+        <p class="view-sub">Paste log text, or open a log file from this computer, and TechFix scans it for known error signatures and repeated failures — matched straight into the knowledge base. Everything happens in this browser tab; nothing is uploaded anywhere.</p>
+      </div>
+
+      <div class="panel">
+        <div class="log-dropzone" id="log-dropzone" tabindex="0">
+          <span class="ico log-drop-icon" data-icon="log"></span>
+          <div class="log-drop-text">
+            <strong>Drop a log file here</strong>, paste text below, or
+            <button class="btn sm" id="log-file-btn" type="button">Choose file…</button>
+          </div>
+          <input type="file" id="log-file-input" accept=".txt,.log,.csv,.json,text/plain" hidden />
+        </div>
+
+        <textarea id="log-textarea" class="log-textarea" placeholder="Paste a crash log, BSOD text, Windows Event Log export, logcat dump, Console.app export, or any error output here…"></textarea>
+
+        <div class="log-actions">
+          <div class="log-actions-left">
+            <button class="btn primary" id="log-analyze-btn"><span class="ico" data-icon="scan"></span><span>Analyze log</span></button>
+            <button class="btn ghost" id="log-watch-btn" style="display:none;"><span class="ico" data-icon="activity"></span><span>Watch this file live</span></button>
+            <button class="btn ghost" id="log-clear-btn"><span>Clear</span></button>
+          </div>
+          <div class="log-status" id="log-status"></div>
+        </div>
+      </div>
+
+      <div id="log-results"></div>
+
+      <div class="panel ai-handoff">
+        <div class="panel-title"><span class="ico" data-icon="report"></span>Stuck? Hand this to an AI</div>
+        <p>Copy a clean, plain-text summary of this log analysis (plus the live device scan, if you've run one) — paste it into a chat with Claude or any assistant for help beyond TechFix's built-in fixes.</p>
+        <button class="btn primary" id="log-copy-report-btn"><span class="ico" data-icon="copy"></span><span>Copy diagnostic report</span></button>
+      </div>
+    </section>
+
+    <section class="view" id="view-kb">
+      <div class="view-head">
+        <div class="view-eyebrow">Reference Library</div>
+        <h1 class="view-title">Knowledge Base</h1>
+        <p class="view-sub">Documented issues, root causes, and fixes spanning MS-DOS to the current release — search, filter, and expand.</p>
+      </div>
+
+      <div class="global-search" style="max-width:100%; margin-bottom:16px;">
+        <span class="ico" data-icon="search"></span>
+        <input type="text" id="kb-search-input" placeholder="Search symptoms, error codes, causes…" />
+      </div>
+
+      <div class="filter-row" id="kb-plat-filters"></div>
+      <div class="filter-row" id="kb-sev-filters"></div>
+      <div class="result-count" id="kb-result-count"></div>
+      <div class="kb-list" id="kb-list"></div>
+    </section>
+
+    <section class="view" id="view-saved">
+      <div class="view-head">
+        <div class="view-eyebrow">Your Shortlist</div>
+        <h1 class="view-title">Saved Fixes</h1>
+        <p class="view-sub" id="saved-count"></p>
+      </div>
+      <div class="kb-list" id="saved-list"></div>
+    </section>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"><span class="ico" data-icon="check"></span><span>Copied</span></div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+
+</body></html>

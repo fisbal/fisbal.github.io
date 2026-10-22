@@ -109,7 +109,7 @@ const CACHE_KEY="mbhub-v1", CACHE_MS=10*60*1000;
 /* Names and descriptions for known repos. Any other public repo with a release or a site shows up automatically. */
 const KNOWN={
   "alpha-omega2":{n:"Alpha & Omega",d:"Étude du Nouveau Testament verset par verset, FR/EN.",o:1},
-  "marbleos":{n:"MarbleOS",os:1,d:"Tireur de billes 3D, style Zuma.",o:2},
+  "marbleos":{n:"MarbleOS",os:1,d:"Tireur de billes 3D, style Zuma, et solitaire.",o:2,web:PAGES+"marble-temple/",webL:"Jouer",extra:[["web",PAGES+"solitaire/","Solitaire"]]},
   "navalos":{n:"NavalOS",os:1,d:"Grades, insignes et savoir de la Marine royale canadienne.",o:3},
   "millionos":{n:"MillionOS",os:1,d:"Quiz militaire style « Qui veut gagner des millions ».",o:4},
   "prodfos":{n:"ProDFOS",os:1,d:"Lecteur PDF avec IA DocMind.",o:5},
@@ -119,6 +119,9 @@ const HIDDEN=new Set(["github-slideshow","alpha-omega","fisbal.github.io"]);
 
 /* Apps that live outside GitHub */
 const EXTERNAL=[
+  {n:"Sky Control 3D",d:"Contrôle aérien 3D sur de vrais aéroports canadiens.",o:3,links:[["web",PAGES+"skycontrol/","Jouer"],["web",PAGES+"skycontrol-hangar/","Hangar"]]},
+  {n:"TechFix",d:"Diagnostic de ton appareil et base de 100 pannes connues.",o:8,links:[["web",PAGES+"techfix/"]]},
+  {n:"Devenir Canadien",d:"Préparation à l'examen de citoyenneté, à jour en 2026.",o:9,links:[["web",PAGES+"devenir-canadien/"]]},
   {n:"SonicOS",os:1,d:"Lecteur de musique.",o:6,links:[["play","https://play.google.com/store/apps/details?id=com.martinb.sonicos","Play Store"]]},
   {n:"ShareTVOS",os:1,d:"Soirées YouTube synchronisées.",o:7,links:[["web","https://sharetvos.vercel.app"]]}
 ];
@@ -135,15 +138,8 @@ const SNAPSHOT=[
 
 const A="https://claude.ai/code/artifact/";
 const CLAUDE=[
-  {n:"MartinB OS Hub (privé)",links:[["claude",A+"2e75aaf4-d4af-40b0-8564-aeb3e6207ee3","Ouvrir"]]},
-  {n:"Sky Control 3D",links:[["claude",A+"4832191a-52e9-41a7-a1de-54ac1a0abedd","Jeu"],["claude",A+"3df8a55e-28dd-482f-bb8b-7f93e9109d21","Hangar"]]},
-  {n:"MarbleOS",os:1,links:[["claude",A+"c56c908b-eb68-481b-96f6-01bed1d14817","Temple"],["claude",A+"73a335fd-f258-4b62-bbc0-4532cad025ea","Solitaire"]]},
-  {n:"Alpha & Omega",links:[["claude",A+"f199d4ac-75d7-4995-99ff-d88d7aa0c1ef"]]},
-  {n:"NavalOS",os:1,links:[["claude",A+"1a410e5d-68b8-4a6b-a320-e4ff488c5b57"]]},
-  {n:"MillionOS",os:1,links:[["claude",A+"20bdf9fe-a84a-4e78-a960-bad6e5c9c5c5"]]},
-  {n:"TechFix",links:[["claude",A+"f979472e-6ed8-4232-84a7-fe9f0542e170"]]},
-  {n:"PrésenceOS",os:1,links:[["claude",A+"c4684611-3a28-4ce7-bd4c-494a82761d4b","Démo"]]},
-  {n:"Devenir Canadien",links:[["claude",A+"65b5d06f-1712-45e5-86cb-cd32e2a8802a"]]}
+  {n:"MartinB OS Hub (tableau de projets)",links:[["claude",A+"2e75aaf4-d4af-40b0-8564-aeb3e6207ee3","Ouvrir"]]},
+  {n:"PrésenceOS",os:1,links:[["claude",A+"c4684611-3a28-4ce7-bd4c-494a82761d4b","Démo"]]}
 ];
 
 const T={web:"Web",apk:"APK",win:"Windows",claude:"Claude",code:"Code",play:"Play Store"};
@@ -167,7 +163,8 @@ function row(a){
 function toApp(r){
   const k=KNOWN[r.repo.toLowerCase()]||{};
   const links=[];
-  if(k.web) links.push(["web",k.web]); else if(r.pages) links.push(["web",PAGES+r.repo+"/"]);
+  if(k.web) links.push(["web",k.web,k.webL]); else if(r.pages) links.push(["web",PAGES+r.repo+"/"]);
+  if(k.extra) links.push(...k.extra);
   let meta="", fresh=false;
   if(r.rel){
     if(r.rel.apk) links.push(["apk",r.rel.apk]);

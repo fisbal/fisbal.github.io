@@ -1,0 +1,203 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>MarbleOS Solitaire</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;700&display=swap">
+<style>
+/* Layout: one centered column — wordmark, stat strip, walnut board with brass rim, control row. Single dark-luxury theme by choice. */
+:root{
+  --bg:#0b0a09; --panel:#151210; --wood:#2a1d14; --wood2:#1b130d;
+  --gold:#d4af5a; --gold-dim:#8a7238; --ink:#f3ede2; --muted:#9c9285; --hole:#070605;
+  --display:"Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --body:"Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme:dark;
+}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--body);min-height:100%;
+  padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));
+  padding-block:20px 28px;
+  background:radial-gradient(ellipse at 50% 0%, #1d1812 0%, var(--bg) 60%);}
+.wrap{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:18px;align-items:center}
+header{text-align:center;display:flex;flex-direction:column;gap:4px}
+.mark{font-family:var(--display);font-size:clamp(2.2rem,8vw,3rem);font-weight:600;letter-spacing:.02em;line-height:1;margin:0}
+.mark b{color:var(--gold);font-weight:700}
+.sub{font-size:.72rem;letter-spacing:.24em;text-transform:uppercase;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);width:100%;border:1px solid #2b241b;border-radius:10px;background:var(--panel)}
+.stat{padding:10px 6px;text-align:center;display:flex;flex-direction:column;gap:2px}
+.stat+.stat{border-left:1px solid #2b241b}
+.stat span{font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.stat strong{font-family:var(--display);font-size:1.7rem;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink)}
+.stat strong.g{color:var(--gold)}
+.boardOuter{width:100%;max-width:440px;aspect-ratio:1;border-radius:50%;padding:5%;
+  background:radial-gradient(circle at 35% 30%, #3a2a1d, var(--wood) 45%, var(--wood2) 100%);
+  box-shadow:0 0 0 3px var(--gold-dim),0 0 0 5px #000,0 0 0 6px var(--gold),0 30px 60px -20px #000, inset 0 2px 30px #000a;}
+.board{width:100%;height:100%;display:grid;gap:2%;}
+.cell{position:relative;border:0;padding:0;background:transparent;cursor:default;border-radius:50%}
+.cell.void{visibility:hidden}
+.cell::before{content:"";position:absolute;inset:18%;border-radius:50%;background:var(--hole);box-shadow:inset 0 2px 4px #000, 0 1px 0 #ffffff14}
+.cell .m{position:absolute;inset:6%;border-radius:50%;
+  background:radial-gradient(circle at 34% 30%, #fff 0 6%, #e9d7a6 14%, var(--gold) 40%, #7a5a1c 85%, #3d2c0c 100%);
+  box-shadow:0 3px 6px #000c, inset -2px -3px 6px #0006;transition:transform .18s ease, box-shadow .18s ease}
+.cell.has{cursor:pointer}
+.cell.sel .m{transform:translateY(-6%) scale(1.08);box-shadow:0 0 0 2px var(--ink),0 0 18px var(--gold),0 8px 10px #000c}
+.cell.target{cursor:pointer}
+.cell.target::after{content:"";position:absolute;inset:32%;border-radius:50%;border:2px solid var(--gold);box-shadow:0 0 10px var(--gold);animation:pulse 1.2s ease-in-out infinite}
+.cell.hint .m{box-shadow:0 0 0 2px var(--gold),0 3px 6px #000c}
+.cell:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+@keyframes pulse{50%{transform:scale(.8);opacity:.6}}
+.cell.pop .m{animation:pop .25s ease}
+@keyframes pop{from{transform:scale(.6)}to{transform:scale(1)}}
+.msg{min-height:1.4em;font-family:var(--display);font-size:1.25rem;text-align:center;color:var(--gold);text-wrap:balance}
+.controls{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.btn{font-family:var(--body);font-size:.8rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  padding:11px 18px;border-radius:999px;border:1px solid var(--gold-dim);background:transparent;color:var(--ink);cursor:pointer}
+.btn:hover{border-color:var(--gold);color:var(--gold)}
+.btn.primary{background:var(--gold);color:#1a1307;border-color:var(--gold)}
+.btn.primary:hover{background:#e6c675;color:#1a1307}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.seg{display:flex;border:1px solid #2b241b;border-radius:999px;padding:3px;background:var(--panel)}
+.seg button{border:0;background:transparent;color:var(--muted);font-family:var(--body);font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:8px 14px;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:#2b241b;color:var(--gold)}
+.rules{font-size:.85rem;line-height:1.6;color:var(--muted);max-width:60ch;text-align:center}
+.rules em{color:var(--ink);font-style:normal}
+footer{font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:#5d554a}
+footer b{color:var(--gold-dim)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1 class="mark">Marble<b>OS</b></h1>
+    <div class="sub">Peg Solitaire · Since 1697</div>
+  </header>
+
+  <div class="seg" role="group" aria-label="Board">
+    <button id="bEng" aria-pressed="true">English · 33</button>
+    <button id="bEur" aria-pressed="false">European · 37</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><span>Marbles</span><strong id="sLeft" class="g">32</strong></div>
+    <div class="stat"><span>Moves</span><strong id="sMoves">0</strong></div>
+    <div class="stat"><span>Best</span><strong id="sBest">—</strong></div>
+  </div>
+
+  <div class="boardOuter"><div class="board" id="board" role="grid" aria-label="Marble solitaire board"></div></div>
+
+  <div class="msg" id="msg" aria-live="polite">Tap a marble, then an empty hole two spaces away.</div>
+
+  <div class="controls">
+    <button class="btn" id="undo" disabled>Undo</button>
+    <button class="btn" id="hint">Hint</button>
+    <button class="btn primary" id="reset">New game</button>
+  </div>
+
+  <p class="rules">Jump a marble over a neighbour into an empty hole, up, down, left or right. The jumped marble leaves the board. <em>Finish with one marble in the centre</em> for a perfect game.</p>
+  <footer>Crafted by <b>Martin B</b></footer>
+</div>
+
+<script>
+(()=>{
+const N=7, C=3;
+const SHAPES={
+  eng:(r,c)=>(r>=2&&r<=4)||(c>=2&&c<=4),
+  eur:(r,c)=>(r>=2&&r<=4)||(c>=2&&c<=4)||((r===1||r===5)&&(c===1||c===5))
+};
+let shape='eng', grid=[], hist=[], moves=0, sel=null, hintCells=[];
+const $=id=>document.getElementById(id);
+const boardEl=$('board');
+boardEl.style.gridTemplateColumns=`repeat(${N},1fr)`;
+boardEl.style.gridTemplateRows=`repeat(${N},1fr)`;
+const DIRS=[[0,1],[1,0],[0,-1],[-1,0]];
+const valid=(r,c)=>r>=0&&c>=0&&r<N&&c<N&&SHAPES[shape](r,c);
+
+function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
+function bestKey(){return 'marbleos-best-'+shape}
+
+function init(){
+  grid=[];for(let r=0;r<N;r++){grid.push([]);for(let c=0;c<N;c++)grid[r].push(valid(r,c)?1:-1)}
+  // European board has no solution with a centre start; classic start is one off-centre
+  if(shape==='eng')grid[C][C]=0; else grid[1][C]=0;
+  hist=[];moves=0;sel=null;hintCells=[];
+  render();setMsg('Tap a marble, then an empty hole two spaces away.');
+}
+function targets(r,c){
+  const out=[];if(grid[r][c]!==1)return out;
+  for(const[dr,dc]of DIRS){const mr=r+dr,mc=c+dc,tr=r+2*dr,tc=c+2*dc;
+    if(valid(tr,tc)&&grid[mr][mc]===1&&grid[tr][tc]===0)out.push([tr,tc,mr,mc]);}
+  return out;
+}
+function allMoves(){const m=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++)for(const t of targets(r,c))m.push([r,c,...t]);return m}
+function count(){let n=0;for(const row of grid)for(const v of row)if(v===1)n++;return n}
+
+function render(){
+  boardEl.innerHTML='';
+  const tg=sel?targets(sel[0],sel[1]):[];
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    const b=document.createElement('button');b.className='cell';b.id=`c${r}${c}`;
+    if(grid[r][c]===-1){b.classList.add('void');b.tabIndex=-1;b.setAttribute('aria-hidden','true')}
+    else{
+      if(grid[r][c]===1){b.classList.add('has');const m=document.createElement('span');m.className='m';b.appendChild(m);b.setAttribute('aria-label',`Marble, row ${r+1} column ${c+1}`)}
+      else b.setAttribute('aria-label',`Empty hole, row ${r+1} column ${c+1}`);
+      if(sel&&sel[0]===r&&sel[1]===c)b.classList.add('sel');
+      if(tg.some(t=>t[0]===r&&t[1]===c))b.classList.add('target');
+      if(hintCells.some(h=>h[0]===r&&h[1]===c))b.classList.add('hint');
+      b.addEventListener('click',()=>tap(r,c));
+    }
+    boardEl.appendChild(b);
+  }
+  $('sLeft').textContent=count();$('sMoves').textContent=moves;
+  const best=store(bestKey());$('sBest').textContent=best??'—';
+  $('undo').disabled=!hist.length;
+}
+function setMsg(t){$('msg').textContent=t}
+
+function tap(r,c){
+  hintCells=[];
+  if(sel){
+    const t=targets(sel[0],sel[1]).find(t=>t[0]===r&&t[1]===c);
+    if(t){jump(sel[0],sel[1],t);return}
+  }
+  if(grid[r][c]===1){
+    if(sel&&sel[0]===r&&sel[1]===c)sel=null;
+    else{sel=[r,c];if(!targets(r,c).length)setMsg('That marble has no jump right now.');else setMsg('Choose a glowing hole.')}
+  }else sel=null;
+  render();
+}
+function jump(r,c,[tr,tc,mr,mc]){
+  hist.push(grid.map(row=>row.slice()));
+  grid[r][c]=0;grid[mr][mc]=0;grid[tr][tc]=1;moves++;sel=null;
+  render();$(`c${tr}${tc}`).classList.add('pop');
+  check();
+}
+function check(){
+  const left=count();
+  if(allMoves().length){setMsg(left+' marbles left.');return}
+  const centre=grid[C][C]===1;
+  let t;
+  if(left===1&&centre)t='Perfect. One marble, dead centre. Genius.';
+  else if(left===1)t='One marble left. Outstanding.';
+  else if(left===2)t='Two left. Excellent.';
+  else if(left===3)t='Three left. Very good.';
+  else if(left<=5)t=left+' left. Good game, try again.';
+  else t=left+' left and no moves. Keep practising.';
+  setMsg(t);
+  const best=parseInt(store(bestKey()));
+  if(isNaN(best)||left<best){store(bestKey(),String(left));render()}
+}
+$('undo').onclick=()=>{if(!hist.length)return;grid=hist.pop();moves--;sel=null;hintCells=[];render();setMsg('Move undone.')};
+$('reset').onclick=init;
+$('hint').onclick=()=>{
+  const m=allMoves();if(!m.length){setMsg('No moves left. Undo or start a new game.');return}
+  // prefer moves that keep marbles toward the centre
+  m.sort((a,b)=>(Math.abs(a[2]-C)+Math.abs(a[3]-C))-(Math.abs(b[2]-C)+Math.abs(b[3]-C)));
+  const h=m[0];sel=null;hintCells=[[h[0],h[1]]];render();
+  setMsg('Try the highlighted marble.');
+};
+function setShape(s){shape=s;$('bEng').setAttribute('aria-pressed',s==='eng');$('bEur').setAttribute('aria-pressed',s==='eur');init()}
+$('bEng').onclick=()=>setShape('eng');$('bEur').onclick=()=>setShape('eur');
+init();
+})();
+</script>
+
+</body></html>

@@ -1,0 +1,1125 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found]){display:none!important}</style></head><body>
+<title>Devenir Canadien</title>
+<style>
+:root{
+  --bg:#faf8f4;
+  --surface:#ffffff;
+  --surface-2:#f3efe6;
+  --border:#e4ddce;
+  --text:#211d17;
+  --text-dim:#655e50;
+  --accent:#b8202f;
+  --accent-ink:#ffffff;
+  --gold:#a97f22;
+  --gold-soft:#f1e6c9;
+  --good:#3f7d4c;
+  --good-soft:#e5f0e3;
+  --warn:#b45a2c;
+  --warn-soft:#f7e9dd;
+  --rail-bg:#1c1a16;
+  --rail-text:#e9e2d1;
+  --rail-text-dim:#a99f8a;
+  --shadow:0 8px 28px -12px rgba(30,20,10,.28);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141210;
+    --surface:#1c1a16;
+    --surface-2:#242019;
+    --border:#39332a;
+    --text:#efe9dd;
+    --text-dim:#a99f8a;
+    --accent:#e0475a;
+    --accent-ink:#1a0a0d;
+    --gold:#d9b45f;
+    --gold-soft:#332a17;
+    --good:#7cc98d;
+    --good-soft:#1c2b1e;
+    --warn:#e08a56;
+    --warn-soft:#2e2118;
+    --rail-bg:#0e0d0b;
+    --rail-text:#efe9dd;
+    --rail-text-dim:#8d8371;
+    --shadow:0 8px 28px -12px rgba(0,0,0,.55);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141210;
+  --surface:#1c1a16;
+  --surface-2:#242019;
+  --border:#39332a;
+  --text:#efe9dd;
+  --text-dim:#a99f8a;
+  --accent:#e0475a;
+  --accent-ink:#1a0a0d;
+  --gold:#d9b45f;
+  --gold-soft:#332a17;
+  --good:#7cc98d;
+  --good-soft:#1c2b1e;
+  --warn:#e08a56;
+  --warn-soft:#2e2118;
+  --rail-bg:#0e0d0b;
+  --rail-text:#efe9dd;
+  --rail-text-dim:#8d8371;
+  --shadow:0 8px 28px -12px rgba(0,0,0,.55);
+}
+*{box-sizing:border-box;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+h1,h2,h3,.display{
+  font-family:"Fraunces","Iowan Old Style",Georgia,serif;
+  text-wrap:balance;
+  font-weight:600;
+  letter-spacing:-0.01em;
+}
+.mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;}
+a{color:inherit;}
+button{font-family:inherit;}
+::selection{background:var(--gold-soft);}
+
+/* ---------- shell ---------- */
+.shell{display:grid;grid-template-columns:236px 1fr;min-height:100vh;}
+@media (max-width:860px){.shell{grid-template-columns:1fr;}}
+
+.rail{
+  background:var(--rail-bg);color:var(--rail-text);
+  padding:22px 16px 18px;
+  display:flex;flex-direction:column;gap:18px;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+@media (max-width:860px){.rail{position:relative;height:auto;}}
+
+.rail-brand{display:flex;align-items:center;gap:10px;padding:0 4px 4px;}
+.seal{
+  width:34px;height:34px;border-radius:50%;
+  border:1.5px solid var(--gold);
+  display:flex;align-items:center;justify-content:center;
+  font-family:"Fraunces",serif;font-weight:600;font-size:13px;color:var(--gold);
+  flex:none;
+}
+.rail-brand-text .t1{font-family:"Fraunces",serif;font-size:15px;line-height:1.15;color:var(--rail-text);}
+.rail-brand-text .t2{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--rail-text-dim);margin-top:2px;}
+
+.rail-nav{display:flex;flex-direction:column;gap:2px;margin-top:4px;}
+.rail-btn{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 10px;border-radius:7px;border:1px solid transparent;
+  background:none;color:var(--rail-text-dim);cursor:pointer;
+  font-size:13.5px;text-align:left;transition:background .12s,color .12s;
+}
+.rail-btn svg{flex:none;opacity:.85;}
+.rail-btn:hover{background:rgba(255,255,255,.05);color:var(--rail-text);}
+.rail-btn.active{background:var(--accent);color:var(--accent-ink);font-weight:600;}
+.rail-btn.active svg{opacity:1;}
+
+.rail-progress{margin-top:6px;padding:12px 12px 13px;border:1px solid #39332a;border-radius:9px;background:rgba(255,255,255,.03);}
+.rail-progress .lbl{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--rail-text-dim);margin-bottom:7px;}
+.rail-progress .bar{height:6px;border-radius:4px;background:#332e26;overflow:hidden;}
+.rail-progress .bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),#f0d488);}
+.rail-progress .num{margin-top:6px;font-size:12px;color:var(--rail-text);font-family:"IBM Plex Mono",monospace;}
+
+.rail-tip{
+  margin-top:auto;padding:13px 13px 14px;border-radius:9px;
+  background:linear-gradient(165deg,#2a2114,#1c1712);
+  border:1px solid #4a3c22;
+}
+.rail-tip .lbl{display:flex;align-items:center;gap:6px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--gold);margin-bottom:7px;font-weight:600;}
+.rail-tip p{margin:0;font-size:12.3px;line-height:1.55;color:#d9d0bd;}
+
+.main{padding:38px 44px 80px;max-width:920px;}
+@media (max-width:860px){.main{padding:26px 18px 60px;}}
+@media (max-width:600px){.rail{padding:16px 14px 14px;}}
+
+.view{display:none;}
+.view.active{display:block;}
+
+.top-eyebrow{display:flex;align-items:center;gap:9px;color:var(--accent);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;margin-bottom:10px;}
+.top-eyebrow .diamond{width:7px;height:7px;background:var(--accent);transform:rotate(45deg);flex:none;}
+h1.page-title{font-size:clamp(26px,3.4vw,36px);margin:0 0 10px;}
+.page-sub{color:var(--text-dim);font-size:15px;line-height:1.6;max-width:62ch;margin:0 0 30px;}
+
+/* ---------- chapter list (Etudier) ---------- */
+.chapter-grid{display:grid;grid-template-columns:1fr;gap:12px;}
+.chapter-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:20px 22px;box-shadow:var(--shadow);cursor:pointer;
+  display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;
+  transition:border-color .12s;
+}
+.chapter-card:hover{border-color:var(--gold);}
+.chapter-num{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--text-dim);
+  border-right:1px solid var(--border);padding-right:16px;min-width:30px;}
+.chapter-card h3{margin:0 0 4px;font-size:17px;}
+.chapter-card .desc{font-size:13px;color:var(--text-dim);line-height:1.5;margin:0;}
+.chapter-check{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border);flex:none;
+  display:flex;align-items:center;justify-content:center;font-size:12px;color:transparent;}
+.chapter-card.done .chapter-check{background:var(--good);border-color:var(--good);color:var(--good-soft);}
+
+/* ---------- chapter detail ---------- */
+.chapter-detail{background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);overflow:hidden;}
+.chapter-detail .cd-head{padding:26px 30px 20px;border-bottom:1px solid var(--border);position:relative;}
+.chapter-detail .cd-head::before{content:"";position:absolute;left:0;top:26px;bottom:26px;width:4px;background:var(--accent);}
+.chapter-detail .cd-body{padding:26px 30px 30px;font-size:15px;line-height:1.75;}
+.chapter-detail .cd-body h4{font-family:"Fraunces",serif;font-size:15.5px;margin:22px 0 8px;display:flex;gap:8px;align-items:center;}
+.chapter-detail .cd-body h4::before{content:"";width:6px;height:6px;background:var(--accent);transform:rotate(45deg);flex:none;}
+.chapter-detail .cd-body p{margin:0 0 12px;color:var(--text);}
+.chapter-detail .cd-body ul{margin:0 0 14px;padding-left:19px;}
+.chapter-detail .cd-body li{margin-bottom:6px;line-height:1.6;}
+.chapter-detail .cd-body strong{color:var(--text);}
+.back-link{display:inline-flex;align-items:center;gap:6px;color:var(--text-dim);font-size:13px;cursor:pointer;margin-bottom:18px;background:none;border:none;padding:0;}
+.back-link:hover{color:var(--accent);}
+
+.maj-box{margin-top:20px;padding:14px 16px;border-radius:9px;background:var(--gold-soft);border:1px solid var(--gold);display:flex;gap:10px;}
+.maj-box .tag{flex:none;font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--gold);background:var(--surface);border:1px solid var(--gold);border-radius:5px;padding:3px 7px;height:fit-content;}
+.maj-box p{margin:0;font-size:13.3px;line-height:1.6;color:var(--text);}
+
+.chapter-nav{display:flex;justify-content:space-between;margin-top:18px;gap:10px;}
+.chapter-nav button{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 14px;font-size:13px;color:var(--text);cursor:pointer;}
+.chapter-nav button:hover{border-color:var(--gold);}
+
+/* ---------- flashcards ---------- */
+.fc-controls{display:flex;gap:10px;align-items:center;margin-bottom:22px;flex-wrap:wrap;}
+select{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:13px;color:var(--text);}
+.fc-stage{display:flex;flex-direction:column;align-items:center;gap:18px;}
+.fc-card{
+  width:100%;max-width:560px;aspect-ratio:16/9.5;border-radius:14px;cursor:pointer;
+  perspective:1400px;
+}
+.fc-card-inner{position:relative;width:100%;height:100%;transition:transform .5s cubic-bezier(.2,.8,.3,1);transform-style:preserve-3d;}
+.fc-card.flipped .fc-card-inner{transform:rotateY(180deg);}
+.fc-face{
+  position:absolute;inset:0;backface-visibility:hidden;border-radius:14px;
+  border:1px solid var(--border);box-shadow:var(--shadow);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px;
+  background:var(--surface);
+}
+.fc-face.back{transform:rotateY(180deg);background:var(--surface-2);}
+.fc-face .eyebrow{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px;font-weight:700;}
+.fc-face .term{font-family:"Fraunces",serif;font-size:26px;}
+.fc-face .def{font-size:15px;line-height:1.6;color:var(--text);}
+.fc-hint{font-size:12px;color:var(--text-dim);}
+.fc-row{display:flex;gap:12px;align-items:center;}
+.fc-nav-btn{background:var(--surface);border:1px solid var(--border);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text);}
+.fc-nav-btn:hover{border-color:var(--gold);}
+.fc-count{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--text-dim);min-width:64px;text-align:center;}
+
+/* ---------- quiz ---------- */
+.quiz-setup{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:26px 28px;box-shadow:var(--shadow);}
+.quiz-setup h3{margin:0 0 4px;font-size:17px;}
+.filter-chips{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 20px;}
+.chip{border:1px solid var(--border);background:var(--surface-2);color:var(--text-dim);padding:6px 12px;border-radius:999px;font-size:12.5px;cursor:pointer;}
+.chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600;}
+.btn-primary{background:var(--accent);color:var(--accent-ink);border:none;border-radius:8px;padding:12px 22px;font-size:14px;font-weight:600;cursor:pointer;}
+.btn-primary:hover{filter:brightness(1.06);}
+.btn-ghost{background:none;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:11px 20px;font-size:13.5px;cursor:pointer;}
+.btn-ghost:hover{border-color:var(--gold);}
+.count-row{display:flex;align-items:center;gap:12px;margin-bottom:6px;}
+.count-row input[type=range]{width:160px;}
+
+.quiz-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;}
+.quiz-progress-bar{flex:1;height:6px;background:var(--surface-2);border-radius:4px;overflow:hidden;}
+.quiz-progress-bar > i{display:block;height:100%;background:var(--accent);}
+.qp-label{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--text-dim);white-space:nowrap;}
+.score-pill{font-family:"IBM Plex Mono",monospace;font-size:12px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:5px 12px;white-space:nowrap;}
+
+.q-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px 28px 24px;box-shadow:var(--shadow);}
+.q-chapter-tag{display:inline-block;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:10px;}
+.q-text{font-family:"Fraunces",serif;font-size:19px;line-height:1.42;margin:0 0 20px;}
+.opts{display:flex;flex-direction:column;gap:10px;}
+.opt{
+  border:1px solid var(--border);background:var(--surface-2);border-radius:9px;padding:13px 15px;
+  font-size:14.5px;line-height:1.5;cursor:pointer;display:flex;gap:11px;align-items:flex-start;text-align:left;
+}
+.opt:hover{border-color:var(--gold);}
+.opt .letter{flex:none;width:22px;height:22px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-family:"IBM Plex Mono",monospace;color:var(--text-dim);}
+.opt.correct{background:var(--good-soft);border-color:var(--good);}
+.opt.correct .letter{background:var(--good);border-color:var(--good);color:var(--good-soft);}
+.opt.wrong{background:var(--warn-soft);border-color:var(--warn);}
+.opt.wrong .letter{background:var(--warn);border-color:var(--warn);color:var(--warn-soft);}
+.opt[disabled]{cursor:default;}
+.explain{margin-top:18px;padding:13px 15px;border-radius:9px;background:var(--surface-2);border:1px solid var(--border);font-size:13.3px;line-height:1.6;color:var(--text-dim);display:none;}
+.explain.show{display:block;}
+.q-actions{display:flex;justify-content:flex-end;margin-top:20px;}
+
+.results-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:34px 30px;text-align:center;box-shadow:var(--shadow);}
+.results-score{font-family:"Fraunces",serif;font-size:52px;margin:6px 0 2px;}
+.results-sub{color:var(--text-dim);font-size:14px;margin-bottom:22px;}
+.results-breakdown{display:grid;gap:8px;text-align:left;margin:20px 0;max-width:440px;margin-left:auto;margin-right:auto;}
+.rb-row{display:flex;justify-content:space-between;font-size:13px;padding:7px 2px;border-bottom:1px solid var(--border);}
+.rb-row .rb-name{color:var(--text);}
+.rb-row .rb-frac{font-family:"IBM Plex Mono",monospace;color:var(--text-dim);}
+
+/* ---------- today ---------- */
+.today-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-bottom:26px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:18px 20px;box-shadow:var(--shadow);}
+.stat-card .k{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;}
+.stat-card .v{font-family:"Fraunces",serif;font-size:20px;line-height:1.3;margin-bottom:4px;}
+.stat-card .d{font-size:12.5px;color:var(--text-dim);line-height:1.5;}
+
+.premier-table{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);}
+.premier-table th{text-align:left;padding:10px 14px;background:var(--surface-2);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);border-bottom:1px solid var(--border);}
+.premier-table td{padding:10px 14px;border-bottom:1px solid var(--border);}
+.premier-table tr:last-child td{border-bottom:none;}
+.table-wrap{overflow-x:auto;border-radius:10px;}
+.source-note{margin-top:22px;font-size:12px;color:var(--text-dim);line-height:1.7;}
+.source-note a{color:var(--accent);text-decoration:underline;text-underline-offset:2px;}
+
+/* ---------- progress view ---------- */
+.progress-list{display:flex;flex-direction:column;gap:10px;}
+.progress-row{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:13px 16px;}
+.progress-row .name{flex:1;font-size:14px;}
+.progress-row .bar{width:120px;height:6px;background:var(--surface-2);border-radius:4px;overflow:hidden;}
+.progress-row .bar > i{display:block;height:100%;background:var(--gold);}
+.progress-row .pct{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--text-dim);width:38px;text-align:right;}
+.reset-row{margin-top:26px;}
+.reset-row button{background:none;border:1px solid var(--border);color:var(--warn);border-radius:8px;padding:9px 16px;font-size:13px;cursor:pointer;}
+
+@media (prefers-reduced-motion:reduce){.fc-card-inner{transition:none;}}
+</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<div class="shell">
+  <nav class="rail">
+    <div class="rail-brand">
+      <div class="seal">CA</div>
+      <div class="rail-brand-text">
+        <div class="t1">Devenir Canadien</div>
+        <div class="t2">Guide d'examen · MàJ 09/2026</div>
+      </div>
+    </div>
+    <div class="rail-nav" id="railNav"></div>
+    <div class="rail-progress">
+      <div class="lbl">Chapitres lus</div>
+      <div class="bar"><i id="railBar" style="width:0%"></i></div>
+      <div class="num" id="railNum">0 / 12</div>
+    </div>
+    <div class="rail-tip">
+      <div class="lbl">★ Conseil clé</div>
+      <p>Le vrai examen tire <strong style="color:#fff">toutes</strong> ses questions du <em>Règlement sur la citoyenneté</em> — les mêmes thèmes que ce guide, pas de la culture générale. Maîtrisez d'abord les 20 questions modèles (p. 52-53 du guide, reprises dans l'onglet Quiz) et les faits « aujourd'hui » : Roi, gouverneure générale, premier ministre. Le livre est daté ; l'onglet <strong style="color:#fff">Aujourd'hui</strong> corrige ce qui a changé.</p>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- ETUDIER : liste -->
+    <section class="view active" id="view-etudier-liste">
+      <div class="top-eyebrow"><span class="diamond"></span> Guide d'étude officiel</div>
+      <h1 class="page-title">Découvrir le Canada, remis à jour</h1>
+      <p class="page-sub">Le contenu ci-dessous suit chapitre par chapitre le guide officiel <em>Découvrir le Canada&nbsp;: les droits et responsabilités liés à la citoyenneté</em> (IRCC), condensé pour l'étude, avec les faits courants corrigés là où le livre est dépassé.</p>
+      <div class="chapter-grid" id="chapterGrid"></div>
+    </section>
+
+    <!-- ETUDIER : detail -->
+    <section class="view" id="view-etudier-detail">
+      <button class="back-link" onclick="showChapterList()">← Retour aux chapitres</button>
+      <div class="chapter-detail" id="chapterDetail"></div>
+    </section>
+
+    <!-- FICHES -->
+    <section class="view" id="view-fiches">
+      <div class="top-eyebrow"><span class="diamond"></span> Vocabulaire &amp; repères</div>
+      <h1 class="page-title">Fiches de révision</h1>
+      <p class="page-sub">36 termes et repères essentiels. Cliquez sur la carte pour retourner, ou utilisez les flèches.</p>
+      <div class="fc-controls">
+        <select id="fcFilter" onchange="fcSetFilter(this.value)"></select>
+        <span class="fc-hint" id="fcHint"></span>
+      </div>
+      <div class="fc-stage">
+        <div class="fc-card" id="fcCard" onclick="fcFlip()">
+          <div class="fc-card-inner" id="fcInner">
+            <div class="fc-face front"><div class="eyebrow">Terme</div><div class="term" id="fcTerm"></div></div>
+            <div class="fc-face back"><div class="eyebrow">Définition</div><div class="def" id="fcDef"></div></div>
+          </div>
+        </div>
+        <div class="fc-row">
+          <button class="fc-nav-btn" onclick="fcNav(-1)" aria-label="Précédent">‹</button>
+          <span class="fc-count" id="fcCount">1 / 37</span>
+          <button class="fc-nav-btn" onclick="fcNav(1)" aria-label="Suivant">›</button>
+        </div>
+        <span class="fc-hint">Cliquez la carte pour révéler la définition</span>
+      </div>
+    </section>
+
+    <!-- QUIZ -->
+    <section class="view" id="view-quiz">
+      <div class="top-eyebrow"><span class="diamond"></span> Mise à l'épreuve</div>
+      <h1 class="page-title">Quiz façon examen</h1>
+      <p class="page-sub" id="quizIntroText">133 questions à choix multiple, formulées sur le modèle exact des questions du guide officiel. Choisissez des chapitres ou lancez un tirage complet.</p>
+
+      <div class="quiz-setup" id="quizSetup">
+        <h3>Configurer le quiz</h3>
+        <p class="page-sub" style="margin:4px 0 0;">Sélectionnez un ou plusieurs chapitres (aucune sélection = tous).</p>
+        <div class="filter-chips" id="quizChips"></div>
+        <div class="count-row">
+          <label for="qCount" style="font-size:13px;color:var(--text-dim);">Nombre de questions</label>
+          <input type="range" id="qCount" min="5" max="40" value="15" oninput="document.getElementById('qCountVal').textContent=this.value">
+          <span class="mono" id="qCountVal" style="font-size:13px;">15</span>
+        </div>
+        <div style="margin-top:18px;"><button class="btn-primary" onclick="startQuiz()">Commencer le quiz →</button></div>
+      </div>
+
+      <div id="quizRunner" style="display:none;">
+        <div class="quiz-head">
+          <div class="quiz-progress-bar"><i id="quizBar" style="width:0%"></i></div>
+          <span class="qp-label" id="quizPos">1 / 15</span>
+          <span class="score-pill" id="quizScore">0 ✓</span>
+        </div>
+        <div class="q-card">
+          <span class="q-chapter-tag" id="qTag"></span>
+          <p class="q-text" id="qText"></p>
+          <div class="opts" id="qOpts"></div>
+          <div class="explain" id="qExplain"></div>
+          <div class="q-actions"><button class="btn-primary" id="qNextBtn" style="display:none;" onclick="nextQuestion()">Suivant →</button></div>
+        </div>
+      </div>
+
+      <div id="quizResults" style="display:none;">
+        <div class="results-card">
+          <div class="top-eyebrow" style="justify-content:center;"><span class="diamond"></span> Résultat</div>
+          <div class="results-score" id="resScore">—</div>
+          <div class="results-sub" id="resSub"></div>
+          <div class="results-breakdown" id="resBreakdown"></div>
+          <div style="display:flex;gap:10px;justify-content:center;margin-top:8px;">
+            <button class="btn-ghost" onclick="resetQuizSetup()">Nouveau quiz</button>
+            <button class="btn-primary" onclick="reviewMissed()" id="reviewBtn" style="display:none;">Revoir les erreurs</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AUJOURD'HUI -->
+    <section class="view" id="view-today"></section>
+
+    <!-- PROGRES -->
+    <section class="view" id="view-progres">
+      <div class="top-eyebrow"><span class="diamond"></span> Suivi</div>
+      <h1 class="page-title">Votre progression</h1>
+      <p class="page-sub">Lecture des chapitres et meilleurs résultats de quiz par chapitre, enregistrés sur cet appareil.</p>
+      <div class="progress-list" id="progressList"></div>
+      <div class="reset-row"><button onclick="resetProgress()">Réinitialiser toute la progression</button></div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+/* =========================================================
+   DATA — CHAPITRES
+   ========================================================= */
+const CHAPTERS = [
+{id:'demande',num:'01',title:'Demander la citoyenneté',desc:"Conditions d'admissibilité, format de l'examen, la cérémonie.",
+html:`
+<p>Pour demander la citoyenneté, les adultes de <strong>18 à 54 ans</strong> doivent démontrer une connaissance suffisante du Canada (histoire, symboles, institutions, droits et responsabilités) <strong>et</strong> une connaissance suffisante du français ou de l'anglais. Les candidats de <strong>55 ans ou plus</strong> sont dispensés de l'examen de connaissances, mais doivent tout de même satisfaire à l'exigence linguistique pour l'admissibilité générale.</p>
+<h4>Le format de l'examen</h4>
+<p>L'examen est en général écrit (parfois une entrevue). Il porte sur deux critères fondamentaux : la connaissance du Canada et des droits/responsabilités de la citoyenneté, et la capacité linguistique. <strong>Toutes les questions proviennent des thèmes du <em>Règlement sur la citoyenneté</em></strong> — les mêmes thèmes que ce guide d'étude couvre chapitre par chapitre. Il n'existe pas d'autre guide officiel : tout matériel tiers est utilisé « à vos propres risques », selon IRCC.</p>
+<h4>Comment se préparer</h4>
+<ul>
+<li>Étudier le guide en entier, pas seulement les questions modèles.</li>
+<li>Se faire interroger par un proche.</li>
+<li>Suivre des cours de préparation gratuits (écoles, commissions scolaires, organismes d'aide à l'établissement).</li>
+</ul>
+<h4>Après l'examen</h4>
+<p>En cas de réussite et une fois toutes les autres conditions remplies, vous recevez un <strong>Avis de convocation</strong> pour la cérémonie de citoyenneté. Vous y prêtez le serment, signez le formulaire, puis recevez votre certificat de citoyenneté canadienne.</p>
+`,
+maj:"Le formulaire du serment a été modifié en 2021 pour reconnaître les droits ancestraux et issus de traités des Premières Nations, des Inuits et des Métis (déjà inclus dans cette édition du guide). Le serment fait aujourd'hui référence au <strong>Roi Charles III</strong>, et non plus à la reine Elizabeth II — voir le chapitre « Aujourd'hui »."
+},
+{id:'droits',num:'02',title:'Droits et responsabilités',desc:"Libertés fondamentales, égalité, devoirs du citoyen.",
+html:`
+<h4>Les libertés fondamentales</h4>
+<p>Héritées d'une tradition de liberté ordonnée vieille de 800 ans (la <strong>Magna Carta</strong>, 1215), inscrites dans la <strong>Charte canadienne des droits et libertés</strong> (1982) : liberté de conscience et de religion; liberté de pensée, de croyance, d'opinion et d'expression (y compris la presse); liberté de réunion pacifique; liberté d'association. L'<strong>habeas corpus</strong> — le droit de contester une détention illégale — vient de la common law britannique.</p>
+<h4>Les droits garantis par la Charte</h4>
+<ul>
+<li><strong>Liberté de circulation et d'établissement</strong> — vivre et travailler n'importe où au Canada, y entrer et en sortir librement, demander un passeport canadien.</li>
+<li><strong>Droits des peuples autochtones</strong> — la Charte ne porte pas atteinte aux droits (acquis par traité ou autres) des peuples autochtones.</li>
+<li><strong>Droits linguistiques</strong> — le français et l'anglais ont un statut égal au Parlement et dans l'ensemble du gouvernement; droit à l'instruction dans la langue de la minorité.</li>
+<li><strong>Multiculturalisme</strong> — caractéristique fondamentale de l'identité canadienne.</li>
+<li><strong>Égalité hommes-femmes</strong> — les hommes et les femmes sont égaux devant la loi.</li>
+</ul>
+<h4>Les responsabilités liées à la citoyenneté</h4>
+<ul>
+<li><strong>Respecter les lois</strong> — la primauté du droit s'applique à tous, y compris au gouvernement.</li>
+<li><strong>Répondre à ses propres besoins et à ceux de sa famille.</strong></li>
+<li><strong>Faire partie d'un jury</strong> — un devoir, pas une option, lorsqu'on est appelé.</li>
+<li><strong>Voter aux élections</strong> — un droit et une responsabilité.</li>
+<li><strong>Aider les autres membres de la communauté</strong> — bénévolat.</li>
+<li><strong>Protéger le patrimoine et l'environnement.</strong></li>
+</ul>
+<p>Le Canada n'impose <strong>pas</strong> le service militaire obligatoire, mais on peut servir dans les Forces canadiennes (Marine, Armée de terre, Force aérienne), la Réserve, les Cadets, la Garde côtière, la police ou les pompiers.</p>
+`,maj:null},
+{id:'qui',num:'03',title:'Qui sommes-nous, les Canadiens?',desc:"Les trois peuples fondateurs, langues, diversité, religion.",
+html:`
+<p>Comprendre l'identité canadienne exige de connaître les <strong>trois peuples fondateurs</strong> : les Autochtones, les Français et les Britanniques.</p>
+<h4>Les peuples autochtones</h4>
+<p>Le terme « peuples autochtones » regroupe trois groupes distincts : les <strong>Premières Nations</strong> (le mot « Indien » désigne historiquement tous les Autochtones sauf les Inuits et les Métis), les <strong>Inuits</strong> (« le peuple » en inuktitut, communautés arctiques), et les <strong>Métis</strong> (peuple distinct né de l'union d'Autochtones et d'Européens, surtout dans les Prairies). Environ 65&nbsp;% des Autochtones sont des Premières Nations, 30&nbsp;% des Métis et 4&nbsp;% des Inuits. Le système des pensionnats (années 1800 à 1980) a cherché à assimiler les enfants autochtones; le gouvernement du Canada a présenté des excuses officielles en <strong>2008</strong>.</p>
+<h4>Français et Anglais</h4>
+<p>Les deux langues officielles du Canada. Les <strong>Acadiens</strong> descendent des colons français établis dès 1604 dans les Maritimes; plus des deux tiers furent déportés lors du <strong>Grand Dérangement</strong> (1755-1763). Les <strong>Québécois</strong> sont en grande majorité francophones; la Chambre des communes a reconnu en <strong>2006</strong> que les Québécois forment une nation au sein d'un Canada uni.</p>
+<h4>La diversité et le multiculturalisme</h4>
+<p>Depuis les années 1970, la majorité des nouveaux arrivants viennent d'Asie. Les groupes ethniques les plus représentés incluent Anglais, Français, Écossais, Irlandais, Allemands, Italiens, Chinois, Autochtones, Ukrainiens, Sud-Asiatiques. La plupart des Canadiens se disent chrétiens (les catholiques forment le plus grand groupe), avec des communautés musulmanes, juives, hindoues, sikhes en croissance. Les Canadiens gais et lesbiennes bénéficient de l'entière protection de la loi, y compris l'accès au mariage civil.</p>
+`,maj:"Les chiffres linguistiques (18 M d'anglophones, 7 M de francophones) datent du recensement d'avant 2011. La proportion relative est demeurée assez stable, mais la population totale a beaucoup augmenté — voir « Aujourd'hui » pour la population actuelle."},
+{id:'histoire',num:'04',title:"L'histoire du Canada",desc:"De la Nouvelle-France à la Charte de 1982.",
+html:`
+<h4>Avant la Confédération</h4>
+<ul>
+<li><strong>1497</strong> — Jean Cabot atteint Terre-Neuve/Cap-Breton au nom de l'Angleterre.</li>
+<li><strong>1534-1542</strong> — Jacques Cartier explore le fleuve Saint-Laurent; le mot iroquois <em>kanata</em> (« village ») donne son nom au pays.</li>
+<li><strong>1608</strong> — Samuel de Champlain fonde Québec.</li>
+<li><strong>1670</strong> — Charte royale accordant à la <strong>Compagnie de la Baie d'Hudson</strong> l'exclusivité du commerce des fourrures.</li>
+<li><strong>1759</strong> — Bataille des plaines d'Abraham; la Grande-Bretagne l'emporte. <strong>1763</strong> — Traité de Paris cède la Nouvelle-France à la Grande-Bretagne. <strong>1774</strong> — l'<em>Acte de Québec</em> garantit aux Canadiens français leur langue, leur religion et leur droit civil.</li>
+<li><strong>1776-1783</strong> — Après la Révolution américaine, environ 40 000 <strong>loyalistes de l'Empire-Uni</strong> fuient vers le Canada.</li>
+<li><strong>1812-1814</strong> — Guerre de 1812 : le Canada repousse les tentatives d'invasion américaines (Isaac Brock, Laura Secord, Charles de Salaberry).</li>
+<li><strong>1837-1838</strong> — Rébellions du Haut et du Bas-Canada; le rapport Durham mène au <strong>gouvernement responsable</strong> (Nouvelle-Écosse, 1848 — Louis-Hippolyte La Fontaine et Robert Baldwin).</li>
+</ul>
+<h4>La Confédération et l'expansion (1867 → 1999)</h4>
+<p>Le <strong>1er juillet 1867</strong>, l'<em>Acte de l'Amérique du Nord britannique</em> crée le Dominion du Canada en unissant l'Ontario, le Québec, la Nouvelle-Écosse et le Nouveau-Brunswick. Sir John A. Macdonald devient le premier premier ministre; sir George-Étienne Cartier est l'architecte principal issu du Québec.</p>
+<p>Expansion : 1870 Manitoba/Territoires du Nord-Ouest · 1871 Colombie-Britannique · 1873 Île-du-Prince-Édouard · 1880 îles de l'Arctique · 1898 Yukon · 1905 Alberta/Saskatchewan · 1949 Terre-Neuve-et-Labrador · 1999 Nunavut. Le chemin de fer canadien Pacifique est achevé en <strong>1885</strong>. <strong>Louis Riel</strong> mène les résistances métisses de la rivière Rouge (1869-70) et de la Saskatchewan (1885).</p>
+<h4>Le XXe siècle</h4>
+<p>Plus de 600&nbsp;000 Canadiens combattent lors de la <strong>Première Guerre mondiale</strong> (crête de Vimy, avril 1917). Les femmes obtiennent le droit de vote fédéral en <strong>1918</strong> (Agnes Macphail devient la première députée en 1921; le Québec accorde le droit de vote aux femmes en 1940). Lors de la <strong>Seconde Guerre mondiale</strong>, plus d'un million de Canadiens servent; le débarquement de la plage Juno a lieu le 6 juin 1944. Le Canada interne injustement des citoyens d'origine japonaise (excuses officielles en 1988).</p>
+<h4>Le Canada contemporain</h4>
+<p>La <strong>Révolution tranquille</strong> transforme le Québec dans les années 1960. La <strong>Loi sur les langues officielles</strong> est adoptée en 1969. En <strong>1982</strong>, la Constitution est rapatriée et la <strong>Charte canadienne des droits et libertés</strong> y est incluse. Deux référendums sur la souveraineté du Québec (1980, 1995) sont défaits de justesse en 1995.</p>
+`,maj:null},
+{id:'moderne',num:'05',title:'Le Canada moderne',desc:"Prospérité d'après-guerre, société, arts et culture.",
+html:`
+<h4>Commerce et prospérité</h4>
+<p>Le Canada connaît une prospérité record après 1945; la découverte de pétrole en Alberta (1947) lance l'industrie énergétique moderne. Le Canada rejoint l'ONU, participe à la guerre de Corée (1950-1953), cofonde l'<strong>OTAN</strong> (1949) et le NORAD.</p>
+<h4>Une société en évolution</h4>
+<p>Les Autochtones obtiennent le droit de vote fédéral inconditionnel en <strong>1960</strong>. Le Canada accueille des dizaines de milliers de réfugiés (Hongrois en 1956, Vietnamiens après 1975). L'idée du multiculturalisme prend un nouvel élan dans les années 1960-1970 et devient une politique officielle.</p>
+<h4>Arts et culture</h4>
+<p>Le <strong>Groupe des Sept</strong> (fondé en 1920, incluant Tom Thomson) est à l'origine d'un style de peinture de paysage typiquement canadien. Emily Carr peint la côte Ouest; des écrivains comme Margaret Laurence, Robertson Davies et Mordecai Richler marquent la littérature; des cinéastes comme Denys Arcand et Atom Egoyan rayonnent à l'international.</p>
+`,maj:null},
+{id:'gouvernement',num:'06',title:'Gouvernement et démocratie',desc:"État fédéral, démocratie parlementaire, monarchie constitutionnelle.",
+html:`
+<p>Trois faits caractérisent le système canadien : c'est un <strong>État fédéral</strong>, une <strong>démocratie parlementaire</strong> et une <strong>monarchie constitutionnelle</strong>.</p>
+<h4>L'État fédéral</h4>
+<p>Le gouvernement fédéral gère les affaires nationales et internationales (défense, politique étrangère, citoyenneté, droit criminel, monnaie); les provinces gèrent l'éducation, la santé, les ressources naturelles, la propriété et les droits civils; les municipalités gèrent les services locaux. L'agriculture et l'immigration sont des responsabilités partagées.</p>
+<h4>La démocratie parlementaire</h4>
+<p>Le Parlement comprend trois parties : le <strong>souverain</strong> (représenté par la gouverneure générale), le <strong>Sénat</strong> (sénateurs nommés sur recommandation du premier ministre, en poste jusqu'à 75 ans) et la <strong>Chambre des communes</strong> (députés élus). Le premier ministre choisit les ministres du Cabinet parmi les députés élus, responsables devant la Chambre; un gouvernement qui perd un vote de confiance doit démissionner.</p>
+<h4>La monarchie constitutionnelle</h4>
+<p>Le souverain (roi ou reine) est le chef d'État héréditaire, symbole de la souveraineté canadienne, non partisan. Il/elle est représenté(e) au Canada par la <strong>gouverneure générale</strong> (nommée sur recommandation du premier ministre, habituellement pour cinq ans) et, dans chaque province, par le <strong>lieutenant-gouverneur</strong>.</p>
+<h4>Comment un projet de loi devient une loi</h4>
+<ol style="padding-left:19px;line-height:1.8;">
+<li>Première lecture</li><li>Deuxième lecture (débat de principe)</li><li>Étude en comité</li>
+<li>Étape du rapport (amendements)</li><li>Troisième lecture (vote)</li><li>Sénat (processus similaire)</li><li>Sanction royale</li>
+</ol>
+`,maj:"Le chef d'État actuel est le <strong>Roi Charles&nbsp;III</strong> (depuis le 8 septembre 2022); la gouverneure générale actuelle est <strong>Louise Arbour</strong>, 31<sup>e</sup> titulaire du poste, installée le 8 juin 2026. Détails complets dans « Aujourd'hui »."},
+{id:'elections',num:'07',title:'Élections fédérales',desc:"Vote, circonscriptions, partis, formation du gouvernement.",
+html:`
+<p>Les élections fédérales générales doivent avoir lieu le troisième lundi d'octobre, quatre ans après les précédentes — bien que le premier ministre puisse demander à la gouverneure générale de déclencher une élection plus tôt.</p>
+<h4>Voter</h4>
+<p>Pour voter, il faut être citoyen canadien, avoir <strong>18 ans</strong> au jour du vote, et être inscrit sur la liste électorale (possible le jour même). <strong>Élections Canada</strong> est l'organisme neutre du Parlement qui administre les élections et gère le Registre national des électeurs. Le vote est <strong>secret</strong>.</p>
+<h4>Circonscriptions et candidats</h4>
+<p>Le pays est divisé en circonscriptions (« comtés »); chaque circonscription élit un député à la Chambre des communes. Dans chaque circonscription, le candidat qui obtient le plus de votes est élu (scrutin majoritaire uninominal à un tour).</p>
+<h4>Après une élection</h4>
+<p>Le chef du parti ayant le plus de sièges est invité par la gouverneure générale à former le gouvernement et en devient le premier ministre. Un parti qui détient la majorité des sièges forme un <strong>gouvernement majoritaire</strong>; sinon, un <strong>gouvernement minoritaire</strong>. Le deuxième parti en importance forme <strong>l'opposition officielle</strong> (« la loyale Opposition de Sa Majesté »).</p>
+`,maj:"Le Canada compte aujourd'hui <strong>343 circonscriptions</strong> (le guide, plus ancien, indique 308 — la carte électorale a été redécoupée en 2022 et appliquée dès l'élection de 2025). Voir « Aujourd'hui » pour le premier ministre et la composition actuels."},
+{id:'justice',num:'08',title:'Système de justice',desc:"Présomption d'innocence, tribunaux, police.",
+html:`
+<p>Le système de justice canadien garantit à chacun l'application régulière de la loi, fondée sur la <strong>présomption d'innocence</strong> : chacun est innocent jusqu'à preuve du contraire.</p>
+<h4>Les tribunaux</h4>
+<p>La <strong>Cour suprême du Canada</strong> — <strong>neuf juges</strong> nommés par le gouverneur général — est le plus haut tribunal du pays. La Cour fédérale traite des questions relevant du gouvernement fédéral. Chaque province a une cour d'appel, une cour supérieure et des tribunaux provinciaux (famille, infractions routières, petites créances).</p>
+<h4>La police</h4>
+<p>La <strong>Gendarmerie royale du Canada (GRC)</strong> applique les lois fédérales et sert de police provinciale dans la plupart des provinces et territoires (sauf l'Ontario et le Québec, qui ont leurs propres services provinciaux, et de nombreuses municipalités qui ont leurs propres corps policiers).</p>
+<p>Des services d'aide juridique gratuits ou à faible coût existent pour les personnes qui ne peuvent payer un avocat.</p>
+`,maj:"Le juge en chef actuel de la Cour suprême du Canada est le très honorable <strong>Richard Wagner</strong>, en poste depuis 2018."},
+{id:'symboles',num:'09',title:'Symboles canadiens',desc:"Couronne, drapeau, hymne, castor, distinctions honorifiques.",
+html:`
+<h4>La Couronne et le drapeau</h4>
+<p>La <strong>Couronne</strong> symbolise l'État depuis 400 ans. Le drapeau canadien actuel — la feuille d'érable rouge — est hissé pour la première fois en <strong>1965</strong>. La devise nationale, <em>A mari usque ad mare</em> (« d'un océan à l'autre »), figure sur les armoiries du Canada, adoptées après la Première Guerre mondiale.</p>
+<h4>La feuille d'érable et le castor</h4>
+<p>La feuille d'érable, symbole le plus connu du Canada, est utilisée par les Canadiens français dès le XVIII<sup>e</sup> siècle. Le castor, choisi par la Compagnie de la Baie d'Hudson, devient un emblème patriotique dès 1834; on le retrouve sur la pièce de cinq cents.</p>
+<h4>L'hymne national</h4>
+<p>« Ô Canada » est proclamé hymne national en <strong>1980</strong>, un siècle après avoir été chanté pour la première fois à Québec (1880). Les versions française et anglaise ne sont pas des traductions littérales l'une de l'autre.</p>
+<h4>Distinctions honorifiques</h4>
+<p>La <strong>Croix de Victoria</strong> est la plus haute distinction pour bravoure. L'<strong>Ordre du Canada</strong>, créé en 1967 pour le centenaire de la Confédération, récompense l'excellence civile. Les langues officielles (français, anglais) sont protégées par la <em>Loi sur les langues officielles</em> (1969).</p>
+`,maj:"Les paroles anglaises de l'hymne ont été rendues non genrées en <strong>2018</strong> : « True patriot love in all thy sons command » est devenu « True patriot love in all of us command » (les paroles françaises n'ont pas changé)."},
+{id:'economie',num:'10',title:"L'économie canadienne",desc:"Trois secteurs, commerce, partenariat avec les États-Unis.",
+html:`
+<h4>Trois grands secteurs</h4>
+<ul>
+<li><strong>Le secteur des services</strong> — plus de 75&nbsp;% des travailleurs canadiens (santé, éducation, finance, tourisme, administration).</li>
+<li><strong>Le secteur manufacturier</strong> — automobiles, aérospatiale, technologie, équipement.</li>
+<li><strong>L'exploitation des ressources naturelles</strong> — foresterie, pêche, agriculture, mines, énergie; ces industries ont façonné l'histoire du pays et restent une part importante des exportations.</li>
+</ul>
+<h4>Une nation commerçante</h4>
+<p>Les États-Unis sont, de loin, le plus important partenaire commercial du Canada — la relation commerciale bilatérale la plus importante au monde. Le Canada figure parmi les dix plus grandes économies de la planète.</p>
+`,maj:"L'accord de libre-échange nord-américain (<strong>ALENA</strong>, cité dans le guide) a été remplacé par l'<strong>ACEUM/USMCA</strong> en 2020. Par ailleurs, le Canada fait partie du <strong>G7</strong> — la Russie, membre du « G8 » à l'époque du guide, en a été exclue depuis 2014."},
+{id:'regions',num:'11',title:'Les régions du Canada',desc:"Cinq régions, dix provinces, trois territoires.",
+html:`
+<p>Le Canada est le <strong>deuxième pays du monde en superficie</strong>, bordé par trois océans (Pacifique, Atlantique, Arctique) et compte <strong>cinq régions</strong> distinctes.</p>
+<div class="table-wrap"><table class="premier-table">
+<tr><th>Région</th><th>Provinces / territoires</th><th>Capitales</th></tr>
+<tr><td>Provinces de l'Atlantique</td><td>Terre-Neuve-et-Labrador, Île-du-Prince-Édouard, Nouvelle-Écosse, Nouveau-Brunswick</td><td>St. John's, Charlottetown, Halifax, Fredericton</td></tr>
+<tr><td>Centre du Canada</td><td>Québec, Ontario</td><td>Québec, Toronto</td></tr>
+<tr><td>Provinces des Prairies</td><td>Manitoba, Saskatchewan, Alberta</td><td>Winnipeg, Regina, Edmonton</td></tr>
+<tr><td>Côte Ouest</td><td>Colombie-Britannique</td><td>Victoria</td></tr>
+<tr><td>Territoires du Nord</td><td>Nunavut, Territoires du Nord-Ouest, Yukon</td><td>Iqaluit, Yellowknife, Whitehorse</td></tr>
+</table></div>
+<p style="margin-top:16px;">Ottawa, sur la rivière des Outaouais, est la <strong>capitale du Canada</strong> depuis 1857 (choisie par la reine Victoria). Vous devriez connaître la capitale de votre propre province ou territoire — question fréquente à l'examen.</p>
+<h4>Points de repère par province</h4>
+<ul>
+<li><strong>Québec</strong> — près de 8 M d'habitants (chiffre du guide, aujourd'hui plus élevé); premier producteur mondial d'hydroélectricité par habitant; Montréal, 2<sup>e</sup> ville francophone du monde après Paris.</li>
+<li><strong>Ontario</strong> — plus d'un tiers de la population canadienne; Toronto, principal centre financier; les cinq Grands Lacs.</li>
+<li><strong>Colombie-Britannique</strong> — porte d'entrée vers l'Asie-Pacifique; port de Vancouver, le plus achalandé du pays.</li>
+<li><strong>Alberta</strong> — première productrice de pétrole et de gaz; parc national Banff (1885).</li>
+<li><strong>Saskatchewan</strong> — « le grenier du monde »; 40&nbsp;% des terres arables du pays.</li>
+<li><strong>Manitoba</strong> — Winnipeg; forte communauté ukrainienne et plus grande proportion d'Autochtones parmi les provinces.</li>
+<li><strong>Nouvelle-Écosse</strong> — la plus peuplée des provinces de l'Atlantique; base navale de Halifax.</li>
+<li><strong>Nouveau-Brunswick</strong> — seule province officiellement bilingue.</li>
+<li><strong>Île-du-Prince-Édouard</strong> — la plus petite province; berceau de la Confédération (1864).</li>
+<li><strong>Terre-Neuve-et-Labrador</strong> — la plus ancienne colonie britannique; entrée dans la Confédération en 1949.</li>
+<li><strong>Territoires du Nord</strong> — Nunavut (créé en 1999, majorité inuite), Territoires du Nord-Ouest (Yellowknife, « capitale nord-américaine du diamant »), Yukon (ruée vers l'or des années 1890).</li>
+</ul>
+`,maj:"La population totale du Canada indiquée dans le guide (« environ 34 millions ») est très en-dessous du chiffre actuel — voir « Aujourd'hui »."},
+];
+
+/* =========================================================
+   DATA — AUJOURD'HUI (chapitre 12, rendu séparément)
+   ========================================================= */
+const TODAY_STATS = [
+ {k:"Chef d'État",v:"Roi Charles III",d:"Monarque du Canada depuis le 8 septembre 2022, à la suite du décès de la reine Elizabeth II. Reine consort : Camilla."},
+ {k:"Gouverneure générale",v:"Louise Arbour",d:"31<sup>e</sup> gouverneure générale, installée le 8 juin 2026. Ancienne juge de la Cour suprême du Canada et ancienne Haute-Commissaire de l'ONU aux droits de l'homme. Succède à Mary Simon (30<sup>e</sup>, 2021-2026)."},
+ {k:'Premier ministre',v:'Mark Carney',d:"Chef du Parti libéral, premier ministre depuis mars 2025. Élu à la tête d'un gouvernement minoritaire lors de l'élection générale du 28 avril 2025, devenu majoritaire après des élections partielles en avril 2026."},
+ {k:'Juge en chef du Canada',v:'Richard Wagner',d:"À la tête de la Cour suprême du Canada depuis 2018."},
+ {k:'Population du Canada',v:'≈ 41,4 millions',d:"Estimation de Statistique Canada au 1<sup>er</sup> avril 2026 (le guide, plus ancien, indique « environ 34 millions »)."},
+ {k:'Circonscriptions fédérales',v:'343',d:"Depuis le redécoupage électoral de 2022, appliqué à partir de l'élection de 2025 (le guide indique 308)."},
+ {k:'Accord commercial nord-américain',v:'ACEUM (USMCA)',d:"A remplacé l'ALENA/NAFTA en 2020."},
+ {k:'Groupe des économies avancées',v:'G7',d:"La Russie, membre du « G8 » cité dans le guide, en a été exclue depuis 2014."},
+ {k:'Hymne national',v:'Paroles non genrées depuis 2018',d:'« True patriot love in all thy sons command » → « in all of us command ». Version française inchangée.'},
+];
+
+const PREMIERS = [
+ ['Alberta','Danielle Smith','Parti conservateur uni'],
+ ['Colombie-Britannique','David Eby','Nouveau Parti démocratique'],
+ ['Île-du-Prince-Édouard','Rob Lantz','Parti progressiste-conservateur'],
+ ['Manitoba','Wab Kinew','Nouveau Parti démocratique'],
+ ['Nouveau-Brunswick','Susan Holt','Parti libéral'],
+ ['Nouvelle-Écosse','Tim Houston','Parti progressiste-conservateur'],
+ ['Ontario','Doug Ford','Parti progressiste-conservateur'],
+ ['Québec','Christine Fréchette','Coalition Avenir Québec'],
+ ['Saskatchewan','Scott Moe','Parti saskatchewanais'],
+ ['Terre-Neuve-et-Labrador','Tony Wakeham','Parti progressiste-conservateur'],
+ ['Territoires du Nord-Ouest','R. J. Simpson','Gouvernement par consensus'],
+ ['Nunavut','John Main','Gouvernement par consensus'],
+ ['Yukon','Currie Dixon','Parti du Yukon'],
+];
+
+/* =========================================================
+   DATA — FICHES
+   ========================================================= */
+const FLASHCARDS = [
+{cat:'Institutions',term:'Habeas corpus',def:"Droit de contester une détention illégale par l'État devant un tribunal; hérité de la common law britannique."},
+{cat:'Institutions',term:'Gouvernement responsable',def:"Principe selon lequel le Cabinet doit conserver la confiance de la majorité des députés élus, sous peine de démission. Établi en Nouvelle-Écosse en 1848."},
+{cat:'Institutions',term:'Sanction royale',def:"Dernière étape du processus législatif : l'accord du représentant du souverain (gouverneur général ou lieutenant-gouverneur) qui transforme un projet de loi en loi."},
+{cat:'Institutions',term:'Gouvernement majoritaire',def:"Gouvernement formé par le parti qui détient plus de la moitié des sièges à la Chambre des communes."},
+{cat:'Institutions',term:'Gouvernement minoritaire',def:"Gouvernement formé par le parti ayant le plus de sièges, mais moins de la moitié du total — doit obtenir l'appui d'autres partis pour gouverner."},
+{cat:'Institutions',term:"Opposition officielle",def:"Le parti ayant le deuxième plus grand nombre de sièges à la Chambre des communes; aussi appelée « la loyale Opposition de Sa Majesté »."},
+{cat:'Institutions',term:'Circonscription',def:"Zone géographique représentée par un seul député à la Chambre des communes; le Canada en compte 343."},
+{cat:'Institutions',term:'Lieutenant-gouverneur',def:"Représentant du souverain dans une province, nommé par le gouverneur général sur recommandation du premier ministre fédéral."},
+{cat:'Institutions',term:'Primauté du droit',def:"Principe selon lequel individus et gouvernements sont régis par des lois connues et publiques, et non par des mesures arbitraires — aucun groupe n'est au-dessus des lois."},
+{cat:'Histoire',term:'Confédération',def:"Union, le 1er juillet 1867, de l'Ontario, du Québec, de la Nouvelle-Écosse et du Nouveau-Brunswick pour former le Dominion du Canada."},
+{cat:'Histoire',term:'Loyalistes de l’Empire-Uni',def:"Colons restés fidèles à la Couronne britannique qui fuient les États-Unis après la Révolution américaine (1776-1783) pour s'établir au Canada."},
+{cat:'Histoire',term:'Acte de Québec (1774)',def:"Loi britannique garantissant aux Canadiens français la liberté religieuse catholique et le maintien du droit civil français."},
+{cat:'Histoire',term:'Révolution tranquille',def:"Période de changements sociaux, politiques et culturels rapides au Québec, dans les années 1960."},
+{cat:'Histoire',term:'Rapatriement de la Constitution',def:"En 1982, transfert du pouvoir de modifier la Constitution du Parlement britannique au Canada, accompagné de l'adoption de la Charte canadienne des droits et libertés."},
+{cat:'Histoire',term:'Grand Dérangement',def:"Déportation forcée de plus des deux tiers des Acadiens par les Britanniques entre 1755 et 1763."},
+{cat:'Histoire',term:'Bataille des plaines d’Abraham',def:"Bataille de 1759 à Québec où les Britanniques défont les Français, menant à la fin de la Nouvelle-France."},
+{cat:'Histoire',term:'Crête de Vimy',def:"Victoire canadienne d'avril 1917 pendant la Première Guerre mondiale, souvent citée comme un moment fondateur de l'identité nationale."},
+{cat:'Histoire',term:'Jour J (6 juin 1944)',def:"Débarquement allié en Normandie; les troupes canadiennes prennent la plage Juno."},
+{cat:'Peuples',term:'Premières Nations',def:"Terme désignant les peuples autochtones autres que les Inuits et les Métis; environ 65 % de la population autochtone du Canada."},
+{cat:'Peuples',term:'Métis',def:"Peuple distinct né de l'union d'Autochtones et d'Européens, principalement dans les Prairies; environ 30 % de la population autochtone."},
+{cat:'Peuples',term:'Inuit',def:"« Le peuple » en inuktitut; peuples autochtones vivant dans de petites communautés arctiques; environ 4 % de la population autochtone."},
+{cat:'Peuples',term:'Acadiens',def:"Descendants des colons français établis dès 1604 dans les provinces maritimes actuelles."},
+{cat:'Peuples',term:'Québécois',def:"Habitants du Québec, en grande majorité francophones; reconnus comme formant une nation au sein d'un Canada uni (motion de la Chambre des communes, 2006)."},
+{cat:'Symboles',term:'Devise nationale',def:"« A mari usque ad mare » — « D'un océan à l'autre »."},
+{cat:'Symboles',term:'Croix de Victoria',def:"Plus haute distinction pour bravoure pouvant être décernée à un Canadien."},
+{cat:'Symboles',term:"Ordre du Canada",def:"Principale distinction honorifique civile du pays, créée en 1967 pour le centenaire de la Confédération."},
+{cat:'Symboles',term:'Feuille d’érable',def:"Symbole le plus connu du Canada, utilisé par les Canadiens français dès le XVIII<sup>e</sup> siècle; au centre du drapeau depuis 1965."},
+{cat:'Symboles',term:'Castor',def:"Emblème choisi à l'origine par la Compagnie de la Baie d'Hudson; symbole patriotique canadien depuis 1834."},
+{cat:'Gouvernement',term:'État fédéral',def:"Système où les pouvoirs sont partagés entre un gouvernement central (fédéral) et des gouvernements provinciaux/territoriaux, chacun responsable de domaines précis."},
+{cat:'Gouvernement',term:'Monarchie constitutionnelle',def:"Système où le chef d'État est un souverain héréditaire dont les pouvoirs sont encadrés par la Constitution et exercés selon la convention parlementaire."},
+{cat:'Gouvernement',term:'Chambre des communes',def:"Chambre basse du Parlement, composée de députés élus par la population."},
+{cat:'Gouvernement',term:'Sénat',def:"Chambre haute du Parlement; sénateurs nommés par le gouverneur général sur recommandation du premier ministre, en poste jusqu'à 75 ans."},
+{cat:'Justice',term:"Présomption d'innocence",def:"Principe fondamental du système de justice canadien : chacun est innocent jusqu'à preuve du contraire."},
+{cat:'Justice',term:'Cour suprême du Canada',def:"Plus haut tribunal du pays, composé de neuf juges."},
+{cat:'Justice',term:'GRC',def:"Gendarmerie royale du Canada — police fédérale, et police provinciale dans la plupart des provinces (sauf l'Ontario et le Québec)."},
+{cat:'Économie',term:'ACEUM (USMCA)',def:"Accord Canada–États-Unis–Mexique, entré en vigueur en 2020, qui a remplacé l'ALENA."},
+];
+
+/* =========================================================
+   DATA — QUESTIONS (banque de quiz)
+   ========================================================= */
+const QUESTIONS = [
+// -- demande (12)
+{ch:'demande',q:"À partir de quel âge un candidat doit-il réussir l'examen de connaissances pour la citoyenneté?",o:["16 ans","18 ans","21 ans","25 ans"],a:1,e:"Les candidats de 18 à 54 ans doivent réussir l'examen; ceux de 55 ans ou plus en sont dispensés."},
+{ch:'demande',q:"Les candidats de quel âge n'ont pas à passer l'examen de connaissances sur le Canada?",o:["45 ans ou plus","50 ans ou plus","55 ans ou plus","60 ans ou plus"],a:2,e:"Les adultes de 55 ans ou plus sont dispensés de l'examen, mais doivent tout de même satisfaire à l'exigence linguistique."},
+{ch:'demande',q:"D'où proviennent toutes les questions de l'examen pour la citoyenneté?",o:["Des journaux nationaux","Des thèmes prévus par le Règlement sur la citoyenneté","D'un examen d'histoire générale","Des programmes scolaires provinciaux"],a:1,e:"Toutes les questions sont formulées à partir des thèmes du Règlement sur la citoyenneté, couverts par le guide officiel."},
+{ch:'demande',q:"Quelles langues officielles un candidat doit-il connaître suffisamment pour obtenir la citoyenneté?",o:["Le français et l'anglais obligatoirement","Le français ou l'anglais","L'anglais uniquement","Aucune exigence linguistique"],a:1,e:"Une connaissance suffisante du français OU de l'anglais est exigée."},
+{ch:'demande',q:"Que reçoit un candidat qui réussit l'examen et remplit toutes les conditions?",o:["Un passeport immédiatement","Un Avis de convocation pour la cérémonie de citoyenneté","Le droit de vote automatique à l'étranger","Une carte de résident permanent renouvelée"],a:1,e:"L'Avis de convocation indique la date, l'heure et le lieu de la cérémonie de citoyenneté."},
+{ch:'demande',q:"Que se passe-t-il lors de la cérémonie de citoyenneté?",o:["On signe un bail","On prête le serment de citoyenneté et on reçoit son certificat","On passe un test médical","On rencontre le premier ministre"],a:1,e:"Le candidat prête serment, signe le formulaire et reçoit son certificat de citoyenneté canadienne."},
+{ch:'demande',q:"Quel est le seul guide d'étude officiel pour l'examen de la citoyenneté canadienne?",o:["N'importe quelle application mobile","Découvrir le Canada, publié par IRCC","Un manuel scolaire d'histoire","Le site d'une école privée"],a:1,e:"Selon IRCC, tout autre matériel est utilisé « à vos propres risques »."},
+{ch:'demande',q:"Quels sont deux critères fondamentaux évalués par l'examen pour la citoyenneté?",o:["Le revenu et l'emploi","La connaissance du Canada et la capacité linguistique","L'âge et la taille du ménage","Le lieu de naissance et la religion"],a:1,e:"L'examen évalue la connaissance du Canada (droits/responsabilités) et la capacité de communiquer en français ou en anglais."},
+{ch:'demande',q:"Qui peut aider un candidat à se préparer à l'examen de citoyenneté?",o:["Uniquement un avocat","Écoles, collèges, centres communautaires et organismes d'aide à l'établissement","Uniquement Élections Canada","Personne, il faut étudier seul"],a:1,e:"Le guide recommande de se renseigner auprès de ces organismes pour des cours de préparation, souvent gratuits."},
+{ch:'demande',q:"Que doit faire un candidat s'il échoue à l'examen de citoyenneté?",o:["Il ne peut plus jamais redemander","Il reçoit un avis indiquant les étapes suivantes","Il perd sa résidence permanente","Il doit quitter le pays"],a:1,e:"Un candidat qui échoue reçoit un avis l'informant des prochaines étapes possibles."},
+{ch:'demande',q:"Le serment de citoyenneté actuel fait référence à quels droits, en plus de la fidélité au souverain?",o:["Aucun autre droit","Les droits ancestraux et issus de traités des Premières Nations, des Inuits et des Métis","Les droits de propriété uniquement","Les droits syndicaux"],a:1,e:"Depuis 2021, le serment reconnaît explicitement ces droits constitutionnels."},
+{ch:'demande',q:"Combien de temps environ prend l'étude d'une demande de citoyenneté après son dépôt?",o:["Quelques heures","Plusieurs mois","Dix ans","Une semaine"],a:1,e:"Le guide précise que l'étude d'une demande « prendra plusieurs mois »."},
+
+// -- droits (12)
+{ch:'droits',q:"Quel document historique de 1215 est à l'origine de la tradition de liberté ordonnée du Canada?",o:["La Déclaration d'indépendance","La Magna Carta","L'Acte de Québec","La Charte de l'ONU"],a:1,e:"La Magna Carta (Grande Charte des libertés), signée en Angleterre en 1215."},
+{ch:'droits',q:"Quel document canadien de 1982 énonce les libertés fondamentales des citoyens?",o:["La Loi sur les langues officielles","La Charte canadienne des droits et libertés","Le Règlement sur la citoyenneté","L'Acte de l'Amérique du Nord britannique"],a:1,e:"La Charte a été incluse dans la Constitution rapatriée en 1982."},
+{ch:'droits',q:"Que signifie l'expression latine « habeas corpus »?",o:["Le droit de vote","Le droit de contester une détention illégale devant un tribunal","Le droit à un procès rapide seulement","Le droit de porter plainte contre la police"],a:1,e:"C'est un droit hérité de la common law britannique."},
+{ch:'droits',q:"Laquelle des libertés suivantes N'EST PAS une liberté fondamentale garantie par la Charte?",o:["Liberté de conscience et de religion","Liberté de réunion pacifique","Liberté de ne pas payer d'impôts","Liberté d'expression"],a:2,e:"Il n'existe pas de « liberté de ne pas payer d'impôts »; payer ses impôts demeure une obligation légale."},
+{ch:'droits',q:"Quelle responsabilité liée à la citoyenneté est obligatoire, et non optionnelle, lorsqu'on est convoqué?",o:["Faire du bénévolat","Faire partie d'un jury","Voter à toutes les élections","S'enrôler dans l'armée"],a:1,e:"Contrairement au vote (droit ET responsabilité mais non sanctionné légalement), faire partie d'un jury est une obligation légale."},
+{ch:'droits',q:"Le Canada impose-t-il le service militaire obligatoire?",o:["Oui, pour tous les citoyens de 18 ans","Non, il n'y a pas de conscription","Oui, mais seulement pour les hommes","Oui, pendant deux ans après la citoyenneté"],a:1,e:"Servir dans les Forces canadiennes est volontaire; ce n'est toutefois pas la seule façon de contribuer (Réserve, cadets, police, pompiers)."},
+{ch:'droits',q:"Quelle liberté permet à un Canadien de vivre et travailler n'importe où au pays et de demander un passeport?",o:["La liberté d'association","La liberté de circulation et d'établissement","La liberté de réunion","La liberté de la presse"],a:1,e:"Ce droit garantit la mobilité des citoyens partout au Canada."},
+{ch:'droits',q:"Quel principe canadien veut que le français et l'anglais aient un statut égal au Parlement?",o:["Le multiculturalisme","Les droits linguistiques officiels","La primauté du droit","L'habeas corpus"],a:1,e:"Le français et l'anglais ont un statut égal au sein du Parlement et de l'ensemble du gouvernement fédéral."},
+{ch:'droits',q:"En matière d'égalité entre les sexes, que dit le guide officiel?",o:["Les hommes et les femmes sont égaux devant la loi","Seuls les hommes ont le droit de vote","L'égalité n'est pas garantie par la loi","Cela varie selon la province"],a:0,e:"L'égalité hommes-femmes est un principe explicite du guide et de la loi canadienne."},
+{ch:'droits',q:"Quelle responsabilité citoyenne concerne la protection du pays à long terme, au-delà des lois?",o:["Protéger le patrimoine et l'environnement","Payer un abonnement de télévision","Voyager à l'étranger chaque année","Adhérer à un syndicat"],a:0,e:"Le guide cite explicitement la protection du patrimoine naturel, culturel et architectural, ainsi que la lutte contre la pollution."},
+{ch:'droits',q:"Que garantit la Charte au sujet des peuples autochtones?",o:["Elle abolit leurs droits issus de traités","Elle ne porte pas atteinte aux droits ancestraux ou issus de traités","Elle les soumet uniquement au droit provincial","Elle ne les mentionne pas"],a:1,e:"La Charte protège explicitement les droits ancestraux et issus de traités des peuples autochtones."},
+{ch:'droits',q:"Quelle est une façon pacifique, non militaire, de « défendre le Canada » selon le guide?",o:["S'enrôler dans la Garde côtière ou les services de police/pompiers locaux","Refuser de voter","Émigrer temporairement","Ignorer les lois locales"],a:0,e:"Le guide cite la Garde côtière, la police, les pompiers et les Cadets comme façons de contribuer sans service militaire obligatoire."},
+
+// -- qui (11)
+{ch:'qui',q:"Quels sont les trois peuples fondateurs du Canada selon le guide officiel?",o:["Autochtones, Français, Britanniques","Anglais, Écossais, Irlandais","Français, Allemands, Italiens","Autochtones, Espagnols, Portugais"],a:0,e:"Comprendre l'identité canadienne exige de connaître ces trois peuples fondateurs."},
+{ch:'qui',q:"Quel terme désigne un peuple distinct né de l'union d'Autochtones et d'Européens, surtout dans les Prairies?",o:["Les Inuits","Les Métis","Les Acadiens","Les Loyalistes"],a:1,e:"Les Métis forment un peuple distinct, environ 30 % de la population autochtone du Canada."},
+{ch:'qui',q:"Que signifie le mot « Inuit »?",o:["« Le peuple », en inuktitut","« Le chasseur », en cri","« La terre gelée », en français ancien","Cela ne veut rien dire de particulier"],a:0,e:"Inuit signifie « le peuple » dans leur langue, l'inuktitut."},
+{ch:'qui',q:"En quelle année le gouvernement du Canada a-t-il présenté des excuses officielles pour le système des pensionnats autochtones?",o:["1998","2008","1982","2015"],a:1,e:"Les excuses officielles ont été présentées en 2008."},
+{ch:'qui',q:"Qui sont les Acadiens?",o:["Les descendants des colons français établis dès 1604 dans les Maritimes","Les premiers colons britanniques de l'Ontario","Les Métis de la rivière Rouge","Les loyalistes arrivés après 1783"],a:0,e:"Les Acadiens descendent des premiers colons français des Maritimes actuelles."},
+{ch:'qui',q:"Qu'est-ce que le « Grand Dérangement »?",o:["La ruée vers l'or du Yukon","La déportation des Acadiens par les Britanniques (1755-1763)","La construction du chemin de fer","La Révolution tranquille"],a:1,e:"Plus des deux tiers des Acadiens furent déportés durant cette période."},
+{ch:'qui',q:"En 2006, la Chambre des communes a reconnu que...",o:["Le Québec devient un pays indépendant","Les Québécois forment une nation au sein d'un Canada uni","Le français devient la seule langue officielle","Le Canada devient une république"],a:1,e:"Cette motion symbolique a été adoptée par la Chambre des communes en 2006."},
+{ch:'qui',q:"Quelles sont les deux langues officielles du Canada?",o:["Anglais et espagnol","Français et anglais","Français et inuktitut","Anglais et mandarin"],a:1,e:"Le français et l'anglais sont les deux langues officielles, avec un statut égal au Parlement."},
+{ch:'qui',q:"Depuis quelle décennie la majorité des nouveaux immigrants au Canada viennent-ils d'Asie?",o:["Les années 1950","Les années 1970","Les années 1920","Les années 2000 seulement"],a:1,e:"Le guide précise que la tendance s'est établie depuis les années 1970."},
+{ch:'qui',q:"Quel groupe religieux forme la plus grande communauté chrétienne au Canada selon le guide?",o:["Les protestants","Les catholiques","Les orthodoxes","Les mennonites"],a:1,e:"Le guide indique que le groupe religieux comptant le plus de fidèles est celui des catholiques."},
+{ch:'qui',q:"Les Canadiens gais et lesbiennes bénéficient, selon le guide, de :",o:["Protections limitées à certaines provinces","L'entière protection de la loi, y compris l'accès au mariage civil","Aucune protection légale spécifique","Protections seulement depuis 2020"],a:1,e:"Le guide affirme explicitement l'égalité de traitement, y compris l'accès au mariage civil."},
+
+// -- histoire (16)
+{ch:'histoire',q:"Qui a fondé la ville de Québec en 1608?",o:["Jacques Cartier","Samuel de Champlain","Jean Cabot","Pierre de Monts"],a:1,e:"Champlain fonde Québec en 1608, sur l'emplacement actuel de la ville."},
+{ch:'histoire',q:"D'où vient le nom « Canada »?",o:["D'un mot espagnol signifiant « rien ici »","Du mot iroquois « kanata », qui signifie « village »","Du nom d'un explorateur français","D'un mot inuit"],a:1,e:"Jacques Cartier entend ce mot iroquois, qui apparaît ensuite sur les cartes dès les années 1550."},
+{ch:'histoire',q:"En quelle année a eu lieu la bataille des plaines d'Abraham?",o:["1701","1759","1812","1867"],a:1,e:"En 1759, les Britanniques défont les Français à Québec, marquant la fin de la Nouvelle-France."},
+{ch:'histoire',q:"Que garantissait l'Acte de Québec de 1774 aux Canadiens français?",o:["Le droit de vote aux femmes","La liberté religieuse catholique et le maintien du droit civil français","L'indépendance du Québec","Le bilinguisme officiel"],a:1,e:"L'Acte de Québec adapte les institutions britanniques à la réalité francophone et catholique de la province."},
+{ch:'histoire',q:"Qui sont les « loyalistes de l'Empire-Uni »?",o:["Des soldats français restés au Canada","Des colons restés fidèles à la Couronne britannique, ayant fui les États-Unis après 1776","Des membres du Parlement britannique","Des explorateurs espagnols"],a:1,e:"Environ 40 000 loyalistes s'établissent en Nouvelle-Écosse et au Québec après la Révolution américaine."},
+{ch:'histoire',q:"Quel événement militaire de 1812-1814 a vu le Canada repousser des tentatives d'invasion américaines?",o:["La guerre de 1812","La guerre de Sept Ans","La rébellion de 1837","La guerre des Boers"],a:0,e:"Isaac Brock, Laura Secord et Charles de Salaberry figurent parmi les figures marquantes de cette guerre."},
+{ch:'histoire',q:"Quelle province a établi le premier gouvernement responsable de l'Amérique du Nord britannique, en 1848?",o:["Le Québec","L'Ontario","La Nouvelle-Écosse","Le Manitoba"],a:2,e:"La Nouvelle-Écosse obtient un gouvernement pleinement responsable en 1847-1848."},
+{ch:'histoire',q:"Quelle date marque la création du Dominion du Canada?",o:["1er juillet 1867","4 juillet 1776","11 novembre 1918","1er janvier 1901"],a:0,e:"L'Acte de l'Amérique du Nord britannique entre en vigueur le 1er juillet 1867."},
+{ch:'histoire',q:"Quelles quatre provinces ont formé le Canada en 1867?",o:["Ontario, Québec, Nouvelle-Écosse, Nouveau-Brunswick","Ontario, Québec, Manitoba, Alberta","Colombie-Britannique, Alberta, Saskatchewan, Manitoba","Québec, Terre-Neuve, Île-du-Prince-Édouard, Ontario"],a:0,e:"Ces quatre provinces fondatrices forment le Dominion du Canada le 1er juillet 1867."},
+{ch:'histoire',q:"Qui était le principal architecte francophone (québécois) de la Confédération?",o:["Sir John A. Macdonald","Sir George-Étienne Cartier","Louis Riel","Sir Wilfrid Laurier"],a:1,e:"Cartier négocie notamment l'entrée du Québec, du Manitoba et de la Colombie-Britannique dans la Confédération."},
+{ch:'histoire',q:"Qui a mené les résistances métisses de 1869-1870 et de 1885?",o:["Sir Sam Steele","Gabriel Dumont","Louis Riel","John A. Macdonald"],a:2,e:"Louis Riel dirige la résistance de la rivière Rouge, puis celle de 1885 en Saskatchewan; il est exécuté pour haute trahison."},
+{ch:'histoire',q:"En quelle année les femmes ont-elles obtenu le droit de vote aux élections fédérales?",o:["1867","1918","1940","1960"],a:1,e:"Le droit de vote fédéral est accordé aux femmes en 1918 (partiellement dès 1917)."},
+{ch:'histoire',q:"Quelle bataille d'avril 1917 est souvent citée comme un moment fondateur de l'identité nationale canadienne?",o:["La bataille de la crête de Vimy","La bataille des plaines d'Abraham","La bataille de Dieppe","La bataille de la Somme"],a:0,e:"La victoire canadienne à Vimy, au prix de lourdes pertes, renforce la fierté et la réputation militaire du pays."},
+{ch:'histoire',q:"Que s'est-il passé le 6 juin 1944 (« jour J »)?",o:["La fin de la Seconde Guerre mondiale","Le débarquement allié en Normandie, où les Canadiens prennent la plage Juno","La bataille de Dieppe","La libération des Pays-Bas"],a:1,e:"15 000 soldats canadiens participent à l'assaut de la plage Juno lors de l'invasion de la Normandie."},
+{ch:'histoire',q:"Qu'est-ce que la Révolution tranquille?",o:["Une révolte armée au Manitoba","Une période de changements sociaux et politiques rapides au Québec dans les années 1960","La construction du chemin de fer transcontinental","Le rapatriement de la Constitution"],a:1,e:"Cette période transforme profondément la société québécoise sur les plans social, politique et culturel."},
+{ch:'histoire',q:"Qu'est-il arrivé à la Constitution du Canada en 1982?",o:["Elle a été abolie","Elle a été rapatriée du Royaume-Uni et la Charte des droits et libertés y a été intégrée","Elle a été remplacée par la Constitution américaine","Elle n'a subi aucun changement"],a:1,e:"Le rapatriement de 1982 donne au Canada le plein pouvoir de modifier sa propre Constitution."},
+
+// -- moderne (8)
+{ch:'moderne',q:"Quelle découverte de 1947, en Alberta, lance l'industrie énergétique moderne du Canada?",o:["Le charbon","Le pétrole","L'uranium","Le gaz naturel"],a:1,e:"La découverte de gisements pétroliers en Alberta en 1947 transforme l'économie canadienne."},
+{ch:'moderne',q:"En quelle année les peuples des Premières Nations ont-ils obtenu le droit de vote fédéral sans condition?",o:["1918","1940","1960","1982"],a:2,e:"Avant 1960, voter signifiait souvent renoncer à son statut d'Indien; ce droit est accordé sans condition en 1960."},
+{ch:'moderne',q:"Quel mouvement artistique canadien, fondé en 1920, s'est illustré par la peinture de paysages sauvages?",o:["Le Groupe des Sept","Les Automatistes","L'École de Toronto","Le Cirque du Soleil"],a:0,e:"Le Groupe des Sept, incluant Tom Thomson, façonne un style pictural typiquement canadien."},
+{ch:'moderne',q:"À quelle organisation militaire internationale le Canada adhère-t-il en 1949?",o:["L'ONU","L'OTAN","Le G7","Le Commonwealth"],a:1,e:"Le Canada est membre fondateur de l'Organisation du traité de l'Atlantique Nord (OTAN)."},
+{ch:'moderne',q:"À quel conflit le Canada participe-t-il sous l'égide de l'ONU entre 1950 et 1953?",o:["La guerre du Vietnam","La guerre de Corée","La guerre du Golfe","La guerre d'Afghanistan"],a:1,e:"Le Canada envoie des troupes pour défendre la Corée du Sud dans le cadre d'une opération de l'ONU."},
+{ch:'moderne',q:"Quel groupe de réfugiés le Canada accueille-t-il en grand nombre après la révolution manquée de 1956?",o:["Des réfugiés hongrois","Des réfugiés syriens","Des réfugiés vietnamiens","Des réfugiés somaliens"],a:0,e:"Environ 37 000 Hongrois fuyant la répression soviétique trouvent refuge au Canada en 1956."},
+{ch:'moderne',q:"Quelle politique officielle canadienne reconnaît et valorise la diversité culturelle des citoyens?",o:["Le fédéralisme","Le multiculturalisme","La primauté du droit","Le bilinguisme uniquement"],a:1,e:"Le multiculturalisme est une caractéristique fondamentale de l'identité canadienne, formalisée à partir des années 1970."},
+{ch:'moderne',q:"Quel cinéaste québécois est cité par le guide pour son succès international?",o:["Denys Arcand","James Cameron","Xavier Dolan","Denis Villeneuve"],a:0,e:"Le guide mentionne Denys Arcand parmi les grands noms du cinéma canadien primés à l'international."},
+
+// -- gouvernement (12)
+{ch:'gouvernement',q:"Quels sont les trois faits principaux qui caractérisent le système de gouvernement du Canada?",o:["Monarchie absolue, État unitaire, théocratie","État fédéral, démocratie parlementaire, monarchie constitutionnelle","République, État fédéral, dictature","État unitaire, démocratie directe, monarchie absolue"],a:1,e:"Ces trois faits définissent la structure politique canadienne."},
+{ch:'gouvernement',q:"Qui représente le souverain au niveau fédéral, au Canada?",o:["Le premier ministre","La gouverneure générale","Le juge en chef","Le Président du Sénat"],a:1,e:"La gouverneure générale est nommée sur recommandation du premier ministre, habituellement pour cinq ans."},
+{ch:'gouvernement',q:"Qui représente le souverain dans chaque province?",o:["Le premier ministre provincial","Le maire de la capitale","Le lieutenant-gouverneur","Le commissaire"],a:2,e:"Dans les trois territoires, c'est un commissaire qui joue un rôle cérémonial similaire."},
+{ch:'gouvernement',q:"De quelles trois parties le Parlement du Canada est-il composé?",o:["Le souverain, le Sénat, la Chambre des communes","Le premier ministre, le Cabinet, la Cour suprême","Le Sénat, la Chambre des communes, la Cour d'appel","Le souverain, le Cabinet, les provinces"],a:0,e:"Ces trois éléments forment ensemble le Parlement fédéral."},
+{ch:'gouvernement',q:"Comment les sénateurs sont-ils choisis?",o:["Élus par la population","Nommés par le gouverneur général sur recommandation du premier ministre","Élus par les provinces","Nommés par la Cour suprême"],a:1,e:"Les sénateurs restent en poste jusqu'à l'âge de 75 ans."},
+{ch:'gouvernement',q:"Que se passe-t-il si le gouvernement perd un vote de confiance à la Chambre des communes?",o:["Rien de particulier","Le gouvernement doit démissionner","Le Sénat prend le pouvoir","Le souverain dissout le Parlement automatiquement"],a:1,e:"C'est le principe même du gouvernement responsable."},
+{ch:'gouvernement',q:"Quelle est la dernière étape du processus par lequel un projet de loi devient une loi?",o:["La première lecture","L'étude en comité","La sanction royale","Le débat public"],a:2,e:"Après avoir été accepté par les deux chambres, le projet de loi reçoit la sanction royale."},
+{ch:'gouvernement',q:"Quel palier de gouvernement est responsable de la défense nationale et de la politique étrangère?",o:["Municipal","Provincial","Fédéral","Aucun, c'est partagé"],a:2,e:"La défense et les affaires étrangères sont des responsabilités exclusivement fédérales."},
+{ch:'gouvernement',q:"Quel palier de gouvernement est responsable de l'éducation et de la santé?",o:["Fédéral","Provincial/territorial","Municipal","L'ONU"],a:1,e:"L'éducation et la santé relèvent des provinces et territoires."},
+{ch:'gouvernement',q:"L'agriculture et l'immigration sont des responsabilités...",o:["Uniquement fédérales","Uniquement provinciales","Partagées entre le fédéral et les provinces","Municipales"],a:2,e:"Ce sont deux des rares domaines de compétence partagée entre le fédéral et les provinces."},
+{ch:'gouvernement',q:"Qui choisit les ministres qui forment le Cabinet?",o:["Le gouverneur général","Le premier ministre","Le Sénat","Les électeurs directement"],a:1,e:"Le premier ministre choisit ses ministres, généralement parmi les députés élus de son parti."},
+{ch:'gouvernement',q:"Quel principe distingue clairement le chef d'État du chef du gouvernement au Canada?",o:["Il n'y a aucune distinction","Le souverain (chef d'État) est représenté par le gouverneur général, tandis que le premier ministre (chef du gouvernement) dirige réellement le pays","Le premier ministre est aussi chef d'État","Le Sénat joue le rôle de chef d'État"],a:1,e:"Cette distinction entre chef d'État et chef du gouvernement est un point d'examen classique."},
+
+// -- elections (12)
+{ch:'elections',q:"Quel âge minimum faut-il avoir pour voter à une élection fédérale?",o:["16 ans","18 ans","21 ans","19 ans"],a:1,e:"Il faut être citoyen canadien et avoir 18 ans le jour du scrutin."},
+{ch:'elections',q:"Quel organisme neutre du Parlement administre les élections fédérales?",o:["Statistique Canada","Élections Canada","La GRC","Le Sénat"],a:1,e:"Élections Canada gère notamment le Registre national des électeurs."},
+{ch:'elections',q:"Le vote au Canada est-il secret?",o:["Non, les résultats individuels sont publics","Oui, personne n'a le droit de vous demander pour qui vous avez voté","Seulement lors des référendums","Non, seulement le vote par anticipation est secret"],a:1,e:"La loi canadienne protège le droit à un vote secret."},
+{ch:'elections',q:"Que représente une circonscription électorale fédérale?",o:["Une ville uniquement","Une zone géographique représentée par un seul député","Un groupe linguistique","Une province entière"],a:1,e:"Chaque circonscription élit un député qui la représente à la Chambre des communes."},
+{ch:'elections',q:"Comment le candidat gagnant est-il déterminé dans une circonscription?",o:["Celui qui obtient le plus grand nombre de votes est élu","Il faut la majorité absolue (plus de 50 %)","Le parti au pouvoir choisit","Un tirage au sort en cas d'égalité uniquement"],a:0,e:"Le Canada utilise un scrutin majoritaire uninominal à un tour : la pluralité suffit pour gagner."},
+{ch:'elections',q:"Qu'est-ce qu'un « gouvernement majoritaire »?",o:["Un gouvernement appuyé par plus de la moitié des sièges à la Chambre des communes","Un gouvernement élu par plus de 50 % des électeurs inscrits","Un gouvernement formé de plusieurs partis à parts égales","Un gouvernement provincial uniquement"],a:0,e:"Le parti au pouvoir détient alors au moins la moitié des sièges."},
+{ch:'elections',q:"Que se passe-t-il après une élection, pour former le gouvernement?",o:["Le souverain choisit directement le premier ministre sans lien avec le résultat","Le chef du parti ayant le plus de sièges est invité à former le gouvernement","C'est le parti ayant le plus de votes populaires, peu importe les sièges","Un vote de tous les députés détermine le premier ministre"],a:1,e:"La gouverneure générale invite le chef du parti ayant le plus de sièges à former le gouvernement."},
+{ch:'elections',q:"Comment appelle-t-on le parti qui a le deuxième plus grand nombre de sièges?",o:["Le parti minoritaire","L'opposition officielle","Le parti fantôme","Le parti indépendant"],a:1,e:"On l'appelle aussi « la loyale Opposition de Sa Majesté »."},
+{ch:'elections',q:"Êtes-vous obligé de révéler pour qui vous avez voté?",o:["Oui, à votre employeur si demandé","Non, personne ne peut vous forcer à le dire","Oui, mais seulement à un agent électoral","Oui, en tout temps"],a:1,e:"Le vote secret protège ce droit; personne, y compris un employeur ou un syndicat, ne peut l'exiger."},
+{ch:'elections',q:"Combien de circonscriptions fédérales le Canada compte-t-il aujourd'hui?",o:["283","308","343","375"],a:2,e:"Depuis le redécoupage de 2022 appliqué en 2025, il y a 343 circonscriptions (le guide, plus ancien, indiquait 308)."},
+{ch:'elections',q:"Peut-on ajouter son nom à la liste électorale le jour même du scrutin?",o:["Non, jamais","Oui, c'est possible","Seulement par la poste un mois avant","Seulement en ligne"],a:1,e:"Même sans carte d'information de l'électeur, on peut faire ajouter son nom à la liste électorale, y compris le jour du vote."},
+{ch:'elections',q:"Qui peut se présenter comme candidat à une élection fédérale?",o:["Seulement les membres d'un parti au pouvoir","Tout citoyen canadien de 18 ans ou plus","Seulement les résidents permanents","Seulement les avocats"],a:1,e:"Tout citoyen canadien de 18 ans ou plus peut se porter candidat."},
+
+// -- justice (9)
+{ch:'justice',q:"Sur quel principe fondamental repose le système de justice canadien en matière criminelle?",o:["La présomption de culpabilité","La présomption d'innocence","Le jugement sans procès","La loi du plus fort"],a:1,e:"Chacun est innocent jusqu'à preuve du contraire — un pilier du système judiciaire canadien."},
+{ch:'justice',q:"Combien de juges siègent à la Cour suprême du Canada?",o:["Cinq","Sept","Neuf","Onze"],a:2,e:"La Cour suprême du Canada, le plus haut tribunal du pays, compte neuf juges."},
+{ch:'justice',q:"Qui nomme les juges de la Cour suprême du Canada?",o:["Les provinces","Le gouverneur général","Les électeurs","Le Sénat"],a:1,e:"Les neuf juges sont nommés par le gouverneur général (sur avis du gouvernement fédéral)."},
+{ch:'justice',q:"Quel corps policier applique les lois fédérales partout au Canada et sert de police provinciale dans la plupart des provinces?",o:["La police municipale de Toronto","La Gendarmerie royale du Canada (GRC)","La Sûreté du Québec seulement","L'armée canadienne"],a:1,e:"La GRC agit comme police provinciale partout sauf en Ontario et au Québec, qui ont leur propre corps policier."},
+{ch:'justice',q:"Quelles provinces ont leur propre service de police provinciale plutôt que la GRC?",o:["L'Alberta et la Colombie-Britannique","L'Ontario et le Québec","Le Manitoba et la Saskatchewan","Toutes les provinces de l'Atlantique"],a:1,e:"L'Ontario (Police provinciale de l'Ontario) et le Québec (Sûreté du Québec) ont leurs propres corps policiers provinciaux."},
+{ch:'justice',q:"Que peut faire une personne qui ne peut pas payer les services d'un avocat?",o:["Elle n'a aucun recours","Elle peut souvent obtenir de l'aide juridique gratuite ou à faible coût","Elle doit se représenter obligatoirement seule sans aide","Elle doit payer un tarif fixe imposé par la Cour"],a:1,e:"La plupart des communautés offrent des services d'aide juridique."},
+{ch:'justice',q:"Avez-vous le droit de poser des questions à un agent de police au sujet de sa conduite?",o:["Non, jamais","Oui, un processus existe pour faire part de préoccupations","Seulement par écrit à un juge","Seulement si vous êtes avocat"],a:1,e:"Presque tous les services de police ont un processus pour recevoir les plaintes du public."},
+{ch:'justice',q:"Quel tribunal traite des questions concernant spécifiquement le gouvernement fédéral?",o:["La Cour fédérale du Canada","La Cour municipale","La Cour des petites créances","Le tribunal de la famille"],a:0,e:"La Cour fédérale est distincte de la Cour suprême et des cours provinciales."},
+{ch:'justice',q:"Quel type de tribunal provincial traite les différends concernant de petites sommes d'argent?",o:["La Cour suprême","La cour des petites créances","La Cour fédérale","La cour d'appel"],a:1,e:"Les cours des petites créances traitent les litiges civils de faible valeur."},
+
+// -- symboles (12)
+{ch:'symboles',q:"En quelle année le drapeau canadien actuel (feuille d'érable rouge) a-t-il été hissé pour la première fois?",o:["1867","1931","1965","1982"],a:2,e:"Le drapeau actuel est adopté et hissé pour la première fois en 1965."},
+{ch:'symboles',q:"Quelle est la devise nationale du Canada?",o:["« Liberté, égalité, fraternité »","« A mari usque ad mare »","« In God We Trust »","« Unité dans la diversité »"],a:1,e:"Cette devise latine signifie « d'un océan à l'autre »."},
+{ch:'symboles',q:"En quelle année « Ô Canada » a-t-il été proclamé hymne national officiel?",o:["1880","1927","1965","1980"],a:3,e:"L'hymne a été chanté pour la première fois en 1880 à Québec, mais proclamé officiel seulement en 1980."},
+{ch:'symboles',q:"Quel animal a été choisi comme emblème par la Compagnie de la Baie d'Hudson et est devenu un symbole patriotique dès 1834?",o:["L'orignal","Le castor","Le harfang des neiges","L'ours polaire"],a:1,e:"Le castor apparaît notamment sur la pièce de cinq cents canadienne."},
+{ch:'symboles',q:"Quelle est la plus haute distinction pour bravoure qu'un Canadien puisse recevoir?",o:["L'Ordre du Canada","La Croix de Victoria","La Médaille du jubilé","Le Prix du Gouverneur général"],a:1,e:"La Croix de Victoria a été décernée à seulement 96 Canadiens depuis 1854."},
+{ch:'symboles',q:"En quelle année l'Ordre du Canada a-t-il été créé, et à quelle occasion?",o:["1917, pendant la Première Guerre mondiale","1967, pour le centenaire de la Confédération","1982, avec la Charte","2000, pour le nouveau millénaire"],a:1,e:"L'Ordre du Canada est créé en 1967 pour marquer les 100 ans de la Confédération."},
+{ch:'symboles',q:"Quel symbole canadien est utilisé par les Canadiens français dès le XVIIIe siècle et figure au centre du drapeau?",o:["Le castor","La feuille d'érable","La fleur de lys","La couronne"],a:1,e:"La feuille d'érable est le symbole le plus connu du Canada."},
+{ch:'symboles',q:"Quelle loi de 1969 protège l'égalité du français et de l'anglais dans les institutions fédérales?",o:["La Loi sur les langues officielles","La Charte des droits","La Loi constitutionnelle","La Loi sur la citoyenneté"],a:0,e:"Adoptée en 1969, elle établit l'égalité de statut du français et de l'anglais."},
+{ch:'symboles',q:"Quel jour férié national commémore les Canadiens morts au combat?",o:["La fête du Canada, 1er juillet","Le jour du Souvenir, 11 novembre","La fête du Travail","L'Action de grâces"],a:1,e:"Le coquelicot rouge est porté en leur honneur autour du 11 novembre."},
+{ch:'symboles',q:"Quelle fête nationale est célébrée le 1er juillet?",o:["Le jour du Souvenir","La fête du Canada","La fête de Victoria","La fête du Travail"],a:1,e:"La fête du Canada marque l'anniversaire de la Confédération de 1867."},
+{ch:'symboles',q:"Qu'est-ce que la « Couronne » symbolise pour le Canada?",o:["Uniquement un bijou royal","L'État, la Constitution et le pays lui-même","Le Sénat","Une simple tradition sans effet légal"],a:1,e:"La Couronne symbolise à la fois la Constitution, le drapeau et le pays."},
+{ch:'symboles',q:"Le sport d'hiver considéré comme le sport national du Canada est :",o:["Le curling","Le hockey sur glace","Le ski alpin","Le patinage de vitesse"],a:1,e:"Le hockey sur glace est considéré comme le sport d'hiver national par excellence."},
+
+// -- economie (8)
+{ch:'economie',q:"Quel secteur emploie plus de 75 % des travailleurs canadiens?",o:["Le secteur manufacturier","Le secteur des services","L'exploitation des ressources naturelles","Le secteur agricole seul"],a:1,e:"Santé, éducation, finance, tourisme et administration relèvent tous du secteur des services."},
+{ch:'economie',q:"Quel pays est, de loin, le plus important partenaire commercial du Canada?",o:["La Chine","Les États-Unis","Le Royaume-Uni","Le Mexique"],a:1,e:"Les deux pays entretiennent la plus importante relation commerciale bilatérale au monde."},
+{ch:'economie',q:"Quel accord commercial nord-américain est actuellement en vigueur?",o:["L'ALENA","L'ACEUM (USMCA)","Le Marché commun nord-américain","L'ALÉNA-2"],a:1,e:"L'ACEUM a remplacé l'ALENA en 2020."},
+{ch:'economie',q:"À quel groupe de grandes économies avancées le Canada appartient-il aujourd'hui?",o:["Le G8","Le G7","Le G20 uniquement","Le BRICS"],a:1,e:"Le G8 est redevenu le G7 en 2014, après l'exclusion de la Russie."},
+{ch:'economie',q:"Lequel de ces éléments fait partie du secteur de l'exploitation des ressources naturelles?",o:["Les banques","La foresterie, la pêche et les mines","Le tourisme","L'administration gouvernementale"],a:1,e:"Ce secteur inclut la foresterie, la pêche, l'agriculture, les mines et l'énergie."},
+{ch:'economie',q:"Le Canada se classe environ à quel rang parmi les plus grandes économies mondiales?",o:["Parmi les 50 premières","Parmi les 10 premières","1er rang mondial","Parmi les 100 premières"],a:1,e:"Le Canada figure constamment parmi les dix plus grandes économies du monde."},
+{ch:'economie',q:"Quelle proportion des exportations canadiennes est destinée aux États-Unis, selon le guide?",o:["Environ le quart","Environ la moitié","Plus des trois quarts","La quasi-totalité, soit 99 %"],a:2,e:"Plus des trois quarts des exportations canadiennes sont destinées aux États-Unis."},
+{ch:'economie',q:"Quel secteur produit des biens comme l'automobile, l'aérospatiale et la technologie?",o:["Le secteur des services","Le secteur manufacturier","L'agriculture","Le secteur primaire uniquement"],a:1,e:"Le secteur manufacturier fabrique des biens vendus au Canada et à l'international."},
+
+// -- regions (11)
+{ch:'regions',q:"Combien de provinces et de territoires compte le Canada?",o:["8 provinces et 2 territoires","10 provinces et 3 territoires","12 provinces et 1 territoire","9 provinces et 4 territoires"],a:1,e:"Le Canada compte 10 provinces et 3 territoires, répartis en cinq régions."},
+{ch:'regions',q:"Quelle ville est la capitale du Canada?",o:["Toronto","Montréal","Ottawa","Vancouver"],a:2,e:"Ottawa a été choisie comme capitale en 1857 par la reine Victoria."},
+{ch:'regions',q:"Quelles provinces forment la région des Prairies?",o:["Ontario, Québec, Manitoba","Manitoba, Saskatchewan, Alberta","Alberta, Colombie-Britannique, Yukon","Saskatchewan, Ontario, Manitoba"],a:1,e:"Le Manitoba, la Saskatchewan et l'Alberta forment les provinces des Prairies."},
+{ch:'regions',q:"Quelle est la capitale de la Colombie-Britannique?",o:["Vancouver","Victoria","Kelowna","Surrey"],a:1,e:"Victoria, sur l'île de Vancouver, est la capitale provinciale, bien que Vancouver soit la plus grande ville."},
+{ch:'regions',q:"Quelle province canadienne est officiellement bilingue?",o:["Le Québec","L'Ontario","Le Nouveau-Brunswick","La Nouvelle-Écosse"],a:2,e:"Le Nouveau-Brunswick est la seule province officiellement bilingue (français-anglais)."},
+{ch:'regions',q:"Quel territoire a été créé en 1999 à partir des Territoires du Nord-Ouest?",o:["Le Yukon","Le Nunavut","Le Labrador","La Terre de Rupert"],a:1,e:"Le Nunavut, dont la population est majoritairement inuite, a été créé en 1999."},
+{ch:'regions',q:"Quelle province est surnommée « le grenier du monde » pour sa production de céréales?",o:["L'Alberta","Le Manitoba","La Saskatchewan","L'Ontario"],a:2,e:"La Saskatchewan possède environ 40 % des terres arables du Canada."},
+{ch:'regions',q:"Quelle est la province la plus peuplée du Canada?",o:["Le Québec","L'Ontario","La Colombie-Britannique","L'Alberta"],a:1,e:"L'Ontario compte plus d'un tiers de la population canadienne totale."},
+{ch:'regions',q:"Quelle province fut la dernière à se joindre à la Confédération, en 1949?",o:["Terre-Neuve-et-Labrador","L'Île-du-Prince-Édouard","La Colombie-Britannique","Le Nunavut"],a:0,e:"Terre-Neuve-et-Labrador rejoint le Canada en 1949, après avoir longtemps été une colonie britannique distincte."},
+{ch:'regions',q:"Quel océan borde le Canada à l'ouest?",o:["L'Atlantique","L'Arctique","Le Pacifique","L'océan Indien"],a:2,e:"Le Canada est bordé par trois océans : Pacifique (ouest), Atlantique (est) et Arctique (nord)."},
+{ch:'regions',q:"Quelle capitale territoriale est surnommée « la capitale nord-américaine du diamant »?",o:["Whitehorse","Iqaluit","Yellowknife","Inuvik"],a:2,e:"Yellowknife, capitale des Territoires du Nord-Ouest, a gagné ce surnom grâce à l'exploitation diamantaire."},
+
+// -- aujourdhui (bonus, 10)
+{ch:'today',q:"Qui est l'actuel chef d'État du Canada (septembre 2026)?",o:["La reine Elizabeth II","Le roi Charles III","Le premier ministre Mark Carney","La gouverneure générale Louise Arbour"],a:1,e:"Le roi Charles III est monarque du Canada depuis le 8 septembre 2022."},
+{ch:'today',q:"Qui est l'actuelle gouverneure générale du Canada?",o:["Mary Simon","Julie Payette","Louise Arbour","Michaëlle Jean"],a:2,e:"Louise Arbour, ancienne juge de la Cour suprême, est devenue la 31e gouverneure générale, installée le 8 juin 2026."},
+{ch:'today',q:"Qui est l'actuel premier ministre du Canada?",o:["Justin Trudeau","Pierre Poilievre","Mark Carney","Jagmeet Singh"],a:2,e:"Mark Carney, chef du Parti libéral, est premier ministre depuis mars 2025."},
+{ch:'today',q:"Quelle est la population approximative du Canada en 2026, selon Statistique Canada?",o:["Environ 25 millions","Environ 34 millions","Environ 41,4 millions","Environ 55 millions"],a:2,e:"Statistique Canada estimait la population à environ 41,4 millions au 1er avril 2026."},
+{ch:'today',q:"Combien de circonscriptions fédérales le Canada compte-t-il depuis 2025?",o:["308","343","350","400"],a:1,e:"Le redécoupage de 2022, appliqué dès l'élection de 2025, porte le nombre de circonscriptions à 343."},
+{ch:'today',q:"Quel accord commercial a remplacé l'ALENA en 2020?",o:["Le PTPGP","L'ACEUM (USMCA)","L'Union douanière nord-américaine","L'AECG"],a:1,e:"L'Accord Canada–États-Unis–Mexique (ACEUM) est en vigueur depuis 2020."},
+{ch:'today',q:"Le Canada fait aujourd'hui partie de quel groupe de grandes puissances économiques (et non plus du « G8 »)?",o:["Le G7","Le G20 seulement","Le BRICS","L'OTAN économique"],a:0,e:"La Russie a été exclue du « G8 » en 2014, redevenu le G7."},
+{ch:'today',q:"Qui est l'actuel juge en chef de la Cour suprême du Canada?",o:["Beverley McLachlin","Richard Wagner","Rosalie Abella","Louise Arbour"],a:1,e:"Richard Wagner est juge en chef depuis 2018."},
+{ch:'today',q:"Qui est l'actuelle première ministre du Québec (2026)?",o:["François Legault","Christine Fréchette","Pauline Marois","Danielle Smith"],a:1,e:"Christine Fréchette, de la Coalition Avenir Québec, est devenue première ministre du Québec en avril 2026."},
+{ch:'today',q:"Quel changement a été apporté aux paroles anglaises de l'hymne national en 2018?",o:["Elles ont été traduites en français","« In all thy sons command » est devenu « in all of us command », pour un langage non genré","L'hymne a été raccourci","Le titre a été changé"],a:1,e:"La modification vise à rendre l'hymne plus inclusif, sans changer les paroles françaises."},
+];
+
+/* =========================================================
+   ICONS
+   ========================================================= */
+const ICONS = {
+ etudier:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17.5H6.5A2.5 2.5 0 0 0 4 22V4.5Z"/><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/></svg>',
+ fiches:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="15" height="11" rx="2"/><rect x="6.5" y="8.5" width="15" height="11" rx="2" fill="none"/></svg>',
+ quiz:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9.5"/><path d="M9.2 9a2.8 2.8 0 1 1 3.8 2.6c-.9.4-1 1-1 2.1" stroke-linecap="round"/><circle cx="12" cy="17" r=".4" fill="currentColor" stroke="none"/></svg>',
+ today:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 3 6.5V12c0 5.6 3.8 9.7 9 10 5.2-.3 9-4.4 9-10V6.5L12 2Z"/><path d="M8.5 12.2l2.2 2.3 4.8-5"/></svg>',
+ progres:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M11 20V4M18 20v-7"/></svg>',
+};
+
+/* =========================================================
+   STATE / STORAGE
+   ========================================================= */
+const STORAGE_KEY='citoyennete_progress_v1';
+function loadState(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return {read:{}, best:{}};
+}
+function saveState(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE)); }catch(e){}
+}
+let STATE = loadState();
+
+/* =========================================================
+   NAV
+   ========================================================= */
+const NAV_ITEMS = [
+ {id:'etudier',label:'Étudier'},
+ {id:'fiches',label:'Fiches'},
+ {id:'quiz',label:'Quiz'},
+ {id:'today',label:"Aujourd'hui"},
+ {id:'progres',label:'Progrès'},
+];
+let currentView='etudier';
+
+function renderNav(){
+  const el=document.getElementById('railNav');
+  el.innerHTML = NAV_ITEMS.map(it=>`<button class="rail-btn${it.id===currentView?' active':''}" data-nav="${it.id}">${ICONS[it.id]}<span>${it.label}</span></button>`).join('');
+  el.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.nav)));
+}
+function setView(id){
+  currentView=id;
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  if(id==='etudier'){ document.getElementById('view-etudier-liste').classList.add('active'); }
+  else { document.getElementById('view-'+id).classList.add('active'); }
+  renderNav();
+  if(id==='today') renderToday();
+  if(id==='progres') renderProgress();
+  if(id==='fiches' && !fcInit) initFlashcards();
+  window.scrollTo({top:0,behavior:'instant'});
+}
+
+/* =========================================================
+   ETUDIER
+   ========================================================= */
+function renderChapterGrid(){
+  const grid=document.getElementById('chapterGrid');
+  grid.innerHTML = CHAPTERS.map(c=>{
+    const done = !!STATE.read[c.id];
+    return `<div class="chapter-card${done?' done':''}" data-ch="${c.id}">
+      <div class="chapter-num">${c.num}</div>
+      <div><h3>${c.title}</h3><p class="desc">${c.desc}</p></div>
+      <div class="chapter-check">${done?'✓':''}</div>
+    </div>`;
+  }).join('');
+  grid.querySelectorAll('[data-ch]').forEach(card=>card.addEventListener('click',()=>openChapter(card.dataset.ch)));
+  updateRailProgress();
+}
+function openChapter(id){
+  const idx = CHAPTERS.findIndex(c=>c.id===id);
+  const c = CHAPTERS[idx];
+  STATE.read[id]=true; saveState();
+  const majBlock = c.maj ? `<div class="maj-box"><span class="tag">MàJ 2026</span><p>${c.maj}</p></div>` : '';
+  document.getElementById('chapterDetail').innerHTML = `
+    <div class="cd-head">
+      <div class="top-eyebrow" style="margin-bottom:8px;"><span class="diamond"></span> Chapitre ${c.num}</div>
+      <h2 style="margin:0;font-size:24px;">${c.title}</h2>
+    </div>
+    <div class="cd-body">${c.html}${majBlock}
+      <div class="chapter-nav">
+        <button id="prevCh" ${idx===0?'disabled style="opacity:.4;"':''}>← Précédent</button>
+        <button id="nextCh" ${idx===CHAPTERS.length-1?'disabled style="opacity:.4;"':''}>Suivant →</button>
+      </div>
+    </div>`;
+  document.getElementById('view-etudier-liste').classList.remove('active');
+  document.getElementById('view-etudier-detail').classList.add('active');
+  const prevBtn=document.getElementById('prevCh'), nextBtn=document.getElementById('nextCh');
+  if(prevBtn && idx>0) prevBtn.onclick=()=>openChapter(CHAPTERS[idx-1].id);
+  if(nextBtn && idx<CHAPTERS.length-1) nextBtn.onclick=()=>openChapter(CHAPTERS[idx+1].id);
+  renderChapterGrid();
+  window.scrollTo({top:0,behavior:'instant'});
+}
+function showChapterList(){
+  document.getElementById('view-etudier-detail').classList.remove('active');
+  document.getElementById('view-etudier-liste').classList.add('active');
+  renderChapterGrid();
+}
+function updateRailProgress(){
+  const total=CHAPTERS.length;
+  const done=Object.keys(STATE.read).filter(k=>STATE.read[k]).length;
+  document.getElementById('railBar').style.width = (done/total*100)+'%';
+  document.getElementById('railNum').textContent = done+' / '+total;
+}
+
+/* =========================================================
+   FICHES
+   ========================================================= */
+let fcInit=false, fcList=[], fcIdx=0, fcFilterVal='__all';
+function initFlashcards(){
+  fcInit=true;
+  const cats=['__all',...new Set(FLASHCARDS.map(f=>f.cat))];
+  const sel=document.getElementById('fcFilter');
+  sel.innerHTML = cats.map(c=>`<option value="${c}">${c==='__all'?'Toutes les catégories':c}</option>`).join('');
+  fcSetFilter('__all');
+}
+function fcSetFilter(v){
+  fcFilterVal=v;
+  fcList = v==='__all' ? FLASHCARDS.slice() : FLASHCARDS.filter(f=>f.cat===v);
+  fcIdx=0;
+  fcRender();
+}
+function fcRender(){
+  const f=fcList[fcIdx];
+  document.getElementById('fcCard').classList.remove('flipped');
+  document.getElementById('fcTerm').textContent=f.term;
+  document.getElementById('fcDef').innerHTML=f.def;
+  document.getElementById('fcCount').textContent=(fcIdx+1)+' / '+fcList.length;
+  document.getElementById('fcHint').textContent='Catégorie : '+f.cat;
+}
+function fcFlip(){ document.getElementById('fcCard').classList.toggle('flipped'); }
+function fcNav(d){
+  fcIdx = (fcIdx + d + fcList.length) % fcList.length;
+  fcRender();
+}
+
+/* =========================================================
+   QUIZ
+   ========================================================= */
+let quizChapSel = new Set();
+let quizQueue = [], quizIdx=0, quizCorrect=0, quizAnswered=false, quizWrongLog=[];
+let lastQuizByChapter = {};
+
+function renderQuizChips(){
+  const el=document.getElementById('quizChips');
+  el.innerHTML = CHAPTERS.concat([{id:'today',title:"Aujourd'hui (bonus)"}]).map(c=>
+    `<button class="chip" data-c="${c.id}">${c.title}</button>`).join('');
+  el.querySelectorAll('.chip').forEach(ch=>ch.addEventListener('click',()=>{
+    const id=ch.dataset.c;
+    if(quizChapSel.has(id)){quizChapSel.delete(id); ch.classList.remove('on');}
+    else{quizChapSel.add(id); ch.classList.add('on');}
+  }));
+}
+function shuffle(arr){
+  const a=arr.slice();
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+function startQuiz(){
+  const chapIds = quizChapSel.size ? Array.from(quizChapSel) : CHAPTERS.map(c=>c.id).concat(['today']);
+  let pool = QUESTIONS.filter(q=>chapIds.includes(q.ch));
+  const n = Math.min(parseInt(document.getElementById('qCount').value,10), pool.length);
+  quizQueue = shuffle(pool).slice(0,n);
+  quizIdx=0; quizCorrect=0; quizWrongLog=[];
+  document.getElementById('quizSetup').style.display='none';
+  document.getElementById('quizResults').style.display='none';
+  document.getElementById('quizRunner').style.display='block';
+  renderQuestion();
+}
+function chapterTitle(id){
+  if(id==='today') return "Aujourd'hui";
+  const c=CHAPTERS.find(c=>c.id===id);
+  return c?c.title:id;
+}
+function renderQuestion(){
+  quizAnswered=false;
+  const q=quizQueue[quizIdx];
+  document.getElementById('quizBar').style.width=(quizIdx/quizQueue.length*100)+'%';
+  document.getElementById('quizPos').textContent=(quizIdx+1)+' / '+quizQueue.length;
+  document.getElementById('quizScore').textContent=quizCorrect+' ✓';
+  document.getElementById('qTag').textContent=chapterTitle(q.ch);
+  document.getElementById('qText').textContent=q.q;
+  const letters=['A','B','C','D'];
+  const order = q.o.map((txt,i)=>({txt,correct:i===q.a}));
+  const shuffled = shuffle(order);
+  const optsEl=document.getElementById('qOpts');
+  optsEl.innerHTML = shuffled.map((o,i)=>`<button class="opt" data-correct="${o.correct}">
+      <span class="letter">${letters[i]}</span><span>${o.txt}</span></button>`).join('');
+  document.getElementById('qExplain').classList.remove('show');
+  document.getElementById('qExplain').textContent=q.e||'';
+  document.getElementById('qNextBtn').style.display='none';
+  optsEl.querySelectorAll('.opt').forEach(btn=>btn.addEventListener('click',()=>answerQuestion(btn,optsEl)));
+}
+function answerQuestion(btn,optsEl){
+  if(quizAnswered) return;
+  quizAnswered=true;
+  const isCorrect = btn.dataset.correct==='true';
+  optsEl.querySelectorAll('.opt').forEach(o=>{
+    o.setAttribute('disabled','true');
+    if(o.dataset.correct==='true') o.classList.add('correct');
+    else if(o===btn) o.classList.add('wrong');
+  });
+  if(isCorrect) quizCorrect++;
+  else quizWrongLog.push(quizQueue[quizIdx]);
+  document.getElementById('quizScore').textContent=quizCorrect+' ✓';
+  document.getElementById('qExplain').classList.add('show');
+  document.getElementById('qNextBtn').style.display='inline-block';
+  document.getElementById('qNextBtn').textContent = (quizIdx===quizQueue.length-1) ? 'Voir les résultats →' : 'Suivant →';
+}
+function nextQuestion(){
+  quizIdx++;
+  if(quizIdx>=quizQueue.length){ finishQuiz(); return; }
+  renderQuestion();
+}
+function finishQuiz(){
+  document.getElementById('quizRunner').style.display='none';
+  document.getElementById('quizResults').style.display='block';
+  const pct = Math.round(quizCorrect/quizQueue.length*100);
+  document.getElementById('resScore').textContent = quizCorrect+' / '+quizQueue.length;
+  document.getElementById('resSub').textContent = pct+'% — ' + (pct>=75 ? "Au-dessus du seuil de réussite typique (≈75 %)." : "En-dessous du seuil de réussite typique (≈75 %) : révisez les chapitres concernés.");
+  const byChap={};
+  quizQueue.forEach((q,i)=>{
+    byChap[q.ch] = byChap[q.ch]||{tot:0,ok:0};
+    byChap[q.ch].tot++;
+  });
+  quizQueue.forEach(q=>{ if(!quizWrongLog.includes(q)){ byChap[q.ch].ok++; } });
+  Object.keys(byChap).forEach(ch=>{
+    lastQuizByChapter[ch] = Math.round(byChap[ch].ok/byChap[ch].tot*100);
+    const key='q_'+ch;
+    STATE.best[key] = Math.max(STATE.best[key]||0, lastQuizByChapter[ch]);
+  });
+  saveState();
+  document.getElementById('resBreakdown').innerHTML = Object.keys(byChap).map(ch=>
+    `<div class="rb-row"><span class="rb-name">${chapterTitle(ch)}</span><span class="rb-frac mono">${byChap[ch].ok} / ${byChap[ch].tot}</span></div>`
+  ).join('');
+  document.getElementById('reviewBtn').style.display = quizWrongLog.length ? 'inline-block' : 'none';
+}
+function reviewMissed(){
+  if(!quizWrongLog.length) return;
+  quizQueue = quizWrongLog.slice();
+  quizIdx=0; quizCorrect=0; quizWrongLog=[];
+  document.getElementById('quizResults').style.display='none';
+  document.getElementById('quizRunner').style.display='block';
+  renderQuestion();
+}
+function resetQuizSetup(){
+  document.getElementById('quizResults').style.display='none';
+  document.getElementById('quizRunner').style.display='none';
+  document.getElementById('quizSetup').style.display='block';
+}
+
+/* =========================================================
+   AUJOURD'HUI
+   ========================================================= */
+function renderToday(){
+  const el=document.getElementById('view-today');
+  el.innerHTML = `
+    <div class="top-eyebrow"><span class="diamond"></span> Instantané — septembre 2026</div>
+    <h1 class="page-title">Le Canada aujourd'hui</h1>
+    <p class="page-sub">Le guide officiel <em>Découvrir le Canada</em> date de 2021 et beaucoup de ses données factuelles ont changé depuis. Cette page rassemble les mises à jour vérifiées les plus importantes — utile en complément d'étude, même si l'examen écrit lui-même porte sur la structure des institutions plutôt que sur les titulaires actuels des postes.</p>
+    <div class="today-grid">
+      ${TODAY_STATS.map(s=>`<div class="stat-card"><div class="k">${s.k}</div><div class="v">${s.v}</div><div class="d">${s.d}</div></div>`).join('')}
+    </div>
+    <h3 style="font-size:16px;margin:6px 0 12px;">Premiers ministres provinciaux et territoriaux</h3>
+    <div class="table-wrap"><table class="premier-table">
+      <tr><th>Province / territoire</th><th>Premier ministre</th><th>Parti</th></tr>
+      ${PREMIERS.map(p=>`<tr><td>${p[0]}</td><td>${p[1]}</td><td>${p[2]}</td></tr>`).join('')}
+    </table></div>
+    <p class="source-note">Sources : Statistique Canada (estimations démographiques, T1 2026) · Gouverneure générale du Canada (gg.ca) · Cabinet du premier ministre (pm.gc.ca) · Cour suprême du Canada (scc-csc.ca) · Patrimoine canadien (hymne national) · Élections Canada (carte électorale 343 circonscriptions) · sites officiels des gouvernements provinciaux et territoriaux. Vérifiez toujours les faits les plus sensibles à l'approche de votre examen — la situation politique peut évoluer.</p>
+  `;
+}
+
+/* =========================================================
+   PROGRES
+   ========================================================= */
+function renderProgress(){
+  const el=document.getElementById('progressList');
+  const rows = CHAPTERS.map(c=>{
+    const read = !!STATE.read[c.id];
+    const best = STATE.best['q_'+c.id] || 0;
+    return `<div class="progress-row">
+      <span class="name">${c.title}${read?' <span style="color:var(--good);">· lu</span>':''}</span>
+      <div class="bar"><i style="width:${best}%"></i></div>
+      <span class="pct mono">${best}%</span>
+    </div>`;
+  });
+  const bestToday = STATE.best['q_today']||0;
+  rows.push(`<div class="progress-row"><span class="name">Aujourd'hui (bonus)</span><div class="bar"><i style="width:${bestToday}%"></i></div><span class="pct mono">${bestToday}%</span></div>`);
+  el.innerHTML = rows.join('');
+}
+function resetProgress(){
+  if(!confirm('Réinitialiser toute la progression (lecture des chapitres et meilleurs scores)?')) return;
+  STATE={read:{},best:{}};
+  saveState();
+  renderChapterGrid(); renderProgress(); updateRailProgress();
+}
+
+/* =========================================================
+   INIT
+   ========================================================= */
+renderNav();
+renderChapterGrid();
+renderQuizChips();
+setView('etudier');
+</script>
+
+</body></html>
