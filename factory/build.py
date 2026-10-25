@@ -314,7 +314,7 @@ def cmd_electron(app_id, src, work):
             "productName": meta["name"],
             "artifactName": meta["file"] + "-Setup.${ext}",
             "directories": {"output": "dist"},
-            "files": ["main.js", "bar.html", "mb-config.json", "icon.png", "package.json"],
+            "files": ["main.js", "preload.js", "bar.html", "mb-config.json", "icon.png", "package.json"],
             "extraResources": [{"from": "www", "to": "www"}],
             "win": {"target": [{"target": "nsis", "arch": ["x64"]}], "icon": "icon.png"},
             "nsis": {

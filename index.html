@@ -55,7 +55,7 @@ a.btn:hover{border-color:var(--gold)}
 .btn.off{color:var(--muted);border-style:dashed;cursor:default}
 .btn.off i{opacity:.35}
 .t-web i{background:var(--web)}.t-apk i,.t-play i{background:var(--apk)}.t-win i{background:var(--win)}.t-code i{background:var(--code)}
-@media (max-width:700px){.app{grid-template-columns:44px minmax(0,1fr)}.btns{grid-column:1/-1;grid-template-columns:repeat(4,1fr);justify-content:stretch}.btn{min-width:0;padding:8px 6px}}
+@media (max-width:700px){.app{grid-template-columns:44px minmax(0,1fr)}.btns{grid-column:1/-1;grid-template-columns:repeat(4,1fr);justify-content:stretch}.btn{min-width:0;padding:8px 6px;overflow:hidden;text-overflow:ellipsis}}
 .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted);margin-top:10px}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .legend i{width:7px;height:7px;border-radius:50%}
@@ -89,6 +89,7 @@ footer a{color:var(--gold)}
     <span><i style="background:var(--apk)"></i>APK : Android</span>
     <span><i style="background:var(--win)"></i>Windows : installateur .exe</span>
     <span><i style="background:var(--code)"></i>Code source</span>
+    <span style="border:1px dashed var(--muted);border-radius:6px;padding:0 6px">pointillés</span><span>= pas encore prêt</span>
   </div>
 
   <h2>Installer</h2>
@@ -150,17 +151,17 @@ function links(a, rel, known) {
     }
     // Without GitHub we show every link; with it, only files that really exist.
     const has = url => { if (!url) return false; if (!known) return true; if (!rel) return false; return Object.keys(rel.assets).some(n => url.endsWith("/" + n)); };
-    out.push(["apk", has(apk) ? apk : null, null, "APK bientôt"]);
-    out.push(["win", has(win) ? win : null, a.winLabel, "Windows bientôt"]);
+    out.push(["apk", has(apk) ? apk : null]);
+    out.push(["win", has(win) ? win : null, a.winLabel]);
   }
-  out.push(["code", a.code || null, null, "Code privé"]);
+  out.push(["code", a.code || null]);
   return out;
 }
 
 function row(a, rel, known) {
   const btns = links(a, rel, known).map(([t, url, label, offLabel]) => url
     ? `<a class="btn t-${t}" href="${esc(url)}" target="_blank" rel="noopener"><i></i>${esc(label || T[t])}</a>`
-    : `<span class="btn off t-${t}" title="Pas encore disponible"><i></i>${esc(offLabel || T[t])}</span>`).join("");
+    : `<span class="btn off t-${t}" title="${t === "code" ? "Code non public" : "Pas encore disponible"}"><i></i>${esc(label || T[t])}</span>`).join("");
   const date = rel && rel.date;
   const meta = date ? `<p class="meta">${isNew(date) ? '<span class="new">● Nouveau · </span>' : ""}Mis à jour le ${fmt(date)}</p>` : "";
   return `<div class="app"><img class="logo" src="${esc(a.icon || "icons/hub.png")}" alt="" loading="lazy">` +

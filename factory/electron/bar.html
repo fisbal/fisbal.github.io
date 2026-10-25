@@ -2,21 +2,35 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' file:; img-src 'self' file: data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
 <title>MartinB</title>
 <style>
-  /* The draggable title strip. Windows draws minimize / maximize / close on the right, in gold. */
+  /* The draggable title strip with the app's logo and name, and gold minimize / maximize / close buttons on the right. */
   html, body { margin: 0; height: 100%; background: #0B0A08; overflow: hidden; }
-  .bar { height: 36px; display: flex; align-items: center; gap: 10px; padding: 0 150px 0 12px;
+  .bar { height: 36px; display: flex; align-items: center; gap: 10px; padding: 0 0 0 12px;
          -webkit-app-region: drag; user-select: none; border-bottom: 1px solid rgba(212,173,98,.22); box-sizing: border-box; }
   img { width: 20px; height: 20px; border-radius: 5px; }
-  .name { font: 600 14px/1 "Segoe UI Semibold", "Segoe UI", system-ui, sans-serif; color: #F3EFE6; letter-spacing: .02em;
+  .name { flex: 1; min-width: 0; font: 600 14px/1 "Segoe UI Semibold", "Segoe UI", system-ui, sans-serif; color: #F3EFE6; letter-spacing: .02em;
           white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .name b { color: #D4AD62; font-weight: 700; }
+  .ctl { display: flex; height: 100%; -webkit-app-region: no-drag; }
+  .ctl[hidden] { display: none; }
+  .ctl button { width: 46px; height: 100%; border: 0; background: transparent; color: #D4AD62; display: grid; place-items: center; cursor: default; }
+  .ctl button:hover { background: rgba(212,173,98,.14); }
+  .ctl #close:hover { background: #C42B1C; color: #fff; }
+  svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.2; }
 </style>
 </head>
 <body>
-  <div class="bar"><img src="icon.png" alt=""><span class="name" id="name"></span></div>
+  <div class="bar" id="bar">
+    <img src="icon.png" alt="">
+    <span class="name" id="name"></span>
+    <div class="ctl" id="ctl" hidden>
+      <button id="min" title="Réduire" aria-label="Réduire"><svg viewBox="0 0 12 12"><path d="M1 6.5h10"/></svg></button>
+      <button id="max" title="Agrandir" aria-label="Agrandir"><svg viewBox="0 0 12 12" id="maxIcon"><rect x="1.5" y="1.5" width="9" height="9"/></svg></button>
+      <button id="close" title="Fermer" aria-label="Fermer"><svg viewBox="0 0 12 12"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9"/></svg></button>
+    </div>
+  </div>
   <script>
     const name = new URLSearchParams(location.search).get("name") || "MartinB";
     const el = document.getElementById("name");
@@ -28,6 +42,20 @@
       el.textContent = name;
     }
     document.title = name;
+
+    if (window.mbWindow) {
+      document.getElementById("ctl").hidden = false;
+      document.getElementById("min").onclick = () => mbWindow.minimize();
+      document.getElementById("max").onclick = () => mbWindow.maximize();
+      document.getElementById("close").onclick = () => mbWindow.close();
+      document.getElementById("bar").ondblclick = (e) => { if (!e.target.closest(".ctl")) mbWindow.maximize(); };
+      mbWindow.onState((s) => {
+        document.getElementById("maxIcon").innerHTML = s === "maximized"
+          ? '<rect x="1.5" y="3.5" width="7" height="7"/><path d="M3.5 3.5V1.5h7v7h-2"/>'
+          : '<rect x="1.5" y="1.5" width="9" height="9"/>';
+        document.getElementById("max").title = s === "maximized" ? "Restaurer" : "Agrandir";
+      });
+    }
   </script>
 </body>
 </html>

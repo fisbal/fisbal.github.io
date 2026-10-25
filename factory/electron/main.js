@@ -1,7 +1,6 @@
 // MartinB app shell for Windows.
-// A 36px gold title bar (real Windows minimize / maximize / close buttons, drawn by Windows in MartinB colours)
-// sits above the app, which runs untouched in its own view, offline from resources/www or from its web address.
-const { app, BrowserWindow, WebContentsView, Menu, protocol, net, shell } = require("electron");
+// A 36px gold title bar (minimize / maximize / close, drawn by bar.html) sits above the app, which runs untouched in its own view, offline from resources/www or from its web address.
+const { app, BrowserWindow, WebContentsView, Menu, protocol, net, shell, ipcMain } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { pathToFileURL } = require("url");
@@ -47,8 +46,7 @@ function createWindow() {
     backgroundColor: "#0B0A08",
     icon: path.join(__dirname, "icon.png"),
     titleBarStyle: "hidden",
-    titleBarOverlay: { color: "#0B0A08", symbolColor: "#D4AD62", height: BAR },
-    webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false }
+    webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false, preload: path.join(__dirname, "preload.js") }
   });
   win.loadFile(path.join(__dirname, "bar.html"), { query: { name: cfg.name } });
 
@@ -82,7 +80,10 @@ function createWindow() {
   });
   wc.on("page-title-updated", (e, title) => win.setTitle(cfg.name));
 
+  const sendState = () => { if (win) win.webContents.send("mb-window-state", win.isMaximized() ? "maximized" : "normal"); };
   win.on("resize", layout);
+  win.on("maximize", sendState);
+  win.on("unmaximize", sendState);
   win.on("enter-full-screen", layout);
   win.on("leave-full-screen", layout);
   win.on("maximize", layout);
@@ -90,6 +91,14 @@ function createWindow() {
   win.once("ready-to-show", () => win.show());
   win.on("closed", () => { win = null; view = null; });
 }
+
+// Title-bar buttons drawn by the bar page itself (used when Windows does not draw its own).
+ipcMain.on("mb-window", (e, action) => {
+  if (!win || e.sender !== win.webContents) return;
+  if (action === "minimize") win.minimize();
+  if (action === "maximize") { if (win.isMaximized()) win.unmaximize(); else win.maximize(); }
+  if (action === "close") win.close();
+});
 
 app.on("second-instance", () => {
   if (win) { if (win.isMinimized()) win.restore(); win.focus(); }
