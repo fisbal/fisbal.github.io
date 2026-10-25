@@ -91,7 +91,8 @@ def current_fingerprint(app_id):
 def cmd_plan():
     force = os.environ.get("FORCE", "false") == "true"
     only = os.environ.get("ONLY", "").strip()
-    template_hash = (tree_hash(os.path.join(FACTORY, "android")) + tree_hash(os.path.join(FACTORY, "electron")) + tree_hash_file(os.path.join(FACTORY, "build.py")))[:16]
+    parts = tree_hash(os.path.join(FACTORY, "android")) + tree_hash(os.path.join(FACTORY, "electron")) + tree_hash_file(os.path.join(FACTORY, "build.py"))
+    template_hash = hashlib.sha256(parts.encode()).hexdigest()[:16]
     todo, prints = [], {}
     for app in load_apps():
         if only and app["id"] != only:
