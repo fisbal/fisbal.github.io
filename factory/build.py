@@ -272,19 +272,22 @@ def cmd_android(app_id, src, work):
                 shutil.copytree(os.path.join(src, "android-res", name), os.path.join(res, name), dirs_exist_ok=True)
     else:
         make_mipmaps(src, res, app.get("bg", "#0B0A08"))
-    args = [
-        f"-PmbAppId={meta['pkg']}",
-        f"-PmbAppName={meta['name']}",
-        f"-PmbVersionCode={1000 + RUN}",
-        f"-PmbVersionName=1.{RUN}",
-        f"-PmbOrientation={meta.get('orientation', 'unspecified')}",
-    ]
+    # The app name goes into strings.xml (XML-escaped: "Alpha & Omega", apostrophes), the rest into gradle.properties.
+    name = meta["name"].replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("'", "\\'").replace('"', '\\"')
+    with open(os.path.join(res, "values", "strings.xml"), "w", encoding="utf-8") as f:
+        f.write(f'<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <string name="app_name">{name}</string>\n</resources>\n')
+    props = {
+        "mbAppId": meta["pkg"],
+        "mbVersionCode": str(1000 + RUN),
+        "mbVersionName": f"1.{RUN}",
+        "mbOrientation": meta.get("orientation", "unspecified"),
+    }
     if meta.get("keystore"):
         shutil.copy2(os.path.join(src, "keystore.jks"), os.path.join(work, "keys", "app.jks"))
-        args += [f"-PmbStoreFile=../keys/app.jks", f"-PmbStorePass={meta['keystore']['pass']}",
-                 f"-PmbKeyAlias={meta['keystore']['alias']}"]
-    with open(os.path.join(work, "gradle.args"), "w", encoding="utf-8") as f:
-        f.write("\n".join(args) + "\n")
+        props.update({"mbStoreFile": "../keys/app.jks", "mbStorePass": meta["keystore"]["pass"],
+                      "mbKeyAlias": meta["keystore"]["alias"]})
+    with open(os.path.join(work, "gradle.properties"), "a", encoding="utf-8") as f:
+        f.write("\n" + "".join(f"{k}={v}\n" for k, v in props.items()))
     print(f"{app_id}: Android project ready in {work}")
 
 

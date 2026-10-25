@@ -4,19 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>MartinB OS Hub</title>
-<meta name="description" content="Toutes les apps MartinB au même endroit : web, Android (APK) et Windows. Toujours la dernière version.">
+<meta name="description" content="Toutes les apps MartinB au même endroit : web, Android (APK), Windows et code. Toujours la dernière version.">
 <meta name="theme-color" content="#0b0a08">
 <meta property="og:title" content="MartinB OS Hub">
-<meta property="og:description" content="Toutes les apps MartinB : web, Android et Windows.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b0a08'/%3E%3Ctext x='32' y='42' font-family='Georgia,serif' font-size='26' font-weight='700' text-anchor='middle' fill='%23c9a227'%3EOS%3C/text%3E%3C/svg%3E">
+<meta property="og:description" content="Toutes les apps MartinB : web, Android, Windows et code.">
+<link rel="icon" href="icons/hub.png">
+<link rel="apple-touch-icon" href="icons/hub.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
 <style>
-/* Layout: wordmark header, live launcher (one row per app, buttons by platform) read straight from GitHub, then Martin's private Claude pages folded at the bottom. Single dark MartinB look. */
+/* Layout: wordmark header, then one row per app (logo, name, version, four platform buttons) built from apps.json
+   and the live GitHub releases, then install help. Single dark MartinB look. */
 :root{
   --bg:#0b0a08; --surface:#15130f; --surface-2:#1d1a14; --line:rgba(201,162,39,.18);
-  --ink:#f3efe6; --muted:#a39b8a; --gold:#c9a227; --gold-soft:rgba(201,162,39,.12);
-  --ok:#4fc48a; --warn:#e8b64a;
-  --apk:#7fcf8f; --win:#7fb3e8; --web:#e8c87f; --claude:#d9a07a; --code:#a9a29a;
+  --ink:#f3efe6; --muted:#a39b8a; --gold:#c9a227; --ok:#4fc48a; --warn:#e8b64a;
+  --web:#e8c87f; --apk:#7fcf8f; --win:#7fb3e8; --code:#a9a29a;
   --f-display:"Cinzel","Trajan Pro",Georgia,serif;
   --f-body:"Figtree","Segoe UI",system-ui,sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
@@ -25,7 +26,7 @@
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
-.wrap{max-width:960px;margin:0 auto;padding-block:max(28px,env(safe-area-inset-top,0px)) max(48px,env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:980px;margin:0 auto;padding-block:max(28px,env(safe-area-inset-top,0px)) max(48px,env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;border-bottom:1px solid var(--line);padding-bottom:18px}
 .mark{font-family:var(--f-display);font-weight:700;font-size:clamp(30px,7vw,46px);letter-spacing:.04em;line-height:1;margin:0}
 .mark span{color:var(--gold)}
@@ -34,36 +35,38 @@ header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-be
 .status i{width:8px;height:8px;border-radius:50%;background:var(--warn)}
 .status.ok i{background:var(--ok)}
 h2{font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin:30px 0 12px}
-.hint{color:var(--muted);font-size:13px;margin:-4px 0 14px;max-width:68ch}
 :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .search{width:100%;background:var(--surface);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:11px 14px;font:16px var(--f-body);margin-bottom:12px}
 .search::placeholder{color:var(--muted)}
 .apps{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden}
-.app{display:grid;grid-template-columns:1fr auto;gap:8px 16px;align-items:center;padding:14px 16px;background:var(--surface);border-top:1px solid rgba(255,255,255,.05)}
+.app{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:6px 14px;align-items:center;padding:14px 16px;background:var(--surface);border-top:1px solid rgba(255,255,255,.05)}
 .app:first-child{border-top:0}
+.logo{width:44px;height:44px;border-radius:11px;background:var(--surface-2);object-fit:cover}
 .info{min-width:0}
 .name{font-weight:600;font-size:17px;margin:0}
 .name .os{color:var(--gold)}
 .desc{color:var(--muted);font-size:13px;margin:1px 0 0}
 .meta{font-family:var(--f-mono);font-size:11.5px;color:var(--muted);margin:3px 0 0;font-variant-numeric:tabular-nums}
 .new{color:var(--ok);font-weight:500}
-.btns{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
-.btn{display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--ink);background:var(--surface-2);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:8px 12px;font:500 13.5px var(--f-body);white-space:nowrap}
+.btns{display:grid;grid-template-columns:repeat(4,auto);gap:6px;justify-content:end}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;color:var(--ink);background:var(--surface-2);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:8px 12px;font:500 13.5px var(--f-body);white-space:nowrap;min-width:84px}
 .btn i{width:7px;height:7px;border-radius:50%;flex:none}
-.btn:hover{border-color:var(--gold)}
-.t-web i{background:var(--web)}.t-apk i,.t-play i{background:var(--apk)}.t-win i{background:var(--win)}.t-claude i{background:var(--claude)}.t-code i{background:var(--code)}
-@media (max-width:640px){.app{grid-template-columns:1fr}.btns{justify-content:flex-start}}
+a.btn:hover{border-color:var(--gold)}
+.btn.off{color:var(--muted);border-style:dashed;cursor:default}
+.btn.off i{opacity:.35}
+.t-web i{background:var(--web)}.t-apk i,.t-play i{background:var(--apk)}.t-win i{background:var(--win)}.t-code i{background:var(--code)}
+@media (max-width:700px){.app{grid-template-columns:44px minmax(0,1fr)}.btns{grid-column:1/-1;grid-template-columns:repeat(4,1fr);justify-content:stretch}.btn{min-width:0;padding:8px 6px}}
 .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted);margin-top:10px}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .legend i{width:7px;height:7px;border-radius:50%}
 .empty{color:var(--muted);padding:14px 16px;margin:0}
-.skel{height:64px;background:linear-gradient(90deg,var(--surface),var(--surface-2),var(--surface));background-size:200% 100%}
-@media (prefers-reduced-motion:no-preference){.skel{animation:sh 1.4s infinite}@keyframes sh{to{background-position:-200% 0}}.btn{transition:border-color .15s}}
-details{margin-top:30px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.help{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.help div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;font-size:13.5px;color:var(--muted)}
+.help b{color:var(--ink)}
+.help h3{margin:0 0 6px;font:600 14px var(--f-body);color:var(--gold)}
+details{margin-top:26px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
 summary{cursor:pointer;padding:14px 16px;font-family:var(--f-display);font-size:14px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
 details .apps{border:0;border-top:1px solid var(--line);border-radius:0 0 14px 14px}
-.help{color:var(--muted);font-size:13px;max-width:68ch}
-.help b{color:var(--ink)}
 footer{color:var(--muted);font-size:12px;margin-top:34px;border-top:1px solid var(--line);padding-top:14px}
 footer a{color:var(--gold)}
 </style>
@@ -73,26 +76,29 @@ footer a{color:var(--gold)}
   <header>
     <div>
       <h1 class="mark">MartinB<span>OS</span> Hub</h1>
-      <p class="sub">Toutes les apps MartinB · web, Android et Windows</p>
+      <p class="sub">Toutes les apps MartinB · web, Android, Windows et code</p>
     </div>
     <div class="status" id="status"><i></i><span>Connexion à GitHub…</span></div>
   </header>
 
   <h2>Apps</h2>
-  <p class="hint">Cette page lit GitHub à chaque ouverture : une nouvelle version ou une nouvelle app apparaît ici automatiquement.</p>
   <input class="search" id="q" type="search" placeholder="Chercher une app…" aria-label="Chercher une app" autocomplete="off">
-  <div class="apps" id="apps"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
+  <div class="apps" id="apps"><p class="empty">Chargement…</p></div>
   <div class="legend">
-    <span><i style="background:var(--web)"></i>Web (tout téléphone ou PC)</span>
-    <span><i style="background:var(--apk)"></i>Android</span>
-    <span><i style="background:var(--win)"></i>Windows</span>
+    <span><i style="background:var(--web)"></i>Web : tout téléphone ou PC</span>
+    <span><i style="background:var(--apk)"></i>APK : Android</span>
+    <span><i style="background:var(--win)"></i>Windows : installateur .exe</span>
     <span><i style="background:var(--code)"></i>Code source</span>
   </div>
 
-  <h2>Installer un APK</h2>
-  <p class="help">Touche <b>APK</b>, puis ouvre le fichier depuis l'app <b>Fichiers</b> (pas depuis Chrome). Si Android le demande, autorise « Installer des applis inconnues ». Une nouvelle version s'installe par-dessus l'ancienne et garde tes données.</p>
+  <h2>Installer</h2>
+  <div class="help">
+    <div><h3>Android</h3>Touche <b>APK</b>, puis ouvre le fichier depuis l'app <b>Fichiers</b> (pas depuis Chrome). Si Android le demande, autorise « Installer des applis inconnues ». Une nouvelle version s'installe par-dessus et garde tes données.</div>
+    <div><h3>Windows</h3>Touche <b>Windows</b> et lance le fichier <b>-Setup.exe</b>. Si SmartScreen s'affiche : <b>Informations complémentaires</b> → <b>Exécuter quand même</b>. L'app s'ajoute au menu Démarrer et au bureau.</div>
+    <div><h3>La barre or</h3>Chaque app a sa barre MartinB en haut : <b>réduire</b>, <b>plein écran</b> et <b>fermer</b>. Sur le web, réduire n'existe pas (le navigateur l'interdit) : la grille ramène ici.</div>
+  </div>
 
-  <details id="private">
+  <details>
     <summary>Pages Claude (privé, Martin seulement)</summary>
     <div class="apps" id="claude"></div>
   </details>
@@ -101,145 +107,151 @@ footer a{color:var(--gold)}
 </div>
 
 <script>
-const USER="fisbal";
-const API="https://api.github.com";
-const PAGES="https://fisbal.github.io/";
-const CACHE_KEY="mbhub-v1", CACHE_MS=10*60*1000;
+const API = "https://api.github.com";
+const FACTORY = "fisbal/fisbal.github.io";
+const CACHE_KEY = "mbhub-v2", CACHE_MS = 10 * 60 * 1000;
+const T = { web: "Web", apk: "APK", win: "Windows", code: "Code", play: "Play Store" };
+const MOIS = ["janv.","févr.","mars","avr.","mai","juin","juil.","août","sept.","oct.","nov.","déc."];
+const fmt = iso => { const d = new Date(iso); return `${d.getDate()} ${MOIS[d.getMonth()]} ${d.getFullYear()}`; };
+const isNew = iso => iso && (Date.now() - new Date(iso)) < 7 * 864e5;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-/* Names and descriptions for known repos. Any other public repo with a release or a site shows up automatically. */
-const KNOWN={
-  "alpha-omega2":{n:"Alpha & Omega",d:"Étude du Nouveau Testament verset par verset, FR/EN.",o:1},
-  "marbleos":{n:"MarbleOS",os:1,d:"Tireur de billes 3D, style Zuma, et solitaire.",o:2,web:PAGES+"marble-temple/",webL:"Jouer",extra:[["web",PAGES+"solitaire/","Solitaire"]]},
-  "navalos":{n:"NavalOS",os:1,d:"Grades, insignes et savoir de la Marine royale canadienne.",o:3},
-  "millionos":{n:"MillionOS",os:1,d:"Quiz militaire style « Qui veut gagner des millions ».",o:4},
-  "prodfos":{n:"ProDFOS",os:1,d:"Lecteur PDF avec IA DocMind.",o:5},
-  "holochrono":{n:"HoloChrono",d:"Horloge holographique, heure de Québec (Second Life).",o:20,web:"https://fisbal.github.io/holochrono/holochrono_clock.html"}
-};
-const HIDDEN=new Set(["github-slideshow","alpha-omega","fisbal.github.io"]);
-
-/* Apps that live outside GitHub */
-const EXTERNAL=[
-  {n:"Sky Control 3D",d:"Contrôle aérien 3D sur de vrais aéroports canadiens.",o:3,links:[["web",PAGES+"skycontrol/","Jouer"],["web",PAGES+"skycontrol-hangar/","Hangar"]]},
-  {n:"TechFix",d:"Diagnostic de ton appareil et base de 100 pannes connues.",o:8,links:[["web",PAGES+"techfix/"]]},
-  {n:"Devenir Canadien",d:"Préparation à l'examen de citoyenneté, à jour en 2026.",o:9,links:[["web",PAGES+"devenir-canadien/"]]},
-  {n:"SonicOS",os:1,d:"Lecteur de musique.",o:6,links:[["play","https://play.google.com/store/apps/details?id=com.martinb.sonicos","Play Store"]]},
-  {n:"ShareTVOS",os:1,d:"Soirées YouTube synchronisées.",o:7,links:[["web","https://sharetvos.vercel.app"]]}
+const A = "https://claude.ai/code/artifact/";
+const CLAUDE = [
+  { n: "MartinB OS Hub (tableau de projets)", url: A + "2e75aaf4-d4af-40b0-8564-aeb3e6207ee3" },
+  { n: "PrésenceOS (démo CF 895)", url: A + "c4684611-3a28-4ce7-bd4c-494a82761d4b" }
 ];
 
-/* Snapshot used if GitHub can't be reached (rate limit, offline) */
-const SNAPSHOT=[
-  {repo:"Alpha-Omega2",pages:1,rel:{tag:"latest",date:"2026-10-19T21:02:30Z",apk:"https://github.com/fisbal/Alpha-Omega2/releases/download/latest/AlphaOmega-android.apk",win:"https://github.com/fisbal/Alpha-Omega2/releases/download/latest/AlphaOmega-windows-setup.exe"}},
-  {repo:"MarbleOS",pages:0,rel:{tag:"v1.0.1",date:"2026-10-22T00:42:28Z",apk:"https://github.com/fisbal/MarbleOS/releases/latest/download/MarbleOS.apk"}},
-  {repo:"navalos",pages:1},
-  {repo:"MillionOS",pages:1},
-  {repo:"prodfos",pages:1,rel:{tag:"latest",date:"2026-10-11T21:29:58Z",page:"https://github.com/fisbal/prodfos/releases/tag/latest"}},
-  {repo:"holochrono",pages:1}
-];
-
-const A="https://claude.ai/code/artifact/";
-const CLAUDE=[
-  {n:"MartinB OS Hub (tableau de projets)",links:[["claude",A+"2e75aaf4-d4af-40b0-8564-aeb3e6207ee3","Ouvrir"]]},
-  {n:"PrésenceOS",os:1,links:[["claude",A+"c4684611-3a28-4ce7-bd4c-494a82761d4b","Démo"]]}
-];
-
-const T={web:"Web",apk:"APK",win:"Windows",claude:"Claude",code:"Code",play:"Play Store"};
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const MOIS=["janv.","févr.","mars","avr.","mai","juin","juil.","août","sept.","oct.","nov.","déc."];
-const fmt=iso=>{const d=new Date(iso);return `${d.getDate()} ${MOIS[d.getMonth()]} ${d.getFullYear()}`};
-const isNew=iso=>iso&&(Date.now()-new Date(iso))<7*864e5;
-
-function nameHTML(a){
-  if(a.os&&a.n.includes("OS")){const i=a.n.lastIndexOf("OS");return esc(a.n.slice(0,i))+'<span class="os">OS</span>'+esc(a.n.slice(i+2));}
-  return esc(a.n);
-}
-function row(a){
-  const btns=a.links.map(([t,u,l])=>`<a class="btn t-${t}" href="${esc(u)}" target="_blank" rel="noopener"><i></i>${esc(l||T[t])}</a>`).join("");
-  const meta=a.meta?`<p class="meta">${a.fresh?'<span class="new">● Nouveau · </span>':''}${esc(a.meta)}</p>`:"";
-  const desc=a.d?`<p class="desc">${esc(a.d)}</p>`:"";
-  return `<div class="app"><div class="info"><h3 class="name">${nameHTML(a)}</h3>${desc}${meta}</div><div class="btns">${btns}</div></div>`;
+function nameHTML(n) {
+  const i = n.lastIndexOf("OS");
+  if (i > 0 && (i + 2 === n.length || n[i + 2] === " ")) return esc(n.slice(0, i)) + '<span class="os">OS</span>' + esc(n.slice(i + 2));
+  return esc(n);
 }
 
-/* Turn raw repo + release info into a launcher row */
-function toApp(r){
-  const k=KNOWN[r.repo.toLowerCase()]||{};
-  const links=[];
-  if(k.web) links.push(["web",k.web,k.webL]); else if(r.pages) links.push(["web",PAGES+r.repo+"/"]);
-  if(k.extra) links.push(...k.extra);
-  let meta="", fresh=false;
-  if(r.rel){
-    if(r.rel.apk) links.push(["apk",r.rel.apk]);
-    if(r.rel.win) links.push(["win",r.rel.win]);
-    if(!r.rel.apk&&!r.rel.win&&r.rel.page) links.push(["apk",r.rel.page,"Téléchargements"]);
-    meta=(r.rel.tag==="latest"?"Dernier build":r.rel.tag)+" · "+fmt(r.rel.date);
-    fresh=isNew(r.rel.date);
-  } else if(r.pushed){ meta="Mis à jour le "+fmt(r.pushed); fresh=isNew(r.pushed); }
-  links.push(["code","https://github.com/"+USER+"/"+r.repo]);
-  return {n:k.n||r.repo,os:k.os||/OS$/.test(r.repo),d:k.d||r.desc||"",o:k.o||50,meta,fresh,links};
+// Same-site web addresses open in the gold-bar web window /w/<id>/.
+function webLink(a) {
+  if (!a.web) return null;
+  if (a.web === "/" ) return "/";
+  if (a.web.startsWith("/")) return "/w/" + a.id + "/";
+  return a.web;
 }
 
-function assetUrl(rel,name){
-  /* Stable link: /latest/download/ for normal releases, /download/<tag>/ for rolling tags */
-  return rel.latest&&rel.tag!=="latest"
-    ? `https://github.com/${USER}/${rel.repo}/releases/latest/download/${encodeURIComponent(name)}`
-    : `https://github.com/${USER}/${rel.repo}/releases/download/${encodeURIComponent(rel.tag)}/${encodeURIComponent(name)}`;
-}
-
-async function gh(path){
-  const res=await fetch(API+path,{headers:{Accept:"application/vnd.github+json"}});
-  if(!res.ok) throw new Error(res.status);
-  return res.json();
-}
-
-async function loadLive(){
-  const repos=(await gh(`/users/${USER}/repos?per_page=100&sort=pushed`)).filter(r=>!r.fork&&!r.archived&&!HIDDEN.has(r.name.toLowerCase()));
-  const out=await Promise.all(repos.map(async r=>{
-    const item={repo:r.name,pages:r.has_pages,desc:r.description,pushed:r.pushed_at};
-    try{
-      const rels=(await gh(`/repos/${USER}/${r.name}/releases?per_page=5`)).filter(x=>!x.draft);
-      if(rels.length){
-        const x=rels[0], rel={repo:r.name,tag:x.tag_name,date:x.published_at,latest:!x.prerelease,page:x.html_url};
-        for(const a of x.assets||[]){
-          if(/\.apk$/i.test(a.name)&&!rel.apk) rel.apk=assetUrl(rel,a.name);
-          else if(/\.(exe|msi)$/i.test(a.name)&&!rel.win) rel.win=assetUrl(rel,a.name);
-          else if(/win.*\.zip$/i.test(a.name)&&!rel.win) rel.win=assetUrl(rel,a.name);
-        }
-        item.rel=rel;
-      }
-    }catch(e){}
-    return item;
-  }));
-  /* Keep only repos that have something to open or install */
-  return out.filter(x=>x.pages||x.rel||KNOWN[x.repo.toLowerCase()]);
-}
-
-let ALL=[];
-function render(){
-  const q=document.getElementById("q").value.trim().toLowerCase();
-  const list=q?ALL.filter(a=>(a.n+" "+a.d).toLowerCase().includes(q)):ALL;
-  document.getElementById("apps").innerHTML=list.map(row).join("")||'<p class="empty">Aucune app trouvée.</p>';
-}
-function setData(items,label,ok){
-  ALL=[...items.map(toApp),...EXTERNAL].sort((a,b)=>a.o-b.o||a.n.localeCompare(b.n));
-  const s=document.getElementById("status");
-  s.className="status"+(ok?" ok":"");
-  s.querySelector("span").textContent=label;
-  render();
-}
-document.getElementById("q").addEventListener("input",render);
-document.getElementById("claude").innerHTML=CLAUDE.map(row).join("");
-
-(async()=>{
-  let cached=null;
-  try{cached=JSON.parse(localStorage.getItem(CACHE_KEY)||"null")}catch(e){}
-  if(cached&&Date.now()-cached.t<CACHE_MS){ setData(cached.items,"À jour · vérifié à "+new Date(cached.t).toLocaleTimeString("fr-CA",{hour:"2-digit",minute:"2-digit"}),true); return; }
-  if(cached) setData(cached.items,"Mise à jour…",false); else setData(SNAPSHOT,"Mise à jour…",false);
-  try{
-    const items=await loadLive();
-    try{localStorage.setItem(CACHE_KEY,JSON.stringify({t:Date.now(),items}))}catch(e){}
-    setData(items,"À jour avec GitHub",true);
-  }catch(e){
-    setData(cached?cached.items:SNAPSHOT,"GitHub injoignable · dernière liste connue",false);
+// rel: { assets: {name: url}, date } from GitHub, or undefined when GitHub could not be reached.
+function links(a, rel, known) {
+  const out = [];
+  out.push(["web", webLink(a), a.webLabel]);
+  if (a.play) {
+    out.push(["play", a.play]);
+  } else {
+    let apk = a.apk, win = a.win;
+    if (a.factory) {
+      apk = `https://github.com/${FACTORY}/releases/download/${a.id}-latest/${a.file}.apk`;
+      win = `https://github.com/${FACTORY}/releases/download/${a.id}-latest/${a.file}-Setup.exe`;
+    }
+    // Without GitHub we show every link; with it, only files that really exist.
+    const has = url => { if (!url) return false; if (!known) return true; if (!rel) return false; return Object.keys(rel.assets).some(n => url.endsWith("/" + n)); };
+    out.push(["apk", has(apk) ? apk : null, null, "APK bientôt"]);
+    out.push(["win", has(win) ? win : null, a.winLabel, "Windows bientôt"]);
   }
+  out.push(["code", a.code || null, null, "Code privé"]);
+  return out;
+}
+
+function row(a, rel, known) {
+  const btns = links(a, rel, known).map(([t, url, label, offLabel]) => url
+    ? `<a class="btn t-${t}" href="${esc(url)}" target="_blank" rel="noopener"><i></i>${esc(label || T[t])}</a>`
+    : `<span class="btn off t-${t}" title="Pas encore disponible"><i></i>${esc(offLabel || T[t])}</span>`).join("");
+  const date = rel && rel.date;
+  const meta = date ? `<p class="meta">${isNew(date) ? '<span class="new">● Nouveau · </span>' : ""}Mis à jour le ${fmt(date)}</p>` : "";
+  return `<div class="app"><img class="logo" src="${esc(a.icon || "icons/hub.png")}" alt="" loading="lazy">` +
+    `<div class="info"><h3 class="name">${nameHTML(a.name)}</h3><p class="desc">${esc(a.desc || "")}</p>${meta}</div>` +
+    `<div class="btns">${btns}</div></div>`;
+}
+
+let APPS = [], RELS = {}, KNOWN = false;
+function render() {
+  const q = document.getElementById("q").value.trim().toLowerCase();
+  const list = q ? APPS.filter(a => (a.name + " " + (a.desc || "")).toLowerCase().includes(q)) : APPS;
+  document.getElementById("apps").innerHTML = list.map(a => row(a, relFor(a), KNOWN)).join("") || '<p class="empty">Aucune app trouvée.</p>';
+}
+function relFor(a) {
+  if (a.factory) return RELS[FACTORY + "#" + a.id];
+  if (a.id === "downloados") {
+    // DownloadOS for Windows is the hub app itself.
+    const d = RELS[a.release], h = RELS[FACTORY + "#hub"];
+    if (!d && !h) return undefined;
+    return { assets: Object.assign({}, d && d.assets, h && h.assets), date: d ? d.date : h.date };
+  }
+  return a.release ? RELS[a.release] : undefined;
+}
+
+function setStatus(text, ok) {
+  const s = document.getElementById("status");
+  s.className = "status" + (ok ? " ok" : "");
+  s.querySelector("span").textContent = text;
+}
+
+async function gh(path) {
+  const r = await fetch(API + path, { headers: { Accept: "application/vnd.github+json" } });
+  if (!r.ok) throw new Error(r.status);
+  return r.json();
+}
+
+function relInfo(list, pick) {
+  const out = {};
+  for (const r of list) {
+    if (r.draft) continue;
+    const key = pick(r);
+    if (!key || out[key]) continue;
+    const assets = {};
+    let date = r.published_at;
+    for (const x of r.assets || []) { assets[x.name] = x.browser_download_url; if (x.updated_at > date) date = x.updated_at; }
+    out[key] = { assets, date };
+  }
+  return out;
+}
+
+async function loadReleases() {
+  const rels = {};
+  const factory = await gh(`/repos/${FACTORY}/releases?per_page=100`);
+  Object.assign(rels, relInfo(factory, r => r.tag_name.endsWith("-latest") ? FACTORY + "#" + r.tag_name.slice(0, -7) : null));
+  const others = [...new Set(APPS.filter(a => a.release).map(a => a.release))];
+  await Promise.all(others.map(async repo => {
+    try { Object.assign(rels, relInfo(await gh(`/repos/${repo}/releases?per_page=5`), () => repo)); } catch (e) {}
+  }));
+  return rels;
+}
+
+document.getElementById("q").addEventListener("input", render);
+document.getElementById("claude").innerHTML = CLAUDE.map(c =>
+  `<div class="app"><img class="logo" src="icons/hub.png" alt=""><div class="info"><h3 class="name">${esc(c.n)}</h3></div>` +
+  `<div class="btns"><a class="btn t-web" href="${esc(c.url)}" target="_blank" rel="noopener"><i></i>Ouvrir</a></div></div>`).join("");
+
+(async () => {
+  try {
+    APPS = (await (await fetch("apps.json", { cache: "no-cache" })).json()).apps;
+  } catch (e) {
+    document.getElementById("apps").innerHTML = '<p class="empty">La liste des apps n\'a pas pu se charger. Actualise la page.</p>';
+    return;
+  }
+  let cached = null;
+  try { cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "null"); } catch (e) {}
+  if (cached) { RELS = cached.rels; KNOWN = true; }
+  render();
+  if (cached && Date.now() - cached.t < CACHE_MS) {
+    setStatus("À jour · vérifié à " + new Date(cached.t).toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" }), true);
+    return;
+  }
+  setStatus("Mise à jour…", false);
+  try {
+    RELS = await loadReleases(); KNOWN = true;
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), rels: RELS })); } catch (e) {}
+    setStatus("À jour avec GitHub", true);
+  } catch (e) {
+    if (!cached) KNOWN = false;
+    setStatus("GitHub injoignable · liens affichés sans vérification", false);
+  }
+  render();
 })();
 </script>
 </body>

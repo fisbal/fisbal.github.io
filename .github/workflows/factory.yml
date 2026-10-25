@@ -116,7 +116,14 @@ jobs:
           python3 factory/build.py android ${{ matrix.app }} src build-android
       - name: Build signed APK
         working-directory: build-android
-        run: gradle assembleRelease --no-daemon --stacktrace $(cat gradle.args | tr '\n' ' ')
+        run: |
+          set -o pipefail
+          if ! gradle assembleRelease --no-daemon 2>&1 | tee build.log; then
+            # Surface the real reason as an annotation (readable without opening the full log).
+            MSG=$(grep -A12 -E "What went wrong|error:" build.log | head -40 | sed ':a;N;$!ba;s/%/%25/g;s/\r//g;s/\n/%0A/g')
+            echo "::error title=Android build (${{ matrix.app }})::$MSG"
+            exit 1
+          fi
       - name: Name the APK
         run: |
           FILE=$(python3 -c "import json;print(json.load(open('src/meta.json'))['file'])")
@@ -150,9 +157,15 @@ jobs:
         working-directory: build-windows
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        shell: bash
         run: |
+          set -o pipefail
           npm install --no-audit --no-fund
-          npx electron-builder --win nsis --x64 --publish never
+          if ! npx electron-builder --win nsis --x64 --publish never 2>&1 | tee build.log; then
+            MSG=$(grep -iE -B2 -A8 "error|failed" build.log | head -40 | sed ':a;N;$!ba;s/%/%25/g;s/\r//g;s/\n/%0A/g')
+            echo "::error title=Windows build (${{ matrix.app }})::$MSG"
+            exit 1
+          fi
       - name: Collect installer
         shell: bash
         run: |
