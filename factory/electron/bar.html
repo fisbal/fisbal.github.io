@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<title>MartinB</title>
+<style>
+  /* The draggable title strip. Windows draws minimize / maximize / close on the right, in gold. */
+  html, body { margin: 0; height: 100%; background: #0B0A08; overflow: hidden; }
+  .bar { height: 36px; display: flex; align-items: center; gap: 10px; padding: 0 150px 0 12px;
+         -webkit-app-region: drag; user-select: none; border-bottom: 1px solid rgba(212,173,98,.22); box-sizing: border-box; }
+  img { width: 20px; height: 20px; border-radius: 5px; }
+  .name { font: 600 14px/1 "Segoe UI Semibold", "Segoe UI", system-ui, sans-serif; color: #F3EFE6; letter-spacing: .02em;
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .name b { color: #D4AD62; font-weight: 700; }
+</style>
+</head>
+<body>
+  <div class="bar"><img src="icon.png" alt=""><span class="name" id="name"></span></div>
+  <script>
+    const name = new URLSearchParams(location.search).get("name") || "MartinB";
+    const el = document.getElementById("name");
+    const i = name.lastIndexOf("OS");
+    if (i > 0 && (i + 2 === name.length || name[i + 2] === " ")) {
+      el.append(name.slice(0, i));
+      const b = document.createElement("b"); b.textContent = "OS"; el.append(b, name.slice(i + 2));
+    } else {
+      el.textContent = name;
+    }
+    document.title = name;
+  </script>
+</body>
+</html>

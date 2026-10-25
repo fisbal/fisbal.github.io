@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Office In 1</title>
+<meta name="description" content="Suite bureautique : lettres Word, PDF et plus à venir.">
+<meta name="theme-color" content="#0b0a08">
+<link rel="icon" href="../../icons/oi1.png">
+<link rel="apple-touch-icon" href="../../icons/oi1.png">
+<style>
+/* Web window for one MartinB app: the gold bar on top (hub, full screen, close), the untouched app below. */
+:root{--bar:#0b0a08;--line:rgba(212,173,98,.22);--gold:#d4ad62;--ink:#f3efe6;--muted:#a39b8a;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#2b2a6e;overflow:hidden}
+body{display:flex;flex-direction:column;height:100dvh}
+.bar{flex:0 0 auto;display:flex;align-items:center;gap:8px;background:var(--bar);border-bottom:1px solid var(--line);
+  padding-top:env(safe-area-inset-top,0px);padding-left:max(6px,env(safe-area-inset-left,0px));padding-right:max(4px,env(safe-area-inset-right,0px));
+  font:600 14px/1 "Segoe UI",system-ui,-apple-system,sans-serif;color:var(--ink);user-select:none}
+.row{height:40px;display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+.logo{width:22px;height:22px;border-radius:5px;flex:none}
+.name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.02em}
+.name b{color:var(--gold)}
+button,a.btn{width:40px;height:40px;display:grid;place-items:center;border:0;border-radius:8px;background:transparent;color:var(--gold);cursor:pointer;flex:none;text-decoration:none;padding:0}
+button:hover,a.btn:hover{background:rgba(212,173,98,.12)}
+button:focus-visible,a.btn:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+#close:hover{background:#c42b1c;color:#fff}
+svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round}
+iframe{flex:1 1 auto;width:100%;border:0;display:block;background:#2b2a6e}
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="row">
+    <a class="btn" href="/" title="Toutes les apps (hub)" aria-label="Toutes les apps">
+      <svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1.2"/><rect x="14" y="4" width="6" height="6" rx="1.2"/><rect x="4" y="14" width="6" height="6" rx="1.2"/><rect x="14" y="14" width="6" height="6" rx="1.2"/></svg>
+    </a>
+    <img class="logo" src="../../icons/oi1.png" alt="">
+    <span class="name" id="name">Office In 1</span>
+    <button id="max" title="Plein écran" aria-label="Plein écran">
+      <svg viewBox="0 0 24 24" id="maxIcon"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>
+    </button>
+    <button id="close" title="Fermer" aria-label="Fermer">
+      <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+</header>
+<iframe id="app" src="/oi1/" title="Office In 1" allow="fullscreen; autoplay; clipboard-read; clipboard-write; screen-wake-lock; camera; microphone; geolocation" allowfullscreen></iframe>
+<script>
+const frame = document.getElementById("app");
+const maxBtn = document.getElementById("max");
+const IN = '<path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5"/>';
+const OUT = '<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>';
+const canFull = !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
+if (!canFull) maxBtn.hidden = true;
+function isFull() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+maxBtn.addEventListener("click", () => {
+  const el = document.documentElement;
+  try {
+    if (isFull()) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    else (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
+  } catch (e) {}
+});
+function syncFull() {
+  const f = isFull();
+  document.getElementById("maxIcon").innerHTML = f ? IN : OUT;
+  maxBtn.title = maxBtn.ariaLabel = f ? "Quitter le plein écran" : "Plein écran";
+}
+document.addEventListener("fullscreenchange", syncFull);
+document.addEventListener("webkitfullscreenchange", syncFull);
+// Browsers only let a page close a window it opened itself; otherwise go back to the hub.
+document.getElementById("close").addEventListener("click", () => {
+  window.close();
+  setTimeout(() => { location.href = "/"; }, 150);
+});
+frame.addEventListener("load", () => { try { frame.contentWindow.focus(); } catch (e) {} });
+</script>
+</body>
+</html>

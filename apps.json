@@ -1,0 +1,136 @@
+{
+  "_comment": "Single source of truth for the MartinB app factory and the hub. factory:true apps get an Android APK and a Windows installer built by .github/workflows/factory.yml, released under the tag <id>-latest in this repo. web = address the app is served from (the /w/<id>/ shell wraps it with the gold window bar).",
+  "apps": [
+    {
+      "id": "alpha-omega", "name": "Alpha & Omega", "file": "AlphaOmega", "pkg": "com.martinb.alphaomega",
+      "desc": "Étude du Nouveau Testament verset par verset, FR/EN.",
+      "factory": true, "source": { "repo": "fisbal/Alpha-Omega2", "path": "app" },
+      "web": "/Alpha-Omega2/", "code": "https://github.com/fisbal/Alpha-Omega2",
+      "icon": "icons/alpha-omega.png", "maskable": "icons/alpha-omega-maskable.png", "bg": "#14151D"
+    },
+    {
+      "id": "navalos", "name": "NavalOS", "os": true, "file": "NavalOS", "pkg": "com.martinb.navalos",
+      "desc": "Grades, insignes et savoir de la Marine royale canadienne.",
+      "factory": true, "source": { "repo": "fisbal/navalos", "path": "", "exclude": ["NavalOS.apk", "LISEZMOI.txt"] },
+      "web": "/navalos/", "code": "https://github.com/fisbal/navalos",
+      "icon": "icons/navalos.png", "maskable": "icons/navalos-maskable.png", "bg": "#0b1626"
+    },
+    {
+      "id": "millionos", "name": "MillionOS", "os": true, "file": "MillionOS", "pkg": "com.martinb.millionos",
+      "desc": "Quiz militaire style « Qui veut gagner des millions ».",
+      "factory": true, "source": { "repo": "fisbal/MillionOS", "path": "", "exclude": ["electron", "app", "build.yml", "package.json", "LISEZMOI.txt", "README.md", "icon.ico", "og.png"] },
+      "web": "/MillionOS/", "code": "https://github.com/fisbal/MillionOS",
+      "icon": "icons/millionos.png", "maskable": "icons/millionos-maskable.png", "bg": "#0b1626"
+    },
+    {
+      "id": "marbleos", "name": "MarbleOS", "os": true, "file": "MarbleOS", "pkg": "com.martinb.marbleos",
+      "desc": "Tireur de billes 3D style Zuma, 24 niveaux, FR/EN.",
+      "factory": true, "source": { "repo": "fisbal/MarbleOS", "path": "android/app/src/main/assets" },
+      "android": { "orientation": "portrait", "immersive": true, "keepScreenOn": true,
+                   "res": "android/app/src/main/res", "keystore": { "file": "android/app/marbleos.jks", "pass": "marbleos2026", "alias": "marbleos" } },
+      "web": "/marble-temple/", "code": "https://github.com/fisbal/MarbleOS",
+      "icon": "icons/marbleos.png", "maskable": "icons/marbleos.png", "bg": "#000000"
+    },
+    {
+      "id": "solitaire", "name": "MarbleOS Solitaire", "os": true, "file": "MarbleSolitaire", "pkg": "com.martinb.marblesolitaire",
+      "desc": "Solitaire de billes, plateaux anglais et européen.",
+      "factory": true, "source": { "local": "solitaire" },
+      "web": "/solitaire/", "code": "https://github.com/fisbal/fisbal.github.io/tree/main/solitaire",
+      "icon": "icons/solitaire.png", "maskable": "icons/solitaire.png", "bg": "#0b0a09"
+    },
+    {
+      "id": "skycontrol", "name": "Sky Control 3D", "file": "SkyControl3D", "pkg": "com.martinb.skycontrol",
+      "desc": "Contrôle aérien 3D sur de vrais aéroports canadiens.",
+      "factory": true, "source": { "local": "skycontrol" },
+      "android": { "immersive": true },
+      "web": "/skycontrol/", "code": "https://github.com/fisbal/fisbal.github.io/tree/main/skycontrol",
+      "icon": "icons/skycontrol.png", "maskable": "icons/skycontrol.png", "bg": "#0a1018"
+    },
+    {
+      "id": "skycontrol-hangar", "name": "Sky Control Hangar", "file": "SkyControlHangar", "pkg": "com.martinb.skycontrolhangar",
+      "desc": "La flotte de Sky Control 3D en studio 3D.",
+      "factory": true, "source": { "local": "skycontrol-hangar" },
+      "web": "/skycontrol-hangar/", "code": "https://github.com/fisbal/fisbal.github.io/tree/main/skycontrol-hangar",
+      "icon": "icons/skycontrol-hangar.png", "maskable": "icons/skycontrol-hangar.png", "bg": "#0a1018"
+    },
+    {
+      "id": "techfix", "name": "TechFix", "file": "TechFix", "pkg": "com.martinb.techfix",
+      "desc": "Diagnostic de ton appareil et base de 100 pannes connues.",
+      "factory": true, "source": { "local": "techfix" },
+      "web": "/techfix/", "code": "https://github.com/fisbal/fisbal.github.io/tree/main/techfix",
+      "icon": "icons/techfix.png", "maskable": "icons/techfix.png", "bg": "#0e0f13"
+    },
+    {
+      "id": "devenir-canadien", "name": "Devenir Canadien", "file": "DevenirCanadien", "pkg": "com.martinb.devenircanadien",
+      "desc": "Préparation à l'examen de citoyenneté, à jour en 2026.",
+      "factory": true, "source": { "local": "devenir-canadien" },
+      "web": "/devenir-canadien/", "code": "https://github.com/fisbal/fisbal.github.io/tree/main/devenir-canadien",
+      "icon": "icons/devenir-canadien.png", "maskable": "icons/devenir-canadien.png", "bg": "#b8202f"
+    },
+    {
+      "id": "oi1", "name": "Office In 1", "file": "OfficeIn1", "pkg": "com.martinb.oi1",
+      "desc": "Suite bureautique : lettres Word, PDF et plus à venir.",
+      "factory": true, "source": { "repo": "fisbal/oi1", "build": "npm ci && npx vite build --base ./", "path": "dist" },
+      "web": "/oi1/", "code": "https://github.com/fisbal/oi1",
+      "icon": "icons/oi1.png", "bg": "#2b2a6e"
+    },
+    {
+      "id": "holochrono", "name": "HoloChrono", "file": "HoloChrono", "pkg": "com.martinb.holochrono",
+      "desc": "Horloge holographique, heure de Québec (Second Life).",
+      "factory": true, "source": { "repo": "fisbal/holochrono", "path": "" }, "entry": "holochrono_clock.html",
+      "web": "/holochrono/holochrono_clock.html", "code": "https://github.com/fisbal/holochrono",
+      "icon": "icons/holochrono.png", "maskable": "icons/holochrono.png", "bg": "#04090c"
+    },
+    {
+      "id": "sharetvos", "name": "ShareTVOS", "os": true, "file": "ShareTVOS", "pkg": "com.martinb.sharetvos",
+      "desc": "Soirées YouTube synchronisées.",
+      "factory": true, "source": { "url": "https://sharetvos.vercel.app" },
+      "web": "https://sharetvos.vercel.app", "code": null,
+      "icon": "icons/sharetvos.png", "maskable": "icons/sharetvos.png", "bg": "#0b0a08"
+    },
+    {
+      "id": "hub", "name": "MartinB OS Hub", "file": "MartinBHub", "pkg": "com.martinb.hub",
+      "desc": "Ce lanceur, en app : installe et ouvre toutes les apps MartinB.",
+      "factory": true, "source": { "url": "https://fisbal.github.io/" },
+      "web": "/", "code": "https://github.com/fisbal/fisbal.github.io",
+      "icon": "icons/hub.png", "maskable": "icons/hub.png", "bg": "#0b0a08"
+    },
+    {
+      "id": "prodfos", "name": "ProDFOS", "os": true,
+      "desc": "Lecteur PDF avec IA DocMind (Flutter).",
+      "factory": false,
+      "web": "/prodfos/",
+      "apk": "https://github.com/fisbal/prodfos/releases/download/latest/ProDFOS-android.apk",
+      "win": "https://github.com/fisbal/prodfos/releases/download/latest/ProDFOS-windows.zip",
+      "code": "https://github.com/fisbal/prodfos", "release": "fisbal/prodfos",
+      "icon": "icons/prodfos.png"
+    },
+    {
+      "id": "true-north-command", "name": "True North Command",
+      "desc": "Jeu de commandement naval 3D (Godot).",
+      "factory": false,
+      "web": "/true-north-command/",
+      "apk": "https://github.com/fisbal/true-north-command/releases/download/latest/TrueNorthCommand.apk",
+      "win": "https://github.com/fisbal/true-north-command/releases/download/latest/TrueNorthCommand.exe",
+      "code": "https://github.com/fisbal/true-north-command", "release": "fisbal/true-north-command",
+      "icon": "icons/true-north-command.png"
+    },
+    {
+      "id": "downloados", "name": "DownloadOS", "os": true,
+      "desc": "Installe tes APK MartinB directement sur ton téléphone.",
+      "factory": false,
+      "web": "/", "webLabel": "Web (Hub)",
+      "apk": "https://github.com/fisbal/DownloadOS/releases/latest/download/DownloadOS.apk",
+      "win": "https://github.com/fisbal/fisbal.github.io/releases/download/hub-latest/MartinBHub-Setup.exe", "winLabel": "Windows (Hub)",
+      "code": "https://github.com/fisbal/DownloadOS", "release": "fisbal/DownloadOS",
+      "icon": "icons/downloados.png"
+    },
+    {
+      "id": "sonicos", "name": "SonicOS", "os": true,
+      "desc": "Lecteur de musique, sur Google Play.",
+      "factory": false,
+      "play": "https://play.google.com/store/apps/details?id=com.martinb.sonicos",
+      "icon": "icons/sonicos.png"
+    }
+  ]
+}

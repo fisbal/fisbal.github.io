@@ -1,7 +1,18 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0b0a08">
 <title>MarbleOS Temple</title>
-<meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Manrope:wght@500;700;800&display=swap">
+
+<style>
+@font-face{font-family:'Cinzel';font-style:normal;font-weight:600;font-display:swap;src:url(fonts/cinzel-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Cinzel';font-style:normal;font-weight:800;font-display:swap;src:url(fonts/cinzel-latin-800-normal.woff2) format('woff2')}
+@font-face{font-family:'Manrope';font-style:normal;font-weight:500;font-display:swap;src:url(fonts/manrope-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Manrope';font-style:normal;font-weight:700;font-display:swap;src:url(fonts/manrope-latin-700-normal.woff2) format('woff2')}
+@font-face{font-family:'Manrope';font-style:normal;font-weight:800;font-display:swap;src:url(fonts/manrope-latin-800-normal.woff2) format('woff2')}
+</style>
 <style>
 /* Layout: one full-height column — header bar (level, stars, score, lives), the 3D board in the middle, a control bar at the bottom. Nothing floats over the marbles. Single dark theme by choice; --accent follows the world. */
 :root{
@@ -120,6 +131,8 @@ footer.bot{flex:0 0 auto;display:flex;align-items:center;justify-content:space-b
 @media (prefers-reduced-motion:reduce){.bar i{transition:none}}
 </style>
 
+</head>
+<body>
 <div class="stage" id="stage">
   <header class="top">
     <h1 class="brand">Marble<b>OS</b><small id="worldName">Temple</small></h1>
@@ -149,7 +162,7 @@ footer.bot{flex:0 0 auto;display:flex;align-items:center;justify-content:space-b
   <div class="overlay" id="ov"><div class="ovin"><p>…</p></div></div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="three.min.js"></script>
 <script>
 (()=>{
 const OV=document.getElementById('ov');
@@ -1119,6 +1132,8 @@ $('menuBtn').onclick=()=>{initAudio();if(state==='play'||state==='paused')showPa
 document.addEventListener('keydown',e=>{if(e.code==='Space'&&state==='play'){e.preventDefault();swap()}if(e.code==='Digit1')useBoost('fire');if(e.code==='Digit2')useBoost('zap');if(e.code==='Digit3')useBoost('freeze');if(e.code==='KeyP'||e.code==='Escape'){if(state==='play')showPause();else if(state==='paused')resumeGame()}});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='play')showPause()});
 
+window.__mosPause=()=>{if(state==='play')showPause()};
+window.__mosBack=()=>{if(state==='play'){showPause();return'ok'}if(state==='paused'&&curOv===showPause){resumeGame();return'ok'}if(curOv===showHome)return'exit';if(curOv===showShop&&shopBack){shopBack();return'ok'}showHome();return'ok'};
 window.__mos={tick:dt=>{update(dt);sync(dt)},snap:()=>({cur,proj:!!proj,sc:[SC.x,SC.y],balls:TR.flatMap(T=>T.balls.filter(b=>b.s>30&&b.s<T.L-20).map(b=>({c:b.c,p:tpos(T,b.s)})))}),aimFire:(x,y)=>{aim=Math.atan2(y-SC.y,x-SC.x);window.__mos.fire(x,y)},get state(){return state},start:n=>{newSession();startLevel(n)},info:()=>({LV,state,score,lives,tracks:TR.map(T=>T.balls.length+'/'+T.toSpawn),theme:theme.k,crit:critters.length}),
   fire:(x,y)=>{const r=glc.getBoundingClientRect();_v.set(X3(x),BALLY,Z3(y)).project(camera);glc.dispatchEvent(new PointerEvent('pointerdown',{clientX:r.left+(_v.x+1)/2*r.width,clientY:r.top+(1-_v.y)/2*r.height,bubbles:true}))},
   levels:showLevels,home:showHome,setLang,activate:(p)=>{const T=TR[0];const b=T.balls.find(q=>q.s>0);if(b){const[x,y]=tpos(T,b.s);activate({p,x,y,c:b.c})}},trackBalls:()=>TR.map(T=>T.balls.filter(b=>b.s>20).slice(0,3).map(b=>tpos(T,b.s)))};
@@ -1126,4 +1141,5 @@ new ResizeObserver(resize).observe(pf);resize();updTexts();showHome();requestAni
 })();
 </script>
 
-</body></html>
+</body>
+</html>

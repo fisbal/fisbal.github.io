@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="MBTheme" parent="android:Theme.DeviceDefault.NoActionBar">
+        <item name="android:windowBackground">@color/mb_bar</item>
+        <item name="android:statusBarColor">@color/mb_bar</item>
+        <item name="android:navigationBarColor">@color/mb_bar</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+    <color name="mb_bar">#0B0A08</color>
+    <color name="mb_gold">#D4AD62</color>
+</resources>
