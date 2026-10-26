@@ -213,7 +213,7 @@ def cmd_source(app_id, out):
 DENSITIES = {"mdpi": 1, "hdpi": 1.5, "xhdpi": 2, "xxhdpi": 3, "xxxhdpi": 4}
 
 
-def make_mipmaps(src, res, bg_hex):
+def make_mipmaps(src, res, bg_hex, crest=False):
     from PIL import Image, ImageDraw
     icon = Image.open(os.path.join(src, "icon.png")).convert("RGBA")
     mask_path = os.path.join(src, "maskable.png")
@@ -243,7 +243,14 @@ def make_mipmaps(src, res, bg_hex):
         else:
             fg = Image.new("RGBA", (full, full), (0, 0, 0, 0))
             inner = round(full * 0.64)
-            fg.paste(icon.resize((inner, inner), Image.LANCZOS), ((full - inner) // 2,) * 2, icon.resize((inner, inner), Image.LANCZOS))
+            small = icon.resize((inner, inner), Image.LANCZOS)
+            if crest:
+                # Round crest logos: keep the disc (ring + studs), drop the square backdrop so no corners show.
+                disc = Image.new("L", (inner, inner), 0)
+                pad = round(inner * 0.045)
+                ImageDraw.Draw(disc).ellipse([pad, pad, inner - 1 - pad, inner - 1 - pad], fill=255)
+                small.putalpha(Image.composite(small.split()[3], Image.new("L", small.size, 0), disc))
+            fg.paste(small, ((full - inner) // 2,) * 2, small)
             back = Image.new("RGBA", (full, full), bg)
         fg.save(os.path.join(folder, "ic_launcher_foreground.png"))
         back.save(os.path.join(folder, "ic_launcher_background.png"))
@@ -272,7 +279,7 @@ def cmd_android(app_id, src, work):
             if name.startswith("mipmap"):
                 shutil.copytree(os.path.join(src, "android-res", name), os.path.join(res, name), dirs_exist_ok=True)
     else:
-        make_mipmaps(src, res, app.get("bg", "#0B0A08"))
+        make_mipmaps(src, res, app.get("iconBg", app.get("bg", "#0B0A08")), crest="iconBg" in app)
     # The app name goes into strings.xml (XML-escaped: "Alpha & Omega", apostrophes), the rest into gradle.properties.
     name = meta["name"].replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("'", "\\'").replace('"', '\\"')
     with open(os.path.join(res, "values", "strings.xml"), "w", encoding="utf-8") as f:
