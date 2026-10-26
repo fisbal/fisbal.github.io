@@ -15,8 +15,8 @@
       "web": "/Alpha-Omega2/",
       "code": "https://github.com/fisbal/Alpha-Omega2",
       "icon": "icons/alpha-omega.png",
-      "maskable": "icons/alpha-omega-maskable.png",
-      "bg": "#14151D"
+      "bg": "#14151D",
+      "iconBg": "#060605"
     },
     {
       "id": "navalos",

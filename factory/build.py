@@ -242,7 +242,7 @@ def make_mipmaps(src, res, bg_hex, crest=False):
             back = Image.new("RGBA", (full, full), fg.getpixel((2, 2))[:3] + (255,))
         else:
             fg = Image.new("RGBA", (full, full), (0, 0, 0, 0))
-            inner = round(full * 0.64)
+            inner = round(full * (0.72 if crest else 0.64))
             small = icon.resize((inner, inner), Image.LANCZOS)
             if crest:
                 # Round crest logos: keep the disc (ring + studs), drop the square backdrop so no corners show.
