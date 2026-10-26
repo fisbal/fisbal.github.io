@@ -72,30 +72,15 @@
       "id": "marbleos",
       "name": "MarbleOS",
       "os": true,
-      "file": "MarbleOS",
-      "pkg": "com.martinb.marbleos",
-      "desc": "Tireur de billes 3D style Zuma, 24 niveaux, FR/EN.",
-      "factory": true,
-      "source": {
-        "repo": "fisbal/MarbleOS",
-        "path": "android/app/src/main/assets"
-      },
-      "android": {
-        "orientation": "portrait",
-        "immersive": true,
-        "keepScreenOn": true,
-        "keystore": {
-          "file": "android/app/marbleos.jks",
-          "pass": "marbleos2026",
-          "alias": "marbleos"
-        }
-      },
-      "web": "/marble-temple/",
+      "desc": "Tireur de billes 3D style Zuma, 24 niveaux, FR/EN. Se met à jour tout seul.",
+      "factory": false,
+      "web": "/MarbleOS/",
+      "apk": "https://github.com/fisbal/MarbleOS/releases/latest/download/MarbleOS.apk",
+      "win": "https://github.com/fisbal/MarbleOS/releases/latest/download/MarbleOS-Setup.exe",
       "code": "https://github.com/fisbal/MarbleOS",
+      "release": "fisbal/MarbleOS",
       "icon": "icons/marbleos.png",
-      "bg": "#000000",
-      "iconBg": "#060605",
-      "hold": "MarbleOS now has its own pipeline (fisbal/MarbleOS) with its signing key in GitHub secrets; the factory keeps its last release and stops rebuilding it."
+      "_note": "Builds in its own repo (web, Android, Windows, Mac, self-updating). versionCode 2000+ so it installs over the old hub-factory APK (1000+)."
     },
     {
       "id": "solitaire",
@@ -281,8 +266,7 @@
       "os": true,
       "desc": "Installe tes APK MartinB directement sur ton téléphone.",
       "factory": false,
-      "web": "/",
-      "webLabel": "Web (Hub)",
+      "web": "/DownloadOS/",
       "apk": "https://github.com/fisbal/DownloadOS/releases/latest/download/DownloadOS.apk",
       "win": "https://github.com/fisbal/fisbal.github.io/releases/download/hub-latest/MartinBHub-Setup.exe",
       "winLabel": "Windows (Hub)",

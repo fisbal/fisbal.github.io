@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>MarbleOS</title>
-<meta name="description" content="Tireur de billes 3D style Zuma, 24 niveaux, FR/EN.">
+<meta name="description" content="Tireur de billes 3D style Zuma, 24 niveaux, FR/EN. Se met à jour tout seul.">
 <meta name="theme-color" content="#0b0a08">
 <link rel="icon" href="../../icons/marbleos.png">
 <link rel="apple-touch-icon" href="../../icons/marbleos.png">
@@ -12,7 +12,7 @@
 /* Web window for one MartinB app: the gold bar on top (hub, full screen, close), the untouched app below. */
 :root{--bar:#0b0a08;--line:rgba(212,173,98,.22);--gold:#d4ad62;--ink:#f3efe6;--muted:#a39b8a;color-scheme:dark}
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;background:#000000;overflow:hidden}
+html,body{margin:0;height:100%;background:#0b0a08;overflow:hidden}
 body{display:flex;flex-direction:column;height:100dvh}
 .bar{flex:0 0 auto;display:flex;align-items:center;gap:8px;background:var(--bar);border-bottom:1px solid var(--line);
   padding-top:env(safe-area-inset-top,0px);padding-left:max(6px,env(safe-area-inset-left,0px));padding-right:max(4px,env(safe-area-inset-right,0px));
@@ -26,7 +26,7 @@ button:hover,a.btn:hover{background:rgba(212,173,98,.12)}
 button:focus-visible,a.btn:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
 #close:hover{background:#c42b1c;color:#fff}
 svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round}
-iframe{flex:1 1 auto;width:100%;border:0;display:block;background:#000000}
+iframe{flex:1 1 auto;width:100%;border:0;display:block;background:#0b0a08}
 </style>
 </head>
 <body>
@@ -45,7 +45,7 @@ iframe{flex:1 1 auto;width:100%;border:0;display:block;background:#000000}
     </button>
   </div>
 </header>
-<iframe id="app" src="/marble-temple/" title="MarbleOS" allow="fullscreen; autoplay; clipboard-read; clipboard-write; screen-wake-lock; camera; microphone; geolocation" allowfullscreen></iframe>
+<iframe id="app" src="/MarbleOS/" title="MarbleOS" allow="fullscreen; autoplay; clipboard-read; clipboard-write; screen-wake-lock; camera; microphone; geolocation" allowfullscreen></iframe>
 <script>
 const frame = document.getElementById("app");
 const maxBtn = document.getElementById("max");

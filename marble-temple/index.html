@@ -55,6 +55,24 @@ footer.bot{flex:0 0 auto;display:flex;align-items:center;justify-content:space-b
   padding:8px max(12px,env(safe-area-inset-right,0px)) 10px max(12px,env(safe-area-inset-left,0px));
   background:linear-gradient(0deg,#16130f,#0b0a08);border-top:1px solid #30281a;z-index:2}
 .grp{display:flex;gap:7px}
+.askrow{margin-top:10px}
+.copilot{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.72)}
+.copilot .box{width:min(100%,460px);max-height:100%;overflow:auto;background:#14110c;border:1px solid var(--gold-dim);border-radius:18px;padding:18px;color:var(--ink);font:500 .9rem/1.45 var(--body)}
+.copilot h2{font-family:var(--display);color:var(--gold);font-size:1.1rem;margin:0 0 10px}
+.copilot input,.copilot textarea{width:100%;box-sizing:border-box;background:#0b0a08;color:var(--ink);border:1px solid #3a3226;border-radius:12px;padding:10px 12px;font:500 .9rem/1.4 var(--body);margin:4px 0 8px}
+.copilot small{display:block;color:var(--muted);margin-bottom:8px}
+.copilot .answer{white-space:pre-wrap;margin:8px 0;min-height:1em}
+.copilot .acts{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+/* Phones on their side: the controls move to a column at the right so the board keeps its height and every button stays full size. */
+@media (orientation:landscape) and (max-height:560px){
+  .stage{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto minmax(0,1fr);
+    width:min(100vw,calc((100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))*.62 + 96px))}
+  header.top{grid-column:1 / -1}
+  .pf{grid-column:1;grid-row:2}
+  footer.bot{grid-column:2;grid-row:2;flex-direction:column;justify-content:center;gap:8px;padding:6px max(10px,env(safe-area-inset-right,0px)) 6px 10px;border-top:0;border-left:1px solid #30281a}
+  .grp{flex-direction:column}
+  .ic.big{width:52px;height:52px}
+}
 .ic{width:40px;height:40px;border-radius:50%;border:1px solid rgba(212,173,98,.45);background:#17140f;color:var(--ink);font-size:16px;line-height:1;cursor:pointer;
   display:grid;place-items:center;font-family:var(--body);font-weight:800;padding:0}
 .ic.big{width:58px;height:58px;font-size:24px;border-color:var(--gold);background:radial-gradient(circle at 35% 30%,#3d321c,#120f0a);box-shadow:0 0 16px rgba(212,173,98,.25)}
@@ -80,7 +98,7 @@ footer.bot{flex:0 0 auto;display:flex;align-items:center;justify-content:space-b
 .btn:hover{border-color:var(--gold);color:var(--gold)}
 .row2{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
 .langs{display:inline-flex;border:1px solid #3a3226;border-radius:999px;padding:3px;background:#0e0d0b}
-.langs button{border:0;background:transparent;color:var(--muted);font:800 .7rem/1 var(--body);letter-spacing:.12em;padding:8px 14px;border-radius:999px;cursor:pointer}
+.langs button{border:0;background:transparent;color:var(--muted);font:800 .7rem/1 var(--body);letter-spacing:.12em;padding:8px 16px;min-height:38px;border-radius:999px;cursor:pointer}
 .langs button[aria-pressed="true"]{background:#2b2418;color:var(--gold)}
 .legend{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:9px 12px;text-align:left;font-size:.68rem;color:var(--muted);border-top:1px solid #2a2418;padding-top:12px}
 .legend h3{grid-column:1/-1;margin:0;font:800 .6rem/1 var(--body);letter-spacing:.24em;text-transform:uppercase;color:var(--gold);text-align:center}
@@ -119,7 +137,7 @@ footer.bot{flex:0 0 auto;display:flex;align-items:center;justify-content:space-b
 .pips{display:flex;gap:3px;margin-top:5px}
 .pips i{width:13px;height:4px;border-radius:2px;background:#3a3226}
 .pips i.on{background:var(--gold)}
-.buy{font:800 .74rem/1 var(--body);padding:9px 12px;border-radius:999px;border:1px solid var(--gold);background:linear-gradient(180deg,#3d321c,#1a150c);color:var(--gold);cursor:pointer;white-space:nowrap;font-variant-numeric:tabular-nums}
+.buy{font:800 .74rem/1 var(--body);padding:9px 12px;min-height:38px;border-radius:999px;border:1px solid var(--gold);background:linear-gradient(180deg,#3d321c,#1a150c);color:var(--gold);cursor:pointer;white-space:nowrap;font-variant-numeric:tabular-nums}
 .buy:hover{filter:brightness(1.15)}
 .buy:disabled{opacity:.4;cursor:not-allowed;border-color:#3a3226;color:var(--muted)}
 .buy.tag{border-color:#3a3226;color:var(--muted);background:none;cursor:default}
@@ -248,7 +266,7 @@ function buildLevelPaths(i){return LEVEL_DEFS[i].tr().map(t=>{if(t.raw){let P=re
 // ===================== LANGUAGE =====================
 let LANG=store('marbleos-lang')||((navigator.language||'en').toLowerCase().startsWith('fr')?'fr':'en');
 const I18N={
- en:{play:'PLAY',cont:'CONTINUE',levels:'LEVELS',level:'Level',best:'Best',lives:'Lives',
+ en:{ask:'Ask Claude',askTitle:'Ask Claude',askHint:'How do I beat level 7? What does Freeze do?',askSend:'Ask',askClose:'Close',askKey:'Your Claude API key',askKeyHelp:'Your own key from console.anthropic.com. It stays on this device.',askThinking:'Claude is thinking…',askFail:'Claude could not answer: ',askOffline:'Ask Claude needs the internet.',play:'PLAY',cont:'CONTINUE',levels:'LEVELS',level:'Level',best:'Best',lives:'Lives',
   tagline:'Stop the chain before it reaches the pit. Match 3 or more marbles of the same colour.',
   tip:'Tap the board to shoot. Tap the idol or ⇄ to swap marbles.',crafted:'Crafted by',jokers:'Jokers',
   cleared:'Level cleared',next:'NEXT LEVEL',retry:'TRY AGAIN',home:'HOME',resume:'RESUME',
@@ -261,7 +279,7 @@ const I18N={
   skins:'Idol skins',skinD:'A new look for your shooter',equip:'USE',equipped:'IN USE',got:'You received',coins:'coins',coinsWon:n=>`+${n} coins`,
   second:'SECOND CHANCE',sounds:'Sounds',auto:'Used automatically',needMore:'Not enough coins yet. Clear levels and shoot gold coins to earn more.',great:'GREAT!',
   boostersT:'Boosters',upgradesT:'Permanent upgrades'},
- fr:{play:'JOUER',cont:'CONTINUER',levels:'NIVEAUX',level:'Niveau',best:'Record',lives:'Vies',
+ fr:{ask:'Demander à Claude',askTitle:'Demander à Claude',askHint:'Comment réussir le niveau 7 ? À quoi sert le Gel ?',askSend:'Demander',askClose:'Fermer',askKey:'Ta clé API Claude',askKeyHelp:'Ta propre clé (console.anthropic.com). Elle reste sur cet appareil.',askThinking:'Claude réfléchit…',askFail:'Claude n’a pas pu répondre : ',askOffline:'Demander à Claude a besoin d’Internet.',play:'JOUER',cont:'CONTINUER',levels:'NIVEAUX',level:'Niveau',best:'Record',lives:'Vies',
   tagline:"Arrêtez la chaîne avant qu'elle n'atteigne le gouffre. Alignez 3 billes ou plus de la même couleur.",
   tip:"Touchez le plateau pour tirer. Touchez l'idole ou ⇄ pour échanger les billes.",crafted:'Créé par',jokers:'Jokers',
   cleared:'Niveau réussi',next:'NIVEAU SUIVANT',retry:'RÉESSAYER',home:'ACCUEIL',resume:'REPRENDRE',
@@ -1017,7 +1035,7 @@ function setLang(l){LANG=l;store('marbleos-lang',l);updTexts();if(!OV.hidden&&cu
 function langSwitch(){return`<div class="langs" role="group" aria-label="${t('lang')}"><button data-act="lang" data-l="fr" aria-pressed="${LANG==='fr'}">Français</button><button data-act="lang" data-l="en" aria-pressed="${LANG==='en'}">English</button></div>`}
 function ovShow(fn,html,acts){curOv=fn;OV.innerHTML='<div class="ovin">'+html+'</div>';OV.hidden=false;OV._acts=acts;OV.scrollTop=0}
 function ovHide(){OV.hidden=true;curOv=null}
-OV.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b||b.disabled)return;initAudio();const a=b.dataset.act;if(a==='lang'){setLang(b.dataset.l);return}if(a==='music'){toggleMusic();if(curOv)curOv();return}if(a==='sfx'){toggleSfx();if(curOv)curOv();return}const fn=OV._acts&&OV._acts[a];if(fn)fn(b)});
+OV.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b||b.disabled)return;initAudio();const a=b.dataset.act;if(a==='lang'){setLang(b.dataset.l);return}if(a==='music'){toggleMusic();if(curOv)curOv();return}if(a==='sfx'){toggleSfx();if(curOv)curOv();return}if(a==='ask'){openCopilot();return}const fn=OV._acts&&OV._acts[a];if(fn)fn(b)});
 function showHome(){state='menu';stopMusic();const nx=Math.min(24,prog.u);setupLevel(nx);demoChain();updTexts();updHud();
   ovShow(showHome,`<h2 class="logo">Marble<b>OS</b></h2><p>${t('tagline')}</p>${langSwitch()}
    <button class="play" data-act="go">${prog.u>1?t('cont'):t('play')} · ${t('level')} ${nx}</button>
@@ -1052,7 +1070,50 @@ function showOver(){ovShow(showOver,`<h2>${t('over')}</h2><p class="big">${t('sc
 // ===================== SHOP =====================
 let shopTab='boost',shopBack=null;
 function openShop(tab){if(curOv!==showShop)shopBack=curOv;showShop(tab)}
-function soundSwitch(){return`<div class="langs" role="group" aria-label="${t('sounds')}"><button data-act="music" aria-pressed="${musicOn}">♫ ${t('music')}</button><button data-act="sfx" aria-pressed="${sfxOn}">♪ ${t('sounds')}</button></div>`}
+// ✦ Ask Claude: the built-in copilot for help, rules and hints. The player's own API key stays on this device;
+// questions go straight to api.anthropic.com through the official SDK, loaded only when asked.
+const CLAUDE_MODEL='claude-opus-5-5';
+const CLAUDE_SDK='https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@0.133.0/+esm';
+function openCopilot(){
+  const old=document.querySelector('.copilot');if(old)old.remove();
+  const key=store('marbleos-claude-key')||'';
+  const el=document.createElement('div');el.className='copilot';el.setAttribute('role','dialog');el.setAttribute('aria-label',t('askTitle'));
+  el.innerHTML=`<div class="box"><h2>✦ ${t('askTitle')}</h2>
+    <label${key?' hidden':''}>${t('askKey')}<input type="password" class="k" autocomplete="off" spellcheck="false"><small>${t('askKeyHelp')}</small></label>
+    <textarea class="q" rows="3" placeholder="${t('askHint')}"></textarea>
+    <div class="answer" aria-live="polite"></div>
+    <div class="acts"><button class="btn" data-x="close">${t('askClose')}</button><button class="play" data-x="send">${t('askSend')}</button></div></div>`;
+  document.body.appendChild(el);
+  const out=el.querySelector('.answer'),q=el.querySelector('.q'),k=el.querySelector('.k');
+  el.addEventListener('click',async e=>{
+    if(e.target===el||e.target.dataset.x==='close'){el.remove();return}
+    if(e.target.dataset.x!=='send')return;
+    const apiKey=(k.value||key).trim(),question=q.value.trim();
+    if(!apiKey){k.focus();return}
+    if(!question){q.focus();return}
+    if(k.value)store('marbleos-claude-key',apiKey);
+    if(!navigator.onLine){out.textContent=t('askOffline');return}
+    out.textContent=t('askThinking');
+    try{
+      const {default:Anthropic}=await import(CLAUDE_SDK);
+      // The key is the player's own and stays in their browser, so calling the API from the page is intended.
+      const client=new Anthropic({apiKey,dangerouslyAllowBrowser:true});
+      const msg=await client.messages.create({model:CLAUDE_MODEL,max_tokens:2000,
+        system:'You are the friendly helper inside MarbleOS, a 3D marble shooter by Martin B: 24 levels in 12 carved-stone worlds. '
+          +'The player taps the board to shoot a marble; 3 or more of the same colour pop; the chain must not reach the pit. '
+          +'Tap the idol or the swap button to swap the next marble. Jokers: Slow, Rewind, Bomb, Precise shot, Double points, Lightning, '
+          +'Rainbow, Freeze, Fireball, Extra life. Coins from levels and gold coins buy boosters, upgrades and idol skins in the shop. '
+          +'Give short, practical tips. Answer in '+(LANG==='fr'?'French':'English')+'.',
+        messages:[{role:'user',content:`I am on level ${prog.u} with ${wal.coins} coins. ${question}`}]});
+      out.textContent=msg.content.filter(b=>b.type==='text').map(b=>b.text).join('\n').trim();
+    }catch(err){
+      if(err&&err.status===401)store('marbleos-claude-key','');
+      out.textContent=t('askFail')+(err&&err.message?err.message:err);
+    }
+  });
+  (key?q:k).focus();
+}
+function soundSwitch(){return`<div class="langs" role="group" aria-label="${t('sounds')}"><button data-act="music" aria-pressed="${musicOn}">♫ ${t('music')}</button><button data-act="sfx" aria-pressed="${sfxOn}">♪ ${t('sounds')}</button></div><div class="askrow"><button class="btn ask" data-act="ask">✦ ${t('ask')}</button></div>`}
 function toggleMusic(){initAudio();musicOn=!musicOn;store('marbleos-music',musicOn?'1':'0');if(musicBus)musicBus.gain.value=musicOn?.5:0}
 function toggleSfx(){initAudio();sfxOn=!sfxOn;store('marbleos-sfx',sfxOn?'1':'0');if(sfxBus)sfxBus.gain.value=sfxOn?1:0}
 function shopItem(img,name,desc,sub,pips,btn){const pic=img[0]==='#'?`<span class="sw" style="background:radial-gradient(circle at 35% 30%,${mixh(img,'#ffffff',.45)},${img} 55%,${mixh(img,'#000000',.55)})"></span>`:`<img src="${img}" alt="">`;
