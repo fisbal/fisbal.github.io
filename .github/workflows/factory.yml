@@ -92,6 +92,8 @@ jobs:
 
   android:
     needs: [plan, source]
+    # Runs even if one app's files could not be collected; that app's own leg fails, the others build.
+    if: always() && needs.plan.result == 'success' && needs.plan.outputs.apps != '[]'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -137,6 +139,7 @@ jobs:
 
   windows:
     needs: [plan, source]
+    if: always() && needs.plan.result == 'success' && needs.plan.outputs.apps != '[]'
     runs-on: windows-latest
     strategy:
       fail-fast: false

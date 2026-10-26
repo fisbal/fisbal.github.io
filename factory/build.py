@@ -97,6 +97,9 @@ def cmd_plan():
     for app in load_apps():
         if only and app["id"] != only:
             continue
+        if app.get("hold"):
+            print(f"{app['id']}: on hold ({app['hold']})")
+            continue
         fp = fingerprint(app, template_hash)
         prints[app["id"]] = fp
         if force or only or current_fingerprint(app["id"]) != fp:

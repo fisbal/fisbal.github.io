@@ -94,7 +94,8 @@
       "code": "https://github.com/fisbal/MarbleOS",
       "icon": "icons/marbleos.png",
       "bg": "#000000",
-      "iconBg": "#060605"
+      "iconBg": "#060605",
+      "hold": "MarbleOS now has its own pipeline (fisbal/MarbleOS) with its signing key in GitHub secrets; the factory keeps its last release and stops rebuilding it."
     },
     {
       "id": "solitaire",
