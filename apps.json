@@ -22,23 +22,16 @@
       "id": "navalos",
       "name": "NavalOS",
       "os": true,
-      "file": "NavalOS",
-      "pkg": "com.martinb.navalos",
       "desc": "Grades, insignes et savoir de la Marine royale canadienne.",
-      "factory": true,
-      "source": {
-        "repo": "fisbal/navalos",
-        "path": "",
-        "exclude": [
-          "NavalOS.apk",
-          "LISEZMOI.txt"
-        ]
-      },
       "web": "/navalos/",
       "code": "https://github.com/fisbal/navalos",
       "icon": "icons/navalos.png",
-      "bg": "#0b1626",
-      "iconBg": "#060605"
+      "factory": false,
+      "apk": "https://github.com/fisbal/navalos/releases/latest/download/NavalOS.apk",
+      "win": "https://github.com/fisbal/navalos/releases/latest/download/NavalOS-Setup.exe",
+      "mac": "https://github.com/fisbal/navalos/releases/latest/download/NavalOS.dmg",
+      "release": "fisbal/navalos",
+      "_note": "Builds in its own repo (web, Android, Windows, Mac, self-updating)."
     },
     {
       "id": "millionos",
