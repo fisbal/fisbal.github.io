@@ -1,6 +1,6 @@
 name: MartinB app factory
 
-# Builds an Android APK and a Windows installer for every app in apps.json marked "factory": true,
+# Builds an Android APK, a Windows installer and a Mac .dmg for every app in apps.json marked "factory": true,
 # each with the gold MartinB window bar, and publishes them as the rolling release "<id>-latest".
 # Only apps whose code, logo or settings changed are rebuilt (checked every 6 hours and on every push).
 
@@ -180,8 +180,58 @@ jobs:
           path: dist
           retention-days: 3
 
+  mac:
+    needs: [plan, source]
+    if: always() && needs.plan.result == 'success' && needs.plan.outputs.apps != '[]'
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJSON(needs.plan.outputs.apps) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: src-${{ matrix.app }}
+          path: src
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Prepare Mac project
+        run: python3 factory/build.py electron ${{ matrix.app }} src build-mac
+      - name: Build app (Apple Silicon + Intel)
+        working-directory: build-mac
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: |
+          set -o pipefail
+          npm install --no-audit --no-fund
+          if ! npx electron-builder --mac dir --universal --publish never 2>&1 | tee build.log; then
+            MSG=$(grep -iE -B2 -A8 "error|failed" build.log | head -40 | sed -e ':a' -e 'N' -e '$!ba' -e 's/%/%25/g' -e 's/\n/%0A/g')
+            echo "::error title=Mac build (${{ matrix.app }})::$MSG"
+            exit 1
+          fi
+      - name: Sign ad hoc and pack the .dmg
+        run: |
+          FILE=$(python3 -c "import json;print(json.load(open('src/meta.json'))['file'])")
+          NAME=$(python3 -c "import json;print(json.load(open('src/meta.json'))['name'])")
+          APP=$(ls -d build-mac/dist/mac-universal/*.app | head -1)
+          # Apple Silicon refuses to start an app with no signature at all; an ad hoc signature is enough without a paid Apple account.
+          codesign --force --deep --sign - "$APP"
+          codesign --verify --deep --strict "$APP"
+          mkdir -p stage dist
+          cp -R "$APP" stage/
+          ln -s /Applications stage/Applications
+          hdiutil create -volname "$NAME" -srcfolder stage -fs HFS+ -format UDZO -ov "dist/$FILE.dmg"
+          ls -la dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dmg-${{ matrix.app }}
+          path: dist
+          retention-days: 3
+
   release:
-    needs: [plan, android, windows]
+    needs: [plan, android, windows, mac]
     if: always() && needs.plan.outputs.apps != '[]' && needs.plan.result == 'success'
     runs-on: ubuntu-latest
     steps:
@@ -189,7 +239,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: art
-          pattern: "{apk,exe}-*"
+          pattern: "{apk,exe,dmg}-*"
       - name: Publish each app's rolling release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -204,15 +254,16 @@ jobs:
           failed = []
           for app_id in json.loads(os.environ["APPS"]):
               a = apps[app_id]
-              files = glob.glob(f"art/apk-{app_id}/*.apk") + glob.glob(f"art/exe-{app_id}/*.exe")
+              files = glob.glob(f"art/apk-{app_id}/*.apk") + glob.glob(f"art/exe-{app_id}/*.exe") + glob.glob(f"art/dmg-{app_id}/*.dmg")
               if not files:
                   failed.append(app_id); continue
-              complete = len(files) >= 2
+              complete = len(files) >= 3
               if not complete: failed.append(app_id)
               tag = f"{app_id}-latest"
               notes = (f"**{a['name']}** — {a.get('desc','')}\n\n"
                        f"- **{a['file']}.apk** : Android. Ouvre le fichier depuis l'app *Fichiers* et autorise « installer des applis inconnues » si demandé. Les mises à jour s'installent par-dessus et gardent tes données.\n"
-                       f"- **{a['file']}-Setup.exe** : Windows. Si Windows SmartScreen s'affiche : *Informations complémentaires* → *Exécuter quand même*.\n\n"
+                       f"- **{a['file']}-Setup.exe** : Windows. Si Windows SmartScreen s'affiche : *Informations complémentaires* → *Exécuter quand même*.\n"
+                       f"- **{a['file']}.dmg** : Mac (Apple Silicon et Intel). Glisse l'app dans *Applications*. Au premier lancement, si macOS la bloque : *Réglages Système* → *Confidentialité et sécurité* → *Ouvrir quand même*.\n\n"
                        f"Barre MartinB : réduire, plein écran, fermer. Construit le {today}.\n\n"
                        + (f"fingerprint: {prints.get(app_id,'')}\n" if complete else "Build incomplet, nouvel essai au prochain passage.\n"))
               exists = subprocess.run(["gh", "release", "view", tag], capture_output=True).returncode == 0

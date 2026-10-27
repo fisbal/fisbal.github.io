@@ -4,7 +4,7 @@
   build.py plan                     -> JSON list of app ids to (re)build, written to $GITHUB_OUTPUT as "apps"
   build.py source  <id> <out>       -> app files in <out>/www, config, icons (needs git, network, node for build steps)
   build.py android <id> <src> <dir> -> ready-to-build Android project in <dir>, gradle -P args in <dir>/gradle.args
-  build.py electron <id> <src> <dir>-> ready-to-build Windows (Electron) project in <dir>
+  build.py electron <id> <src> <dir>-> ready-to-build Windows / Mac (Electron) project in <dir>
 
 Everything is driven by apps.json at the repo root. App files are never edited, except that
 <script src="https://cdn..."> libraries are copied next to the app so the APK and EXE work offline.
@@ -328,6 +328,9 @@ def cmd_electron(app_id, src, work):
             "files": ["main.js", "preload.js", "bar.html", "mb-config.json", "icon.png", "package.json"],
             "extraResources": [{"from": "www", "to": "www"}],
             "win": {"target": [{"target": "nsis", "arch": ["x64"]}], "icon": "icon.png"},
+            # Mac: one app for Apple Silicon and Intel; signed ad hoc and packed into a .dmg by the workflow.
+            "mac": {"target": [{"target": "dir", "arch": ["universal"]}], "icon": "icon.png",
+                    "category": "public.app-category.productivity", "identity": None},
             "nsis": {
                 "oneClick": False,
                 "perMachine": False,
@@ -341,7 +344,7 @@ def cmd_electron(app_id, src, work):
     }
     with open(os.path.join(work, "package.json"), "w", encoding="utf-8") as f:
         json.dump(pkg, f, ensure_ascii=False, indent=2)
-    print(f"{app_id}: Windows project ready in {work}")
+    print(f"{app_id}: Windows / Mac project ready in {work}")
 
 
 if __name__ == "__main__":

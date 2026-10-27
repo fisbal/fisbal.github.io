@@ -15,6 +15,8 @@
   .name b { color: #D4AD62; font-weight: 700; }
   .ctl { display: flex; height: 100%; -webkit-app-region: no-drag; }
   .ctl[hidden] { display: none; }
+  body.mac .bar { padding-left: 80px; }
+  body.mac .name { text-align: center; margin-right: 80px; }
   .ctl button { width: 46px; height: 100%; border: 0; background: transparent; color: #D4AD62; display: grid; place-items: center; cursor: default; }
   .ctl button:hover { background: rgba(212,173,98,.14); }
   .ctl #close:hover { background: #C42B1C; color: #fff; }
@@ -32,7 +34,10 @@
     </div>
   </div>
   <script>
-    const name = new URLSearchParams(location.search).get("name") || "MartinB";
+    const qs = new URLSearchParams(location.search);
+    const name = qs.get("name") || "MartinB";
+    const mac = qs.get("platform") === "darwin";
+    if (mac) document.body.classList.add("mac");
     const el = document.getElementById("name");
     const i = name.lastIndexOf("OS");
     if (i > 0 && (i + 2 === name.length || name[i + 2] === " ")) {
@@ -44,7 +49,8 @@
     document.title = name;
 
     if (window.mbWindow) {
-      document.getElementById("ctl").hidden = false;
+      // Mac uses its own red / yellow / green buttons (placed in this bar), so the drawn ones stay hidden there.
+      document.getElementById("ctl").hidden = mac;
       document.getElementById("min").onclick = () => mbWindow.minimize();
       document.getElementById("max").onclick = () => mbWindow.maximize();
       document.getElementById("close").onclick = () => mbWindow.close();

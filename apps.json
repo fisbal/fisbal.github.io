@@ -1,5 +1,5 @@
 {
-  "_comment": "Single source of truth for the MartinB app factory and the hub. factory:true apps get an Android APK and a Windows installer built by .github/workflows/factory.yml, released under the tag <id>-latest in this repo. web = address the app is served from (the /w/<id>/ shell wraps it with the gold window bar).",
+  "_comment": "Single source of truth for the MartinB app factory and the hub. factory:true apps get an Android APK, a Windows installer and a Mac .dmg built by .github/workflows/factory.yml, released under the tag <id>-latest in this repo. web = address the app is served from (the /w/<id>/ shell wraps it with the gold window bar).",
   "apps": [
     {
       "id": "alpha-omega",
@@ -77,6 +77,7 @@
       "web": "/MarbleOS/",
       "apk": "https://github.com/fisbal/MarbleOS/releases/latest/download/MarbleOS.apk",
       "win": "https://github.com/fisbal/MarbleOS/releases/latest/download/MarbleOS-Setup.exe",
+      "mac": "https://github.com/fisbal/MarbleOS/releases/latest/download/MarbleOS.dmg",
       "code": "https://github.com/fisbal/MarbleOS",
       "release": "fisbal/MarbleOS",
       "icon": "icons/marbleos.png",

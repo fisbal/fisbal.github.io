@@ -7,6 +7,7 @@ const { pathToFileURL } = require("url");
 
 const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, "mb-config.json"), "utf8"));
 const BAR = 36;
+const MAC = process.platform === "darwin";
 const LOCAL = !cfg.url;
 const WWW = app.isPackaged ? path.join(process.resourcesPath, "www") : path.join(__dirname, "www");
 const HOME = LOCAL ? "app://local/" + (cfg.entry || "index.html") : cfg.url;
@@ -46,9 +47,11 @@ function createWindow() {
     backgroundColor: "#0B0A08",
     icon: path.join(__dirname, "icon.png"),
     titleBarStyle: "hidden",
+    // On a Mac the native red / yellow / green buttons sit inside the gold bar instead of drawn ones.
+    ...(MAC ? { trafficLightPosition: { x: 12, y: 11 } } : {}),
     webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false, preload: path.join(__dirname, "preload.js") }
   });
-  win.loadFile(path.join(__dirname, "bar.html"), { query: { name: cfg.name } });
+  win.loadFile(path.join(__dirname, "bar.html"), { query: { name: cfg.name, platform: process.platform } });
 
   view = new WebContentsView({
     webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false }
@@ -113,7 +116,13 @@ app.whenReady().then(() => {
     if (!file.startsWith(WWW) || !fs.existsSync(file)) return new Response("Not found", { status: 404 });
     return net.fetch(pathToFileURL(file).toString());
   });
-  Menu.setApplicationMenu(null);
+  // Mac needs a menu for Cmd+Q, copy / paste and the Window menu; Windows has none.
+  Menu.setApplicationMenu(MAC ? Menu.buildFromTemplate([
+    { label: cfg.name, submenu: [{ role: "about" }, { type: "separator" }, { role: "hide" }, { role: "hideOthers" }, { role: "unhide" }, { type: "separator" }, { role: "quit" }] },
+    { role: "editMenu" },
+    { label: "Affichage", submenu: [{ label: "Recharger", accelerator: "Cmd+R", click: () => view && view.webContents.reload() }, { role: "togglefullscreen" }] },
+    { role: "windowMenu" }
+  ]) : null);
   createWindow();
 });
 

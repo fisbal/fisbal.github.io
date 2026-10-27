@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>MartinB OS Hub</title>
-<meta name="description" content="Toutes les apps MartinB au même endroit : web, Android (APK), Windows et code. Toujours la dernière version.">
+<meta name="description" content="Toutes les apps MartinB au même endroit : web, Android (APK), Windows, Mac et code. Toujours la dernière version.">
 <meta name="theme-color" content="#0b0a08">
 <meta property="og:title" content="MartinB OS Hub">
 <meta property="og:description" content="Toutes les apps MartinB : web, Android, Windows et code.">
@@ -17,7 +17,7 @@
 :root{
   --bg:#0b0a08; --surface:#15130f; --surface-2:#1d1a14; --line:rgba(201,162,39,.18);
   --ink:#f3efe6; --muted:#a39b8a; --gold:#c9a227; --ok:#4fc48a; --warn:#e8b64a;
-  --web:#e8c87f; --apk:#7fcf8f; --win:#7fb3e8; --code:#a9a29a;
+  --web:#e8c87f; --apk:#7fcf8f; --win:#7fb3e8; --mac:#d9d4cc; --code:#a9a29a;
   --f-display:"Cinzel","Trajan Pro",Georgia,serif;
   --f-body:"Figtree","Segoe UI",system-ui,sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
@@ -54,7 +54,7 @@ h2{font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.1
 a.btn:hover{border-color:var(--gold)}
 .btn.off{color:var(--muted);border-style:dashed;cursor:default}
 .btn.off i{opacity:.35}
-.t-web i{background:var(--web)}.t-apk i,.t-play i{background:var(--apk)}.t-win i{background:var(--win)}.t-code i{background:var(--code)}
+.t-web i{background:var(--web)}.t-apk i,.t-play i{background:var(--apk)}.t-win i{background:var(--win)}.t-mac i{background:var(--mac)}.t-code i{background:var(--code)}
 @media (max-width:700px){.app{grid-template-columns:44px minmax(0,1fr)}.btns{grid-column:1/-1;grid-template-columns:repeat(4,1fr);justify-content:stretch}.btn{min-width:0;padding:8px 6px;overflow:hidden;text-overflow:ellipsis}}
 .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted);margin-top:10px}
 .legend span{display:inline-flex;align-items:center;gap:6px}
@@ -88,6 +88,7 @@ footer a{color:var(--gold)}
     <span><i style="background:var(--web)"></i>Web : tout téléphone ou PC</span>
     <span><i style="background:var(--apk)"></i>APK : Android</span>
     <span><i style="background:var(--win)"></i>Windows : installateur .exe</span>
+    <span><i style="background:var(--mac)"></i>Mac : fichier .dmg</span>
     <span><i style="background:var(--code)"></i>Code source</span>
     <span style="border:1px dashed var(--muted);border-radius:6px;padding:0 6px">pointillés</span><span>= pas encore prêt</span>
   </div>
@@ -96,6 +97,7 @@ footer a{color:var(--gold)}
   <div class="help">
     <div><h3>Android</h3>Touche <b>APK</b>, puis ouvre le fichier depuis l'app <b>Fichiers</b> (pas depuis Chrome). Si Android le demande, autorise « Installer des applis inconnues ». Une nouvelle version s'installe par-dessus et garde tes données.</div>
     <div><h3>Windows</h3>Touche <b>Windows</b> et lance le fichier <b>-Setup.exe</b>. Si SmartScreen s'affiche : <b>Informations complémentaires</b> → <b>Exécuter quand même</b>. L'app s'ajoute au menu Démarrer et au bureau.</div>
+    <div><h3>Mac</h3>Touche <b>Mac</b>, ouvre le <b>.dmg</b> et glisse l'app dans <b>Applications</b>. Si macOS bloque le premier lancement : <b>Réglages Système</b> → <b>Confidentialité et sécurité</b> → <b>Ouvrir quand même</b>. Sur iPhone et iPad : ouvre le lien <b>Web</b> dans Safari → <b>Partager</b> → <b>Sur l'écran d'accueil</b>.</div>
     <div><h3>La barre or</h3>Chaque app a sa barre MartinB en haut : <b>réduire</b>, <b>plein écran</b> et <b>fermer</b>. Sur le web, réduire n'existe pas (le navigateur l'interdit) : la grille ramène ici.</div>
   </div>
 
@@ -111,7 +113,7 @@ footer a{color:var(--gold)}
 const API = "https://api.github.com";
 const FACTORY = "fisbal/fisbal.github.io";
 const CACHE_KEY = "mbhub-v2", CACHE_MS = 10 * 60 * 1000;
-const T = { web: "Web", apk: "APK", win: "Windows", code: "Code", play: "Play Store" };
+const T = { web: "Web", apk: "APK", win: "Windows", mac: "Mac", code: "Code", play: "Play Store" };
 const MOIS = ["janv.","févr.","mars","avr.","mai","juin","juil.","août","sept.","oct.","nov.","déc."];
 const fmt = iso => { const d = new Date(iso); return `${d.getDate()} ${MOIS[d.getMonth()]} ${d.getFullYear()}`; };
 const isNew = iso => iso && (Date.now() - new Date(iso)) < 7 * 864e5;
@@ -144,15 +146,18 @@ function links(a, rel, known) {
   if (a.play) {
     out.push(["play", a.play]);
   } else {
-    let apk = a.apk, win = a.win;
+    let apk = a.apk, win = a.win, mac = a.mac;
     if (a.factory) {
       apk = `https://github.com/${FACTORY}/releases/download/${a.id}-latest/${a.file}.apk`;
       win = `https://github.com/${FACTORY}/releases/download/${a.id}-latest/${a.file}-Setup.exe`;
+      mac = `https://github.com/${FACTORY}/releases/download/${a.id}-latest/${a.file}.dmg`;
     }
     // Without GitHub we show every link; with it, only files that really exist.
     const has = url => { if (!url) return false; if (!known) return true; if (!rel) return false; return Object.keys(rel.assets).some(n => url.endsWith("/" + n)); };
     out.push(["apk", has(apk) ? apk : null]);
     out.push(["win", has(win) ? win : null, a.winLabel]);
+    // Mac appears once the .dmg really exists (apps with no Mac version simply have no Mac button).
+    if (has(mac)) out.push(["mac", mac, a.macLabel]);
   }
   out.push(["code", a.code || null]);
   return out;
