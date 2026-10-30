@@ -1,0 +1,67 @@
+name: Hub check
+
+# Verifies that the MartinB OS Hub updated itself: live site = repo, every factory app rebuilt from its
+# current code with APK + Windows + Mac, every link works, and the live page shows every card and button.
+# Runs after each factory run and each site update, and every day. A problem opens (or updates) an issue,
+# which GitHub emails to Martin; the issue closes by itself once everything is fine again.
+
+on:
+  workflow_run:
+    workflows: ["MartinB app factory", "pages-build-deployment"]
+    types: [completed]
+  schedule:
+    - cron: "41 11 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: hub-check
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Site, versions and links
+        id: data
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 factory/hub_check.py
+      - name: The hub as a visitor sees it
+        id: render
+        continue-on-error: true
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.48.2
+          npx playwright install --with-deps chromium
+          node factory/hub_render.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hub-check
+          path: |
+            hub-check-report.md
+            hub-screenshot.png
+          retention-days: 14
+      - name: Open or close the alert issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OK: ${{ steps.data.outcome == 'success' && steps.render.outcome == 'success' }}
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          TITLE="Hub : la mise à jour automatique a un problème"
+          NUM=$(gh issue list --state open --search "\"$TITLE\" in:title" --json number -q '.[0].number')
+          if [ "$OK" = "true" ]; then
+            if [ -n "$NUM" ]; then gh issue close "$NUM" --comment "✅ Tout est de nouveau à jour. $RUN"; fi
+            exit 0
+          fi
+          BODY=$(printf '%s\n\nDétails, capture du hub : %s\n' "$(cat hub-check-report.md 2>/dev/null)" "$RUN")
+          if [ -n "$NUM" ]; then gh issue comment "$NUM" --body "$BODY"; else gh issue create --title "$TITLE" --body "$BODY"; fi
+          exit 1
