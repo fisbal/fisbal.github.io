@@ -125,7 +125,8 @@ def links(app):
         out.append(("Play", app["play"]))
     if app.get("factory"):
         base = f"https://github.com/{FACTORY_REPO}/releases/download/{app['id']}-latest/{app['file']}"
-        out += [("APK", base + ".apk"), ("Windows", base + "-Setup.exe"), ("Mac", base + ".dmg")]
+        # Own desktop installers (app["win"] / app["mac"]) replace the factory ones, as in index.html.
+        out += [("APK", base + ".apk"), ("Windows", app.get("win") or base + "-Setup.exe"), ("Mac", app.get("mac") or base + ".dmg")]
     else:
         for k, label in (("apk", "APK"), ("win", "Windows"), ("mac", "Mac")):
             if app.get(k):

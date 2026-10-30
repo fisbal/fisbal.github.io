@@ -173,6 +173,10 @@
         "path": "dist"
       },
       "web": "/oi1/",
+      "win": "https://github.com/fisbal/oi1/releases/latest/download/OfficeIn1-Setup.exe",
+      "mac": "https://github.com/fisbal/oi1/releases/latest/download/OfficeIn1.dmg",
+      "release": "fisbal/oi1",
+      "_desktop": "Windows and Mac come from the app's own repo (Tauri, 10 MB, self-updating), not the factory's 80 MB Electron build.",
       "code": "https://github.com/fisbal/oi1",
       "icon": "icons/oi1.png",
       "bg": "#2b2a6e",

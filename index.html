@@ -96,7 +96,7 @@ footer a{color:var(--gold)}
   <h2>Installer</h2>
   <div class="help">
     <div><h3>Android</h3>Touche <b>APK</b>, puis ouvre le fichier depuis l'app <b>Fichiers</b> (pas depuis Chrome). Si Android le demande, autorise « Installer des applis inconnues ». Une nouvelle version s'installe par-dessus et garde tes données.</div>
-    <div><h3>Windows</h3>Touche <b>Windows</b> et lance le fichier <b>-Setup.exe</b>. Si SmartScreen s'affiche : <b>Informations complémentaires</b> → <b>Exécuter quand même</b>. L'app s'ajoute au menu Démarrer et au bureau.</div>
+    <div><h3>Windows</h3>Touche <b>Windows</b>. Si Edge dit « n'est pas téléchargé fréquemment » : dans <b>Téléchargements</b>, <b>…</b> → <b>Conserver</b> → <b>Afficher plus</b> → <b>Conserver quand même</b>. Lance le fichier <b>-Setup.exe</b>. Si SmartScreen s'affiche : <b>Informations complémentaires</b> → <b>Exécuter quand même</b>. L'app s'ajoute au menu Démarrer et au bureau. Sans .exe : ouvre le lien <b>Web</b> dans Edge → <b>…</b> → <b>Applications</b> → <b>Installer ce site en tant qu'application</b>.</div>
     <div><h3>Mac</h3>Touche <b>Mac</b>, ouvre le <b>.dmg</b> et glisse l'app dans <b>Applications</b>. Si macOS bloque le premier lancement : <b>Réglages Système</b> → <b>Confidentialité et sécurité</b> → <b>Ouvrir quand même</b>. Sur iPhone et iPad : ouvre le lien <b>Web</b> dans Safari → <b>Partager</b> → <b>Sur l'écran d'accueil</b>.</div>
     <div><h3>La barre or</h3>Chaque app a sa barre MartinB en haut : <b>réduire</b>, <b>plein écran</b> et <b>fermer</b>. Sur le web, réduire n'existe pas (le navigateur l'interdit) : la grille ramène ici.</div>
   </div>
@@ -148,9 +148,10 @@ function links(a, rel, known) {
   } else {
     let apk = a.apk, win = a.win, mac = a.mac;
     if (a.factory) {
+      // An app that ships its own self-updating desktop installers keeps them (a.win / a.mac).
       apk = `https://github.com/${FACTORY}/releases/download/${a.id}-latest/${a.file}.apk`;
-      win = `https://github.com/${FACTORY}/releases/download/${a.id}-latest/${a.file}-Setup.exe`;
-      mac = `https://github.com/${FACTORY}/releases/download/${a.id}-latest/${a.file}.dmg`;
+      win = a.win || `https://github.com/${FACTORY}/releases/download/${a.id}-latest/${a.file}-Setup.exe`;
+      mac = a.mac || `https://github.com/${FACTORY}/releases/download/${a.id}-latest/${a.file}.dmg`;
     }
     // Without GitHub we show every link; with it, only files that really exist.
     const has = url => { if (!url) return false; if (!known) return true; if (!rel) return false; return Object.keys(rel.assets).some(n => url.endsWith("/" + n)); };
@@ -181,6 +182,13 @@ function render() {
   document.getElementById("apps").innerHTML = list.map(a => row(a, relFor(a), KNOWN)).join("") || '<p class="empty">Aucune app trouvée.</p>';
 }
 function relFor(a) {
+  if (a.factory && a.release) {
+    // Factory APK plus the app's own desktop installers.
+    const f = RELS[FACTORY + "#" + a.id], o = RELS[a.release];
+    if (!f && !o) return undefined;
+    const date = [f && f.date, o && o.date].filter(Boolean).sort().pop();
+    return { assets: Object.assign({}, f && f.assets, o && o.assets), date };
+  }
   if (a.factory) return RELS[FACTORY + "#" + a.id];
   if (a.id === "downloados") {
     // DownloadOS for Windows is the hub app itself.
