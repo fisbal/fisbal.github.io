@@ -100,10 +100,10 @@ jobs:
           # Start the app normally (no test feed): it must report the update as installed.
           Remove-Item Env:MB_UPDATE_URL -ErrorAction SilentlyContinue
           Start-Process -FilePath $env:EXE | Out-Null
-          for ($i = 0; $i -lt 30; $i++) { if (Select-String -Path $env:LOG -Pattern "update to build .* installed" -Quiet) { break }; Start-Sleep 2 }
+          for ($i = 0; $i -lt 30; $i++) { if (Select-String -Path $env:LOG -Pattern "previous update to build .* ran" -Quiet) { break }; Start-Sleep 2 }
           Get-Content $env:LOG
           Get-Process | Where-Object { $_.Path -eq $env:EXE } | Stop-Process -Force -ErrorAction SilentlyContinue
-          if (-not (Select-String -Path $env:LOG -Pattern "update to build .* installed" -Quiet)) { throw "update not confirmed after restart" }
+          if (-not (Select-String -Path $env:LOG -Pattern "previous update to build .* ran" -Quiet)) { throw "update not confirmed after restart" }
           if (-not ((Stamp) -gt $before)) { throw "the installer did not run (uninstaller not rewritten)" }
           Stop-Process -Id $srv.Id -Force
           "Path 1 OK: downloaded, shown, installed on close"

@@ -46,7 +46,7 @@ class Updater {
     // Report the result of the last update (Windows), then remove old downloads.
     try {
       const pending = JSON.parse(fs.readFileSync(path.join(this.dir, "pending.json"), "utf8"));
-      this.log(`update to build ${pending.build} installed, now running build ${this.build()}`);
+      this.log(`previous update to build ${pending.build} ran, now running build ${this.build()}`);
     } catch (e) { }
     try { fs.rmSync(this.dir, { recursive: true, force: true }); } catch (e) { }
   }
