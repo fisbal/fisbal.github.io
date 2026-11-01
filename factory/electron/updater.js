@@ -104,16 +104,28 @@ class Updater {
       if (process.platform === "win32") {
         const args = ["/S"];
         if (relaunch) args.push("--force-run");
-        // Wait until this app has fully closed, run the installer silently, and note its result in update.log.
+        // A small script waits until this app has fully closed, runs the installer silently (up to 3 tries:
+        // Windows can stop an installer with a transient error) and notes the result in update.log.
         const ps = (v) => "'" + String(v).replace(/'/g, "''") + "'";
-        const cmd = [
-          `Wait-Process -Id ${process.pid} -ErrorAction SilentlyContinue`,
-          "Start-Sleep -Seconds 2",
-          // Up to 3 tries: Windows can stop an installer with a transient error.
-          `foreach ($i in 1..3) { $p = Start-Process -FilePath ${ps(file)} -ArgumentList ${args.map(ps).join(",")} -Wait -PassThru; if ($p.ExitCode -eq 0) { break }; Start-Sleep -Seconds 3 }`,
-          `Add-Content -LiteralPath ${ps(this.logFile)} -Value ((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') + ' windows installer finished exit=' + $p.ExitCode)`
-        ].join("; ");
-        spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-Command", cmd],
+        const script = path.join(os.tmpdir(), `mb-update-${process.pid}.ps1`);
+        fs.writeFileSync(script, "\ufeff" + [
+          `$log = ${ps(this.logFile)}`,
+          `function Note($m) { Add-Content -LiteralPath $log -Value ((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') + ' ' + $m) }`,
+          `Note 'windows helper started'`,
+          `try { Wait-Process -Id ${process.pid} -Timeout 60 -ErrorAction Stop } catch { }`,
+          `Start-Sleep -Seconds 2`,
+          `$code = -1`,
+          `foreach ($i in 1..3) {`,
+          `  $p = Start-Process -FilePath ${ps(file)} -ArgumentList ${args.map(ps).join(",")} -PassThru`,
+          `  $p.WaitForExit()`,
+          `  $code = $p.ExitCode`,
+          `  if ($code -eq 0) { break }`,
+          `  Start-Sleep -Seconds 3`,
+          `}`,
+          `Note ('windows installer finished exit=' + $code)`,
+          `Remove-Item -LiteralPath $MyInvocation.MyCommand.Path -ErrorAction SilentlyContinue`
+        ].join("\r\n"), "utf8");
+        spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", script],
           { detached: true, stdio: "ignore", windowsHide: true }).unref();
       } else if (process.platform === "darwin") {
         const bundle = this.bundlePath();
