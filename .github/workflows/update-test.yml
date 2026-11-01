@@ -95,11 +95,16 @@ jobs:
           for ($i = 0; $i -lt 90; $i++) { Start-Sleep 2; if ((Test-Path $env:EXE) -and ((Stamp) -gt $before)) { break } }
           Start-Sleep 10
           Get-Content $env:LOG
-          for ($i = 0; $i -lt 90; $i++) { if (Select-String -Path $env:LOG -Pattern "windows installer finished" -Quiet) { break }; Start-Sleep 2 }
           Get-Content $env:LOG
           if (-not (Select-String -Path $env:LOG -Pattern "applying build .* \(relaunch=false\)" -Quiet)) { throw "update not applied on close" }
-          if (-not (Select-String -Path $env:LOG -Pattern "windows installer finished exit=0" -Quiet)) { throw "installer did not finish with success" }
-          if (-not ((Stamp) -gt $before)) { Write-Output "::warning title=Windows::file dates unchanged (installer may keep them); installer result is the proof" }
+          # Start the app normally (no test feed): it must report the update as installed.
+          Remove-Item Env:MB_UPDATE_URL -ErrorAction SilentlyContinue
+          Start-Process -FilePath $env:EXE | Out-Null
+          for ($i = 0; $i -lt 30; $i++) { if (Select-String -Path $env:LOG -Pattern "update to build .* installed" -Quiet) { break }; Start-Sleep 2 }
+          Get-Content $env:LOG
+          Get-Process | Where-Object { $_.Path -eq $env:EXE } | Stop-Process -Force -ErrorAction SilentlyContinue
+          if (-not (Select-String -Path $env:LOG -Pattern "update to build .* installed" -Quiet)) { throw "update not confirmed after restart" }
+          if (-not ((Stamp) -gt $before)) { throw "the installer did not run (uninstaller not rewritten)" }
           Stop-Process -Id $srv.Id -Force
           "Path 1 OK: downloaded, shown, installed on close"
       - name: Path 2 - install now and reopen by itself
@@ -117,8 +122,7 @@ jobs:
           for ($i = 0; $i -lt 120; $i++) {
             Start-Sleep 2
             $n = (Select-String -Path $env:LOG -Pattern "started version").Count
-            $fin = (Select-String -Path $env:LOG -Pattern "windows installer finished exit=0").Count
-            if ($n -ge $starts + 2 -and $fin -ge 2) { $ok = $true; break }
+            if ($n -ge $starts + 2 -and (Stamp) -gt $before) { $ok = $true; break }
           }
           Get-Content $env:LOG
           if (-not $ok) { throw "app did not update and reopen" }

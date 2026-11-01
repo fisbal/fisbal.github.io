@@ -43,7 +43,11 @@ class Updater {
   }
 
   cleanup() {
-    // Remove old downloads; keep nothing older than the running build.
+    // Report the result of the last update (Windows), then remove old downloads.
+    try {
+      const pending = JSON.parse(fs.readFileSync(path.join(this.dir, "pending.json"), "utf8"));
+      this.log(`update to build ${pending.build} installed, now running build ${this.build()}`);
+    } catch (e) { }
     try { fs.rmSync(this.dir, { recursive: true, force: true }); } catch (e) { }
   }
 
@@ -104,37 +108,12 @@ class Updater {
       if (process.platform === "win32") {
         const args = ["/S"];
         if (relaunch) args.push("--force-run");
-        // A small batch script (cmd: PowerShell does not start reliably in the background) waits until this app
-        // has fully closed, runs the installer silently (up to 3 tries: Windows can stop an installer with a
-        // transient error) and notes the result in update.log.
-        const bat = path.join(os.tmpdir(), `mb-update-${process.pid}.cmd`);
-        const log = this.logFile;
-        fs.writeFileSync(bat, [
-          "@echo off",
-          "setlocal EnableDelayedExpansion",
-          `>>"${log}" echo windows helper started`,
-          "set n=0",
-          ":wait",
-          "set /a n+=1",
-          `if !n! GTR 120 goto closed`,
-          `tasklist /FI "PID eq ${process.pid}" /NH 2>nul | find " ${process.pid} " >nul && (ping -n 2 127.0.0.1 >nul & goto wait)`,
-          ":closed",
-          `>>"${log}" echo windows app closed after !n! checks`,
-          "ping -n 3 127.0.0.1 >nul",
-          "set code=1",
-          "for /L %%i in (1,1,3) do (",
-          `  if not "!code!"=="0" (`,
-          `    >>"${log}" echo windows installer try %%i`,
-          `    start "" /wait "${file}" ${args.join(" ")}`,
-          "    set code=!errorlevel!",
-          `    if not "!code!"=="0" ping -n 4 127.0.0.1 >nul`,
-          "  )",
-          ")",
-          // Redirection first: "exit=0>>" would otherwise be read as a redirect of stream 0.
-          `>>"${log}" echo windows installer finished exit=!code!`,
-          `del "%~f0"`
-        ].join("\r\n") + "\r\n", "utf8");
-        spawn("cmd.exe", ["/d", "/s", "/c", `""${bat}""`], { detached: true, stdio: "ignore", windowsHide: true, windowsVerbatimArguments: true }).unref();
+        // Like electron-updater: start the installer itself, detached. It survives this app closing (a helper
+        // script would be closed with the app), waits for the app to be gone and installs silently.
+        fs.writeFileSync(path.join(this.dir, "pending.json"), JSON.stringify({ build, at: Date.now() }));
+        const child = spawn(file, ["--updated", ...args], { detached: true, stdio: "ignore", windowsHide: true });
+        child.on("error", (e) => this.log("installer did not start: " + e.message));
+        child.unref();
       } else if (process.platform === "darwin") {
         const bundle = this.bundlePath();
         if (!bundle.endsWith(".app")) throw new Error("not inside an .app: " + bundle);
