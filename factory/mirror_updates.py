@@ -28,15 +28,10 @@ HUB = "fisbal/fisbal.github.io"
 DL = f"https://github.com/{HUB}/releases/download"
 
 # id on the hub -> source repo
+# Only Office In 1 is private (Martin, 2026-11-01): the other apps keep updating from their own public repos.
+# Add an app here before making its repo private.
 APPS = {
     "oi1": "fisbal/oi1",
-    "prodfos": "fisbal/prodfos",
-    "navalos": "fisbal/navalos",
-    "millionos": "fisbal/MillionOS",
-    "alpha-omega": "fisbal/alpha-omega",
-    "marbleos": "fisbal/MarbleOS",
-    "true-north-command": "fisbal/true-north-command",
-    "downloados": "fisbal/DownloadOS",
 }
 
 SOURCE_TOKEN = os.environ.get("SOURCE_TOKEN", "").strip()
@@ -138,7 +133,20 @@ def mirror(app_id, repo, force):
     return True
 
 
+def prune():
+    """Remove the channel of an app that is no longer listed (its own repo is public again)."""
+    r = gh("release", "list", "-R", HUB, "-L", "200", "--json", "tagName", "-q", ".[].tagName", check=False)
+    for tag in r.stdout.split():
+        if tag.endswith("-updates") and tag[: -len("-updates")] not in APPS:
+            body = gh("release", "view", tag, "-R", HUB, "--json", "body", "-q", ".body", check=False).stdout
+            if body.startswith("Update channel for"):
+                gh("release", "delete", tag, "-R", HUB, "-y", "--cleanup-tag", check=False)
+                print(f"removed channel {tag}")
+
+
 def main():
+    if not sys.argv[1:]:
+        prune()
     force = os.environ.get("FORCE", "false") == "true"
     only = [a for a in sys.argv[1:] if a]
     failed = []
