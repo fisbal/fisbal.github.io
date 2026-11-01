@@ -28,15 +28,10 @@ HUB = "fisbal/fisbal.github.io"
 DL = f"https://github.com/{HUB}/releases/download"
 
 # id on the hub -> source repo
+# Only Office In 1 is private (Martin, 2026-11-01): the other apps keep updating from their own public repos.
+# Add an app here before making its repo private.
 APPS = {
     "oi1": "fisbal/oi1",
-    "prodfos": "fisbal/prodfos",
-    "navalos": "fisbal/navalos",
-    "millionos": "fisbal/MillionOS",
-    "alpha-omega": "fisbal/alpha-omega",
-    "marbleos": "fisbal/MarbleOS",
-    "true-north-command": "fisbal/true-north-command",
-    "downloados": "fisbal/DownloadOS",
 }
 
 SOURCE_TOKEN = os.environ.get("SOURCE_TOKEN", "").strip()
