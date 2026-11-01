@@ -6,31 +6,19 @@ jobs:
     steps:
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
-      - name: Try launch methods from a process that exits right away
+      - name: Spawn the real installer detached from a process that exits right away
         shell: bash
         run: |
-          mkdir -p t && cd t
-          cat > child.ps1 <<'PS'
-          param($tag)
-          Add-Content -LiteralPath "$env:TEMP\spawn-results.txt" -Value "$tag started"
-          Start-Sleep -Seconds 4
-          Add-Content -LiteralPath "$env:TEMP\spawn-results.txt" -Value "$tag survived"
-          PS
+          curl -sSfL -o Setup.exe https://github.com/fisbal/fisbal.github.io/releases/download/hub-latest/MartinBHub-Setup.exe
           cat > parent.js <<'JS'
           const { spawn } = require("child_process");
           const path = require("path");
-          const ps1 = path.resolve("child.ps1");
-          const m = process.argv[2];
-          const base = ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass"];
-          if (m === "a") spawn("powershell.exe", [...base, "-WindowStyle", "Hidden", "-File", ps1, "a"], { detached: true, stdio: "ignore", windowsHide: true }).unref();
-          if (m === "b") spawn("powershell.exe", [...base, "-File", ps1, "b"], { detached: true, stdio: "ignore", windowsHide: true }).unref();
-          if (m === "c") spawn("cmd.exe", ["/c", "start", '""', "/min", "powershell.exe", ...base, "-File", ps1, "c"], { detached: true, stdio: "ignore", windowsHide: true }).unref();
-          if (m === "d") spawn("powershell.exe", [...base, "-File", ps1, "d"], { detached: true, stdio: "ignore", windowsHide: false }).unref();
-          if (m === "f") spawn(process.execPath, ["-e", "require('fs').appendFileSync(process.env.TEMP+'/spawn-results.txt','f started\\n');setTimeout(()=>require('fs').appendFileSync(process.env.TEMP+'/spawn-results.txt','f survived\\n'),4000)"], { detached: true, stdio: "ignore", windowsHide: true }).unref();
-          if (m === "e") spawn("wscript.exe", [path.resolve("run.vbs")], { detached: true, stdio: "ignore" }).unref();
+          spawn(path.resolve("Setup.exe"), ["/S"], { detached: true, stdio: "ignore", windowsHide: true }).unref();
+          spawn("cmd.exe", ["/c", "echo g started>>%TEMP%\\spawn-results.txt & ping -n 5 127.0.0.1 >nul & echo g survived>>%TEMP%\\spawn-results.txt"], { detached: true, stdio: "ignore", windowsHide: true }).unref();
           setTimeout(() => process.exit(0), 300);
           JS
-          printf 'CreateObject("WScript.Shell").Run "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ""%s"" e", 0, False\r\n' "$(cygpath -w "$PWD/child.ps1")" > run.vbs
-          for m in a b c d e f; do node parent.js $m; done
-          sleep 75
-          echo "::notice title=spawn results::$(cat "$TEMP/spawn-results.txt" 2>/dev/null | tr '\r\n' '  ')"
+          node parent.js
+          for i in $(seq 60); do [ -f "$LOCALAPPDATA/Programs/hub/MartinB OS Hub.exe" ] && break; sleep 3; done
+          sleep 5
+          R=$( [ -f "$LOCALAPPDATA/Programs/hub/MartinB OS Hub.exe" ] && echo "installer: INSTALLED" || echo "installer: not installed")
+          echo "::notice title=spawn results::$R / $(cat "$TEMP/spawn-results.txt" 2>/dev/null | tr '\r\n' '  ')"
