@@ -104,29 +104,30 @@ class Updater {
       if (process.platform === "win32") {
         const args = ["/S"];
         if (relaunch) args.push("--force-run");
-        // A small script waits until this app has fully closed, runs the installer silently (up to 3 tries:
-        // Windows can stop an installer with a transient error) and notes the result in update.log.
-        const ps = (v) => "'" + String(v).replace(/'/g, "''") + "'";
-        const script = path.join(os.tmpdir(), `mb-update-${process.pid}.ps1`);
-        fs.writeFileSync(script, "\ufeff" + [
-          `$log = ${ps(this.logFile)}`,
-          `function Note($m) { Add-Content -LiteralPath $log -Value ((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') + ' ' + $m) }`,
-          `Note 'windows helper started'`,
-          `try { Wait-Process -Id ${process.pid} -Timeout 60 -ErrorAction Stop } catch { }`,
-          `Start-Sleep -Seconds 2`,
-          `$code = -1`,
-          `foreach ($i in 1..3) {`,
-          `  $p = Start-Process -FilePath ${ps(file)} -ArgumentList ${args.map(ps).join(",")} -PassThru`,
-          `  $p.WaitForExit()`,
-          `  $code = $p.ExitCode`,
-          `  if ($code -eq 0) { break }`,
-          `  Start-Sleep -Seconds 3`,
-          `}`,
-          `Note ('windows installer finished exit=' + $code)`,
-          `Remove-Item -LiteralPath $MyInvocation.MyCommand.Path -ErrorAction SilentlyContinue`
-        ].join("\r\n"), "utf8");
-        spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", script],
-          { detached: true, stdio: "ignore", windowsHide: true }).unref();
+        // A small batch script (cmd: PowerShell does not start reliably in the background) waits until this app
+        // has fully closed, runs the installer silently (up to 3 tries: Windows can stop an installer with a
+        // transient error) and notes the result in update.log.
+        const bat = path.join(os.tmpdir(), `mb-update-${process.pid}.cmd`);
+        const log = this.logFile;
+        fs.writeFileSync(bat, [
+          "@echo off",
+          "setlocal EnableDelayedExpansion",
+          `echo windows helper started>>"${log}"`,
+          ":wait",
+          `tasklist /FI "PID eq ${process.pid}" 2>nul | find "${process.pid}" >nul && (ping -n 2 127.0.0.1 >nul & goto wait)`,
+          "ping -n 3 127.0.0.1 >nul",
+          "set code=1",
+          "for /L %%i in (1,1,3) do (",
+          `  if not "!code!"=="0" (`,
+          `    start "" /wait "${file}" ${args.join(" ")}`,
+          "    set code=!errorlevel!",
+          `    if not "!code!"=="0" ping -n 4 127.0.0.1 >nul`,
+          "  )",
+          ")",
+          `echo windows installer finished exit=!code!>>"${log}"`,
+          `del "%~f0"`
+        ].join("\r\n") + "\r\n", "utf8");
+        spawn("cmd.exe", ["/d", "/s", "/c", `""${bat}""`], { detached: true, stdio: "ignore", windowsHide: true, windowsVerbatimArguments: true }).unref();
       } else if (process.platform === "darwin") {
         const bundle = this.bundlePath();
         if (!bundle.endsWith(".app")) throw new Error("not inside an .app: " + bundle);
