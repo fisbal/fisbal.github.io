@@ -2,7 +2,8 @@
 
   1. The live site (https://fisbal.github.io) serves the same apps.json and index.html as the repo.
   2. Every factory app's release was built from the current code, logo and settings
-     (its fingerprint matches) and holds the APK, the Windows installer and the Mac .dmg.
+     (its fingerprint matches), holds the APK, the Windows installer and the Mac .dmg, and has the
+     update.json that installed copies read to update themselves (rule: no reinstall ever needed).
   3. Every link the hub shows (web, APK, Windows, Mac, code, Play) really downloads or opens.
   4. Apps that build in their own repo: their latest version and date (for the report).
 
@@ -58,7 +59,7 @@ def reachable(url):
     return False, last
 
 
-problems, rows = [], []
+problems, rows, todo = [], [], []
 
 
 def bad(msg):
@@ -107,11 +108,24 @@ for app in local_apps["apps"]:
     have = m.group(1) if m else ""
     missing = [f for f in (f"{app['file']}.apk", f"{app['file']}-Setup.exe", f"{app['file']}.dmg") if f not in names]
     date = max((a["updated_at"] for a in rel.get("assets", [])), default="?")[:16].replace("T", " ")
+    # Rule: every installed app updates itself. Its update.json must exist and point at this release's files.
+    upd_ok = False
+    if "update.json" in names:
+        try:
+            _, raw = get(f"https://github.com/{FACTORY_REPO}/releases/download/{app['id']}-latest/update.json")
+            info = json.loads(raw)
+            upd_ok = info.get("build", 0) > 0 and all(info.get(k, "").endswith("/" + f) for k, f in
+                     (("apk", f"{app['file']}.apk"), ("exe", f"{app['file']}-Setup.exe"), ("dmg", f"{app['file']}.dmg")))
+        except Exception as e:
+            print("update.json unreadable:", e)
+    if not upd_ok:
+        bad(f"{app['name']} : pas de mise à jour automatique (update.json absent ou incorrect).")
     if have != want:
         bad(f"{app['name']} : la version publiée ne correspond pas au code actuel (pas reconstruite).")
     if missing:
         bad(f"{app['name']} : fichiers manquants {missing}.")
-    rows.append(("Version", app["name"], ("à jour" if have == want and not missing else "PAS À JOUR") + f" · {date} UTC"))
+    rows.append(("Version", app["name"], ("à jour" if have == want and not missing else "PAS À JOUR") + f" · {date} UTC"
+                 + (" · se met à jour seule ✓" if upd_ok else " · mise à jour auto ✗")))
 
 # ---------------------------------------------------------------- 3. every link the hub shows
 def links(app):
@@ -156,7 +170,12 @@ for app in local_apps["apps"]:
     try:
         _, body = get(f"https://api.github.com/repos/{repo}/releases?per_page=1", api=True)
         rel = json.loads(body)[0]
-        rows.append(("Son propre dépôt", app["name"], f"{rel['tag_name']} · {rel['published_at'][:16].replace('T', ' ')} UTC"))
+        names = {a["name"] for a in rel.get("assets", [])}
+        selfupd = bool(names & {"latest.json", "update.json"})
+        if not selfupd:
+            todo.append(f"{app['name']} : ne se met pas encore à jour toute seule une fois installée.")
+        rows.append(("Son propre dépôt", app["name"], f"{rel['tag_name']} · {rel['published_at'][:16].replace('T', ' ')} UTC"
+                     + (" · se met à jour seule ✓" if selfupd else " · mise à jour auto ✗")))
     except Exception as e:
         rows.append(("Son propre dépôt", app["name"], f"illisible ({type(e).__name__})"))
 
@@ -167,6 +186,8 @@ summary = ["## Vérification du MartinB OS Hub", "",
 summary += [f"| {a} | {b} | {c} |" for a, b, c in rows]
 if problems:
     summary += ["", "### Problèmes", ""] + [f"- {p}" for p in problems]
+if todo:
+    summary += ["", "### Règle « se met à jour toute seule » : encore à faire (apps construites dans leur propre dépôt)", ""] + [f"- {t}" for t in todo]
 text = "\n".join(summary) + "\n"
 print(text)
 if os.environ.get("GITHUB_STEP_SUMMARY"):

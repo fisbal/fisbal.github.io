@@ -4,6 +4,7 @@ const { app, BrowserWindow, WebContentsView, Menu, protocol, net, shell, ipcMain
 const path = require("path");
 const fs = require("fs");
 const { pathToFileURL } = require("url");
+const { Updater } = require("./updater");
 
 const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, "mb-config.json"), "utf8"));
 const BAR = 36;
@@ -24,6 +25,11 @@ if (!app.requestSingleInstanceLock()) {
 
 let win = null;
 let view = null;
+let updateState = { status: "none" };
+const updater = new Updater(cfg, (state) => {
+  updateState = state;
+  if (win) win.webContents.send("mb-update-state", state);
+});
 
 function layout() {
   if (!win || !view) return;
@@ -92,6 +98,7 @@ function createWindow() {
   win.on("maximize", layout);
   win.on("unmaximize", layout);
   win.once("ready-to-show", () => win.show());
+  win.webContents.on("did-finish-load", () => win.webContents.send("mb-update-state", updateState));
   win.on("closed", () => { win = null; view = null; });
 }
 
@@ -101,6 +108,13 @@ ipcMain.on("mb-window", (e, action) => {
   if (action === "minimize") win.minimize();
   if (action === "maximize") { if (win.isMaximized()) win.unmaximize(); else win.maximize(); }
   if (action === "close") win.close();
+  // "Redémarrer pour mettre à jour" in the gold bar: install the downloaded version now and reopen.
+  if (action === "update" && updater.apply(true)) app.quit();
+});
+
+// Closing the app installs a downloaded update quietly, so the next start is the new version.
+app.on("before-quit", () => {
+  if (updater.ready && !updater.applying) updater.apply(false);
 });
 
 app.on("second-instance", () => {
@@ -124,6 +138,7 @@ app.whenReady().then(() => {
     { role: "windowMenu" }
   ]) : null);
   createWindow();
+  updater.start();
 });
 
 app.on("window-all-closed", () => app.quit());

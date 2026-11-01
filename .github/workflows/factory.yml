@@ -245,6 +245,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           APPS: ${{ needs.plan.outputs.apps }}
           PRINTS: ${{ needs.plan.outputs.prints }}
+          RUN: ${{ github.run_number }}
         run: |
           python3 - <<'PY'
           import json, os, glob, subprocess, datetime
@@ -264,13 +265,25 @@ jobs:
                        f"- **{a['file']}.apk** : Android. Ouvre le fichier depuis l'app *Fichiers* et autorise « installer des applis inconnues » si demandé. Les mises à jour s'installent par-dessus et gardent tes données.\n"
                        f"- **{a['file']}-Setup.exe** : Windows. Si Windows SmartScreen s'affiche : *Informations complémentaires* → *Exécuter quand même*.\n"
                        f"- **{a['file']}.dmg** : Mac (Apple Silicon et Intel). Glisse l'app dans *Applications*. Au premier lancement, si macOS la bloque : *Réglages Système* → *Confidentialité et sécurité* → *Ouvrir quand même*.\n\n"
-                       f"Barre MartinB : réduire, plein écran, fermer. Construit le {today}.\n\n"
+                       f"Barre MartinB : réduire, plein écran, fermer. **Se met à jour toute seule** une fois installée (version 1.0.{os.environ['RUN']}). Construit le {today}.\n\n"
                        + (f"fingerprint: {prints.get(app_id,'')}\n" if complete else "Build incomplet, nouvel essai au prochain passage.\n"))
               exists = subprocess.run(["gh", "release", "view", tag], capture_output=True).returncode == 0
               if exists:
                   subprocess.run(["gh", "release", "edit", tag, "--title", f"{a['name']} — dernière version", "--notes", notes, "--latest=false"], check=True)
               else:
                   subprocess.run(["gh", "release", "create", tag, "--title", f"{a['name']} — dernière version", "--notes", notes, "--target", "main", "--latest=false"], check=True)
+              if complete:
+                  # update.json: what installed apps read to update themselves (build = this run's number).
+                  base = f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/releases/download/{tag}/"
+                  pick = lambda ext: next(f for f in files if f.endswith(ext))
+                  info = {"id": app_id, "name": a["name"], "build": int(os.environ["RUN"]), "version": f"1.0.{os.environ['RUN']}",
+                          "date": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+                          "apk": base + os.path.basename(pick(".apk")), "apkSize": os.path.getsize(pick(".apk")),
+                          "exe": base + os.path.basename(pick(".exe")), "exeSize": os.path.getsize(pick(".exe")),
+                          "dmg": base + os.path.basename(pick(".dmg")), "dmgSize": os.path.getsize(pick(".dmg"))}
+                  os.makedirs("upd", exist_ok=True)
+                  with open("upd/update.json", "w") as f: json.dump(info, f, indent=1)
+                  files.append("upd/update.json")
               subprocess.run(["gh", "release", "upload", tag, "--clobber", *files], check=True)
               print("published", tag, [os.path.basename(f) for f in files])
           if failed:

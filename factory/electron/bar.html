@@ -20,6 +20,11 @@
   .ctl button { width: 46px; height: 100%; border: 0; background: transparent; color: #D4AD62; display: grid; place-items: center; cursor: default; }
   .ctl button:hover { background: rgba(212,173,98,.14); }
   .ctl #close:hover { background: #C42B1C; color: #fff; }
+  .upd { -webkit-app-region: no-drag; display: none; height: 24px; padding: 0 12px; margin-right: 6px; border-radius: 12px;
+         border: 1px solid #D4AD62; background: rgba(212,173,98,.16); color: #F3EFE6; cursor: pointer;
+         font: 600 12px/22px "Segoe UI", system-ui, sans-serif; white-space: nowrap; }
+  .upd:hover { background: #D4AD62; color: #0B0A08; }
+  .upd.on { display: inline-block; }
   svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.2; }
 </style>
 </head>
@@ -27,6 +32,7 @@
   <div class="bar" id="bar">
     <img src="icon.png" alt="">
     <span class="name" id="name"></span>
+    <button class="upd" id="upd" title="Une nouvelle version est prête. Elle s'installe aussi toute seule quand tu fermes l'app.">Redémarrer pour mettre à jour</button>
     <div class="ctl" id="ctl" hidden>
       <button id="min" title="Réduire" aria-label="Réduire"><svg viewBox="0 0 12 12"><path d="M1 6.5h10"/></svg></button>
       <button id="max" title="Agrandir" aria-label="Agrandir"><svg viewBox="0 0 12 12" id="maxIcon"><rect x="1.5" y="1.5" width="9" height="9"/></svg></button>
@@ -55,6 +61,12 @@
       document.getElementById("max").onclick = () => mbWindow.maximize();
       document.getElementById("close").onclick = () => mbWindow.close();
       document.getElementById("bar").ondblclick = (e) => { if (!e.target.closest(".ctl")) mbWindow.maximize(); };
+      const upd = document.getElementById("upd");
+      upd.onclick = () => { upd.textContent = "Mise à jour…"; upd.disabled = true; mbWindow.update(); };
+      if (mbWindow.onUpdate) mbWindow.onUpdate((u) => {
+        upd.classList.toggle("on", !!u && u.status === "ready");
+        if (u && u.version) upd.title = `Version ${u.version} prête. Elle s'installe aussi toute seule quand tu fermes l'app.`;
+      });
       mbWindow.onState((s) => {
         document.getElementById("maxIcon").innerHTML = s === "maximized"
           ? '<rect x="1.5" y="3.5" width="7" height="7"/><path d="M3.5 3.5V1.5h7v7h-2"/>'

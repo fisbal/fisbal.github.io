@@ -65,6 +65,10 @@ public class MainActivity extends Activity {
     private boolean local = true;
     private boolean immersive = false;
     private ValueCallback<Uri[]> fileCallback;
+    private Updater updater;
+    private LinearLayout updateStrip;
+    private TextView updateText;
+    private boolean updateSilent;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -82,6 +86,7 @@ public class MainActivity extends Activity {
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(BAR);
         root.addView(buildBar(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(44)));
+        root.addView(buildUpdateStrip(), new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
         web = new WebView(this);
         int bg = BAR;
@@ -94,6 +99,56 @@ public class MainActivity extends Activity {
         if (state != null) web.restoreState(state);
         else web.loadUrl(home);
         applyImmersive();
+
+        // The app updates itself: checks for a new version now and every 6 hours.
+        String testFeed = Updater.testFeed(getIntent());
+        updater = new Updater(this, testFeed != null ? testFeed : cfg.optString("update", ""),
+                testFeed != null && getIntent().getBooleanExtra("mbUpdateAuto", false), this::showUpdateReady);
+        UpdateReceiver.updater = updater;
+        updater.checkIfDue(true);
+    }
+
+    // ---------- Self-update ----------
+
+    private View buildUpdateStrip() {
+        updateStrip = new LinearLayout(this);
+        updateStrip.setOrientation(LinearLayout.HORIZONTAL);
+        updateStrip.setGravity(Gravity.CENTER_VERTICAL);
+        updateStrip.setBackgroundColor(Color.parseColor("#1A160E"));
+        updateStrip.setPadding(dp(12), dp(6), dp(8), dp(6));
+        updateStrip.setVisibility(View.GONE);
+
+        updateText = new TextView(this);
+        updateText.setTextColor(INK);
+        updateText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        updateStrip.addView(updateText, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView go = new TextView(this);
+        go.setText("Mettre à jour");
+        go.setTextColor(BAR);
+        go.setTypeface(Typeface.DEFAULT_BOLD);
+        go.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+        go.setBackgroundColor(GOLD);
+        go.setPadding(dp(14), dp(7), dp(14), dp(7));
+        go.setContentDescription("Mettre à jour maintenant");
+        go.setOnClickListener(v -> { updateText.setText("Installation…"); updater.install(); });
+        updateStrip.addView(go);
+        return updateStrip;
+    }
+
+    private void showUpdateReady(String version, boolean silent) {
+        updateSilent = silent;
+        updateText.setText(silent
+                ? "Version " + version + " prête. Elle s'installe toute seule quand tu quittes l'app."
+                : "Version " + version + " prête. Une touche suffit, tes données sont gardées.");
+        updateStrip.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        // Leaving the app: a downloaded update installs quietly (Android 12+, after the first confirmed update).
+        if (updater != null && updater.hasUpdate() && !isChangingConfigurations() && updater.canInstallSilently()) updater.install();
     }
 
     // ---------- The gold window bar ----------
@@ -329,6 +384,7 @@ public class MainActivity extends Activity {
         super.onResume();
         if (web != null) { web.resumeTimers(); web.onResume(); }
         if (immersive) applyImmersive();
+        if (updater != null) updater.checkIfDue(false);
     }
 
     @Override

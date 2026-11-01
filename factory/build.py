@@ -204,6 +204,9 @@ def cmd_source(app_id, out):
     shutil.copy2(os.path.join(ROOT, app["icon"]), os.path.join(out, "icon.png"))
     if app.get("maskable"):
         shutil.copy2(os.path.join(ROOT, app["maskable"]), os.path.join(out, "maskable.png"))
+    # Where the installed app looks for its own new versions (written by the release job of factory.yml).
+    cfg["id"] = app_id
+    cfg["update"] = f"https://github.com/fisbal/fisbal.github.io/releases/download/{app_id}-latest/update.json"
     with open(os.path.join(out, "mb-config.json"), "w", encoding="utf-8") as f:
         json.dump(cfg, f, ensure_ascii=False, indent=1)
     with open(os.path.join(out, "meta.json"), "w", encoding="utf-8") as f:
@@ -325,7 +328,7 @@ def cmd_electron(app_id, src, work):
             "productName": meta["name"],
             "artifactName": meta["file"] + "-Setup.${ext}",
             "directories": {"output": "dist"},
-            "files": ["main.js", "preload.js", "bar.html", "mb-config.json", "icon.png", "package.json"],
+            "files": ["main.js", "preload.js", "updater.js", "bar.html", "mb-config.json", "icon.png", "package.json"],
             "extraResources": [{"from": "www", "to": "www"}],
             "win": {"target": [{"target": "nsis", "arch": ["x64"]}], "icon": "icon.png"},
             # Mac: one app for Apple Silicon and Intel; signed ad hoc and packed into a .dmg by the workflow.

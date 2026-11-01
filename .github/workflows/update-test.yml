@@ -1,0 +1,206 @@
+name: Self-update test
+
+# Proves on real machines that an installed app updates itself without reinstalling (rule for every app on the hub).
+# Each job installs the published app, serves a local update.json announcing a newer build (same real file,
+# build number + 1), and checks that the installed app downloads it, installs it and starts again.
+#   Windows: closing the app installs the update quietly; then the "auto" path installs and reopens.
+#   Mac: the same two paths, with the app in a writable Applications folder.
+#   Android (emulator, Android 14): first update with one confirmation, second update fully silent.
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: "App id (default: hub)"
+        required: false
+        default: "hub"
+  schedule:
+    - cron: "23 9 * * 1"
+
+permissions:
+  contents: read
+
+env:
+  APP: ${{ github.event.inputs.app || 'hub' }}
+  REL: https://github.com/${{ github.repository }}/releases/download
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - name: Download the published app and its update.json
+        shell: bash
+        run: |
+          curl -sSfL -o update.json "$REL/$APP-latest/update.json"
+          cat update.json
+          python -c "import json;d=json.load(open('update.json'));print(d['exe'])" > exe_url.txt
+          curl -sSfL -o Setup.exe "$(cat exe_url.txt)"
+          python - <<'PY'
+          import json
+          d = json.load(open("update.json"))
+          d["build"] += 1; d["version"] = f"1.0.{d['build']}"
+          import os; os.makedirs("feed", exist_ok=True)
+          json.dump(d, open("feed/update.json", "w"))
+          open("name.txt", "w").write(d["name"])
+          PY
+      - name: Install it (silent, per user)
+        shell: pwsh
+        run: |
+          Start-Process -FilePath .\Setup.exe -ArgumentList "/S" -Wait
+          $name = Get-Content name.txt
+          $exe = Join-Path $env:LOCALAPPDATA "Programs\$name\$name.exe"
+          if (-not (Test-Path $exe)) { Get-ChildItem "$env:LOCALAPPDATA\Programs" -Recurse -Depth 1 | Select FullName; throw "not installed at $exe" }
+          "EXE=$exe" | Out-File -Append $env:GITHUB_ENV -Encoding utf8
+          "LOG=$(Join-Path $env:APPDATA "$name\update.log")" | Out-File -Append $env:GITHUB_ENV -Encoding utf8
+      - name: Path 1 - update found, ready in the gold bar, installed quietly on close
+        shell: pwsh
+        run: |
+          $srv = Start-Process python -ArgumentList "-m","http.server","8000","--directory","feed" -PassThru -WindowStyle Hidden
+          $before = (Get-Item $env:EXE).LastWriteTimeUtc
+          $env:MB_UPDATE_URL = "http://127.0.0.1:8000/update.json"
+          $p = Start-Process -FilePath $env:EXE -PassThru
+          $ok = $false
+          for ($i = 0; $i -lt 90; $i++) { Start-Sleep 2; if ((Test-Path $env:LOG) -and (Select-String -Path $env:LOG -Pattern "downloaded build" -Quiet)) { $ok = $true; break } }
+          Get-Content $env:LOG
+          if (-not $ok) { throw "update was not downloaded" }
+          Start-Sleep 3
+          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+          $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+          $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+          [System.Drawing.Graphics]::FromImage($bmp).CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+          $bmp.Save("windows-update-ready.png")
+          # Close the app like a user (window close): it must install the update quietly.
+          Get-Process | Where-Object { $_.Path -eq $env:EXE -and $_.MainWindowHandle -ne 0 } | ForEach-Object { $_.CloseMainWindow() | Out-Null }
+          for ($i = 0; $i -lt 90; $i++) { Start-Sleep 2; if ((Get-Item $env:EXE).LastWriteTimeUtc -gt $before) { break } }
+          Start-Sleep 10
+          Get-Content $env:LOG
+          if (-not (Select-String -Path $env:LOG -Pattern "applying build .* \(relaunch=false\)" -Quiet)) { throw "update not applied on close" }
+          if (-not ((Get-Item $env:EXE).LastWriteTimeUtc -gt $before)) { throw "installed app was not replaced" }
+          Stop-Process -Id $srv.Id -Force
+          "Path 1 OK: downloaded, shown, installed on close"
+      - name: Path 2 - install now and reopen by itself
+        shell: pwsh
+        run: |
+          Get-Process | Where-Object { $_.Path -eq $env:EXE } | Stop-Process -Force -ErrorAction SilentlyContinue
+          $srv = Start-Process python -ArgumentList "-m","http.server","8000","--directory","feed" -PassThru -WindowStyle Hidden
+          $starts = (Select-String -Path $env:LOG -Pattern "started version").Count
+          $before = (Get-Item $env:EXE).LastWriteTimeUtc
+          $env:MB_UPDATE_URL = "http://127.0.0.1:8000/update.json"
+          $env:MB_UPDATE_AUTO = "1"
+          Start-Process -FilePath $env:EXE | Out-Null
+          $ok = $false
+          for ($i = 0; $i -lt 120; $i++) {
+            Start-Sleep 2
+            $n = (Select-String -Path $env:LOG -Pattern "started version").Count
+            if ($n -ge $starts + 2 -and (Get-Item $env:EXE).LastWriteTimeUtc -gt $before) { $ok = $true; break }
+          }
+          Get-Content $env:LOG
+          if (-not $ok) { throw "app did not update and reopen" }
+          Start-Sleep 5
+          if (-not (Get-Process | Where-Object { $_.Path -eq $env:EXE })) { throw "app not running after the update" }
+          Stop-Process -Id $srv.Id -Force
+          "Path 2 OK: installed and reopened"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows
+          path: |
+            *.png
+            ${{ env.LOG }}
+
+  mac:
+    runs-on: macos-latest
+    steps:
+      - name: Download the published app and install it in a writable Applications folder
+        run: |
+          curl -sSfL -o update.json "$REL/$APP-latest/update.json"; cat update.json
+          curl -sSfL -o app.dmg "$(python3 -c "import json;print(json.load(open('update.json'))['dmg'])")"
+          python3 - <<'PY'
+          import json, os
+          d = json.load(open("update.json")); d["build"] += 1; d["version"] = f"1.0.{d['build']}"
+          os.makedirs("feed", exist_ok=True); json.dump(d, open("feed/update.json", "w"))
+          open("name.txt", "w").write(d["name"])
+          PY
+          NAME=$(cat name.txt)
+          mkdir -p "$HOME/Applications" mnt
+          hdiutil attach -nobrowse -readonly -mountpoint mnt app.dmg
+          ditto "mnt/$NAME.app" "$HOME/Applications/$NAME.app"
+          hdiutil detach mnt
+          echo "APPB=$HOME/Applications/$NAME.app" >> $GITHUB_ENV
+          echo "BIN=$HOME/Applications/$NAME.app/Contents/MacOS/$NAME" >> $GITHUB_ENV
+          echo "LOG=$HOME/Library/Application Support/$NAME/update.log" >> $GITHUB_ENV
+      - name: Path 1 - update found, ready in the gold bar, installed quietly on quit
+        run: |
+          python3 -m http.server 8000 --directory feed >/dev/null 2>&1 &
+          SRV=$!
+          ID1=$(stat -f %i "$APPB/Contents/Info.plist")
+          MB_UPDATE_URL=http://127.0.0.1:8000/update.json "$BIN" >/dev/null 2>&1 &
+          for i in $(seq 90); do sleep 2; grep -q "downloaded build" "$LOG" 2>/dev/null && break; done
+          cat "$LOG"; grep -q "downloaded build" "$LOG"
+          sleep 3; screencapture -x mac-update-ready.png || true
+          osascript -e "tell application \"$(basename "$APPB" .app)\" to quit" || pkill -TERM -f "$BIN" || true
+          for i in $(seq 90); do sleep 2; grep -q "mac replace finished" "$LOG" && break; done
+          cat "$LOG"
+          grep -q "applying build .* (relaunch=false)" "$LOG"
+          grep -q "mac replace finished rc=0" "$LOG"
+          ID2=$(stat -f %i "$APPB/Contents/Info.plist")
+          [ "$ID1" != "$ID2" ] || { echo "bundle not replaced"; exit 1; }
+          codesign --verify --deep "$APPB"
+          kill $SRV
+          echo "Path 1 OK"
+      - name: Path 2 - install now and reopen by itself
+        run: |
+          python3 -m http.server 8000 --directory feed >/dev/null 2>&1 &
+          SRV=$!
+          STARTS=$(grep -c "started version" "$LOG")
+          MB_UPDATE_URL=http://127.0.0.1:8000/update.json MB_UPDATE_AUTO=1 "$BIN" >/dev/null 2>&1 &
+          for i in $(seq 120); do sleep 2; N=$(grep -c "started version" "$LOG"); [ "$N" -ge $((STARTS+2)) ] && break; done
+          cat "$LOG"
+          [ "$(grep -c "started version" "$LOG")" -ge $((STARTS+2)) ] || { echo "did not reopen"; exit 1; }
+          grep -c "mac replace finished rc=0" "$LOG" | grep -q 2
+          pgrep -f "$BIN" >/dev/null || { echo "not running"; exit 1; }
+          kill $SRV
+          echo "Path 2 OK"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mac
+          path: |
+            *.png
+            ${{ env.LOG }}
+
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - name: Download the published app
+        run: |
+          curl -sSfL -o update.json "$REL/$APP-latest/update.json"; cat update.json
+          curl -sSfL -o app.apk "$(python3 -c "import json;print(json.load(open('update.json'))['apk'])")"
+          python3 - <<'PY'
+          import json, os
+          d = json.load(open("update.json")); d["build"] += 1
+          os.makedirs("feed", exist_ok=True); json.dump(d, open("feed/update.json", "w"))
+          PY
+          sudo apt-get install -y -qq aapt >/dev/null 2>&1 || true
+          echo "PKG=$(aapt dump badging app.apk | sed -n "s/package: name='\([^']*\)'.*/\1/p")" >> $GITHUB_ENV
+      - name: Test on Android 14
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: bash .github/scripts/android-update-test.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android
+          path: |
+            *.png
+            *.txt
