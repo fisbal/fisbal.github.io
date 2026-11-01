@@ -46,7 +46,7 @@ jobs:
       - name: Install it (silent, per user)
         shell: pwsh
         run: |
-          Start-Process -FilePath .\Setup.exe -ArgumentList "/S" -Wait
+          Start-Process -FilePath .\Setup.exe -ArgumentList "/S","/currentuser" -Wait
           $name = Get-Content name.txt
           $found = Get-ChildItem "$env:LOCALAPPDATA\Programs" -Recurse -Depth 2 -Filter "$name.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
           if (-not $found) {
@@ -57,7 +57,7 @@ jobs:
           $exe = $found.FullName
           Write-Output "::notice title=Windows install::installed at $exe"
           "EXE=$exe" | Out-File -Append $env:GITHUB_ENV -Encoding utf8
-          "LOG=$(Join-Path $env:APPDATA "$name\update.log")" | Out-File -Append $env:GITHUB_ENV -Encoding utf8
+          "LOG=$(Join-Path $env:APPDATA "$env:APP\update.log")" | Out-File -Append $env:GITHUB_ENV -Encoding utf8
       - name: Path 1 - update found, ready in the gold bar, installed quietly on close
         shell: pwsh
         run: |
@@ -139,7 +139,7 @@ jobs:
           hdiutil detach mnt
           echo "APPB=$HOME/Applications/$NAME.app" >> $GITHUB_ENV
           echo "BIN=$HOME/Applications/$NAME.app/Contents/MacOS/$NAME" >> $GITHUB_ENV
-          echo "LOG=$HOME/Library/Application Support/$NAME/update.log" >> $GITHUB_ENV
+          echo "LOG=$HOME/Library/Application Support/$APP/update.log" >> $GITHUB_ENV
       - name: Path 1 - update found, ready in the gold bar, installed quietly on quit
         run: |
           python3 -m http.server 8000 --directory feed >/dev/null 2>&1 &

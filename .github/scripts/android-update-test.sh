@@ -7,7 +7,8 @@ FEED="http://10.0.2.2:8000/update.json"
 ACT="$PKG/com.martinb.shell.MainActivity"
 python3 -m http.server 8000 --directory feed >/dev/null 2>&1 &
 
-updated() { adb shell dumpsys package "$PKG" | grep -m1 lastUpdateTime | tr -d '\r'; }
+updated() { adb shell dumpsys package "$PKG" | grep -m1 lastUpdateTime | tr -d '\r '; }
+state() { adb shell dumpsys package "$PKG" | grep -E "versionCode|lastUpdateTime|installerPackageName|firstInstallTime" | tr -d '\r' | tr -s ' '; }
 installer() { adb shell dumpsys package "$PKG" | grep -m1 -o "installerPackageName=[^ ]*" | tr -d '\r'; }
 wait_log() { for i in $(seq "$2"); do adb logcat -d -s MBUpdate:* | grep -q "$1" && return 0; sleep 2; done; return 1; }
 tap_text() {
@@ -50,11 +51,13 @@ echo "Round 1 OK: updated ($T1), $(installer)" | tee -a android-result.txt
 
 # ---- Round 2: must be silent (no tap)
 sleep 3
+echo "before round 2: $(state)" | tee -a android-result.txt
 adb logcat -c
 adb shell am start -n "$ACT" --es mbUpdateUrl "$FEED" --ez mbUpdateAuto true
 wait_log "installing .* silently" 90 || { adb logcat -d -s MBUpdate:* | tee -a android-result.txt; echo "FAIL round 2: not silent" | tee -a android-result.txt; exit 1; }
 for i in $(seq 60); do [ "$(updated)" != "$T1" ] && break; sleep 2; done
 adb logcat -d -s MBUpdate:* | tee -a android-result.txt
+echo "after round 2: $(state)" | tee -a android-result.txt
 [ "$(updated)" != "$T1" ] || { echo "FAIL round 2: app not updated" | tee -a android-result.txt; exit 1; }
 adb logcat -d -s MBUpdate:* | grep -q "install status -1" && { echo "FAIL round 2: Android asked the user" | tee -a android-result.txt; exit 1; }
 echo "Round 2 OK: silent update ($(updated))" | tee -a android-result.txt

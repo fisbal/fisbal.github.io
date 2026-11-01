@@ -102,7 +102,10 @@ class Updater {
     this.log(`applying build ${build} (relaunch=${relaunch})`);
     try {
       if (process.platform === "win32") {
-        const args = ["/S"];
+        // Same install mode as now: per user (no admin) unless the app lives in Program Files (all users).
+        const pf = [process.env.ProgramFiles, process.env["ProgramFiles(x86)"]].filter(Boolean).map((d) => d.toLowerCase());
+        const allUsers = pf.some((d) => process.execPath.toLowerCase().startsWith(d));
+        const args = ["/S", allUsers ? "/allusers" : "/currentuser"];
         if (relaunch) args.push("--force-run");
         spawn(file, args, { detached: true, stdio: "ignore", windowsHide: true }).unref();
       } else if (process.platform === "darwin") {
