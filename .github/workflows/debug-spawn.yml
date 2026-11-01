@@ -26,10 +26,11 @@ jobs:
           if (m === "b") spawn("powershell.exe", [...base, "-File", ps1, "b"], { detached: true, stdio: "ignore", windowsHide: true }).unref();
           if (m === "c") spawn("cmd.exe", ["/c", "start", '""', "/min", "powershell.exe", ...base, "-File", ps1, "c"], { detached: true, stdio: "ignore", windowsHide: true }).unref();
           if (m === "d") spawn("powershell.exe", [...base, "-File", ps1, "d"], { detached: true, stdio: "ignore", windowsHide: false }).unref();
+          if (m === "f") spawn(process.execPath, ["-e", "require('fs').appendFileSync(process.env.TEMP+'/spawn-results.txt','f started\\n');setTimeout(()=>require('fs').appendFileSync(process.env.TEMP+'/spawn-results.txt','f survived\\n'),4000)"], { detached: true, stdio: "ignore", windowsHide: true }).unref();
           if (m === "e") spawn("wscript.exe", [path.resolve("run.vbs")], { detached: true, stdio: "ignore" }).unref();
           setTimeout(() => process.exit(0), 300);
           JS
           printf 'CreateObject("WScript.Shell").Run "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ""%s"" e", 0, False\r\n' "$(cygpath -w "$PWD/child.ps1")" > run.vbs
-          for m in a b c d e; do node parent.js $m; done
-          sleep 12
+          for m in a b c d e f; do node parent.js $m; done
+          sleep 75
           echo "::notice title=spawn results::$(cat "$TEMP/spawn-results.txt" 2>/dev/null | tr '\r\n' '  ')"
