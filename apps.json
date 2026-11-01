@@ -240,11 +240,12 @@
       "desc": "Lecteur PDF avec IA DocMind (Flutter).",
       "factory": false,
       "web": "/prodfos/",
-      "apk": "https://github.com/fisbal/prodfos/releases/download/latest/ProDFOS-android.apk",
-      "win": "https://github.com/fisbal/prodfos/releases/download/latest/ProDFOS-windows.zip",
+      "apk": "https://github.com/fisbal/prodfos/releases/latest/download/ProDFOS-android.apk",
+      "win": "https://github.com/fisbal/prodfos/releases/latest/download/ProDFOS-Setup.exe",
       "code": "https://github.com/fisbal/prodfos",
       "release": "fisbal/prodfos",
-      "icon": "icons/prodfos.png"
+      "icon": "icons/prodfos.png",
+      "mac": "https://github.com/fisbal/prodfos/releases/latest/download/ProDFOS.dmg"
     },
     {
       "id": "true-north-command",
@@ -252,11 +253,12 @@
       "desc": "Jeu de commandement naval 3D (Godot).",
       "factory": false,
       "web": "/true-north-command/",
-      "apk": "https://github.com/fisbal/true-north-command/releases/download/latest/TrueNorthCommand.apk",
-      "win": "https://github.com/fisbal/true-north-command/releases/download/latest/TrueNorthCommand.exe",
+      "apk": "https://github.com/fisbal/true-north-command/releases/latest/download/TrueNorthCommand.apk",
+      "win": "https://github.com/fisbal/true-north-command/releases/latest/download/TrueNorthCommand.exe",
       "code": "https://github.com/fisbal/true-north-command",
       "release": "fisbal/true-north-command",
-      "icon": "icons/true-north-command.png"
+      "icon": "icons/true-north-command.png",
+      "mac": "https://github.com/fisbal/true-north-command/releases/latest/download/TrueNorthCommand-mac.zip"
     },
     {
       "id": "downloados",

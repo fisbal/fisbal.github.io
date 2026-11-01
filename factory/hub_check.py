@@ -171,7 +171,7 @@ for app in local_apps["apps"]:
         _, body = get(f"https://api.github.com/repos/{repo}/releases?per_page=1", api=True)
         rel = json.loads(body)[0]
         names = {a["name"] for a in rel.get("assets", [])}
-        selfupd = bool(names & {"latest.json", "update.json"})
+        selfupd = bool(names & {"latest.json", "update.json", "version.json"})
         if not selfupd:
             todo.append(f"{app['name']} : ne se met pas encore à jour toute seule une fois installée.")
         rows.append(("Son propre dépôt", app["name"], f"{rel['tag_name']} · {rel['published_at'][:16].replace('T', ' ')} UTC"
