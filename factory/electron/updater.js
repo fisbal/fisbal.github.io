@@ -107,7 +107,16 @@ class Updater {
         const allUsers = pf.some((d) => process.execPath.toLowerCase().startsWith(d));
         const args = ["/S", allUsers ? "/allusers" : "/currentuser"];
         if (relaunch) args.push("--force-run");
-        spawn(file, args, { detached: true, stdio: "ignore", windowsHide: true }).unref();
+        // Wait until this app has fully closed, run the installer silently, and note its result in update.log.
+        const ps = (v) => "'" + String(v).replace(/'/g, "''") + "'";
+        const cmd = [
+          `Wait-Process -Id ${process.pid} -ErrorAction SilentlyContinue`,
+          "Start-Sleep -Seconds 2",
+          `$p = Start-Process -FilePath ${ps(file)} -ArgumentList ${args.map(ps).join(",")} -Wait -PassThru`,
+          `Add-Content -LiteralPath ${ps(this.logFile)} -Value ((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') + ' windows installer finished exit=' + $p.ExitCode)`
+        ].join("; ");
+        spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-Command", cmd],
+          { detached: true, stdio: "ignore", windowsHide: true }).unref();
       } else if (process.platform === "darwin") {
         const bundle = this.bundlePath();
         if (!bundle.endsWith(".app")) throw new Error("not inside an .app: " + bundle);
