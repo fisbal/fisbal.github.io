@@ -36,8 +36,15 @@ def app_by_id(app_id):
 
 
 def sh(cmd, cwd=None):
-    print("+", cmd, flush=True)
+    tok = os.environ.get("SOURCE_TOKEN", "").strip()
+    print("+", cmd.replace(tok, "***") if tok else cmd, flush=True)
     subprocess.run(cmd, shell=True, check=True, cwd=cwd)
+
+
+def git_url(repo):
+    """Clone address of an app repo. Private repos need SOURCE_TOKEN (fine-grained, Contents: read-only)."""
+    tok = os.environ.get("SOURCE_TOKEN", "").strip()
+    return f"https://x-access-token:{tok}@github.com/{repo}" if tok else f"https://github.com/{repo}"
 
 
 # ---------------------------------------------------------------- plan
@@ -57,7 +64,7 @@ def tree_hash(path):
 def fingerprint(app, template_hash):
     src = app["source"]
     if "repo" in src:
-        out = subprocess.run(["git", "ls-remote", f"https://github.com/{src['repo']}", "HEAD"],
+        out = subprocess.run(["git", "ls-remote", git_url(src['repo']), "HEAD"],
                              capture_output=True, text=True, check=True).stdout.split()
         part = "repo:" + (out[0] if out else "?")
     elif "local" in src:
@@ -172,7 +179,7 @@ def cmd_source(app_id, out):
     else:
         if "repo" in src:
             repo_dir = os.path.join(out, "_repo")
-            sh(f"git clone -q --depth 1 https://github.com/{src['repo']} {repo_dir}")
+            sh(f"git clone -q --depth 1 {git_url(src['repo'])} {repo_dir}")
             if src.get("build"):
                 sh(src["build"], cwd=repo_dir)
             base = os.path.join(repo_dir, src.get("path", ""))
