@@ -6,6 +6,7 @@ set -u
 FEED="http://10.0.2.2:8000/update.json"
 ACT="$PKG/com.martinb.shell.MainActivity"
 python3 -m http.server 8000 --directory feed >/dev/null 2>&1 &
+for i in $(seq 30); do curl -sf http://127.0.0.1:8000/update.json >/dev/null && break; sleep 1; done
 
 updated() { adb shell dumpsys package "$PKG" | grep -m1 lastUpdateTime | tr -d '\r '; }
 state() { adb shell dumpsys package "$PKG" | grep -E "versionCode|lastUpdateTime|installerPackageName|firstInstallTime" | tr -d '\r' | tr -s ' '; }

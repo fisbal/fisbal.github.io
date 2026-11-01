@@ -143,13 +143,18 @@ jobs:
         shell: pwsh
         run: |
           if ($env:LOG -and (Test-Path $env:LOG)) { $t = (Get-Content $env:LOG | Select-Object -Last 40) -join "%0A"; Write-Output "::notice title=Windows update.log::$t" } else { Write-Output "::notice title=Windows update.log::(no log)" }
+      - name: Keep the log
+        if: always()
+        shell: pwsh
+        run: if ($env:LOG -and (Test-Path $env:LOG)) { Copy-Item $env:LOG windows-update.log }
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: windows
+          if-no-files-found: ignore
           path: |
             *.png
-            ${{ env.LOG }}
+            windows-update.log
 
   mac:
     runs-on: macos-latest
@@ -208,13 +213,17 @@ jobs:
         if: always()
         run: |
           if [ -f "$LOG" ]; then echo "::notice title=Mac update.log::$(tail -40 "$LOG" | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/%0A/g')"; else echo "::notice title=Mac update.log::(no log at $LOG) $(ls "$HOME/Library/Application Support" | tr '\n' ' ')"; fi
+      - name: Keep the log
+        if: always()
+        run: '[ -f "$LOG" ] && cp "$LOG" mac-update.log || true'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: mac
+          if-no-files-found: ignore
           path: |
             *.png
-            ${{ env.LOG }}
+            mac-update.log
 
   android:
     runs-on: ubuntu-latest
