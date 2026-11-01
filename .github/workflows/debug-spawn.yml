@@ -1,0 +1,35 @@
+name: Debug detached spawn (temporary)
+on: workflow_dispatch
+jobs:
+  win:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Try launch methods from a process that exits right away
+        shell: bash
+        run: |
+          mkdir -p t && cd t
+          cat > child.ps1 <<'PS'
+          param($tag)
+          Add-Content -LiteralPath "$env:TEMP\spawn-results.txt" -Value "$tag started"
+          Start-Sleep -Seconds 4
+          Add-Content -LiteralPath "$env:TEMP\spawn-results.txt" -Value "$tag survived"
+          PS
+          cat > parent.js <<'JS'
+          const { spawn } = require("child_process");
+          const path = require("path");
+          const ps1 = path.resolve("child.ps1");
+          const m = process.argv[2];
+          const base = ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass"];
+          if (m === "a") spawn("powershell.exe", [...base, "-WindowStyle", "Hidden", "-File", ps1, "a"], { detached: true, stdio: "ignore", windowsHide: true }).unref();
+          if (m === "b") spawn("powershell.exe", [...base, "-File", ps1, "b"], { detached: true, stdio: "ignore", windowsHide: true }).unref();
+          if (m === "c") spawn("cmd.exe", ["/c", "start", '""', "/min", "powershell.exe", ...base, "-File", ps1, "c"], { detached: true, stdio: "ignore", windowsHide: true }).unref();
+          if (m === "d") spawn("powershell.exe", [...base, "-File", ps1, "d"], { detached: true, stdio: "ignore", windowsHide: false }).unref();
+          if (m === "e") spawn("wscript.exe", [path.resolve("run.vbs")], { detached: true, stdio: "ignore" }).unref();
+          setTimeout(() => process.exit(0), 300);
+          JS
+          printf 'CreateObject("WScript.Shell").Run "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ""%s"" e", 0, False\r\n' "$(cygpath -w "$PWD/child.ps1")" > run.vbs
+          for m in a b c d e; do node parent.js $m; done
+          sleep 12
+          echo "::notice title=spawn results::$(cat "$TEMP/spawn-results.txt" 2>/dev/null | tr '\r\n' '  ')"
