@@ -76,7 +76,7 @@ jobs:
         shell: pwsh
         run: |
           $srv = Start-Process python -ArgumentList "-m","http.server","8000","--directory","feed" -PassThru -WindowStyle Hidden
-          function Stamp { $d = Split-Path $env:EXE; $u = Get-ChildItem $d -Filter "Uninstall*.exe" | Select-Object -First 1; @((Get-Item $env:EXE).CreationTimeUtc, $(if ($u) { $u.LastWriteTimeUtc } else { [datetime]::MinValue })) | Sort-Object | Select-Object -Last 1 }
+          function Stamp { $d = Split-Path $env:EXE; (@(Get-Item (Join-Path $d "resources"), (Join-Path $d "locales") -ErrorAction SilentlyContinue | ForEach-Object LastWriteTimeUtc) + [datetime]::MinValue | Sort-Object | Select-Object -Last 1) }
           $before = Stamp
           $env:MB_UPDATE_URL = "http://127.0.0.1:8000/update.json"
           $p = Start-Process -FilePath $env:EXE -PassThru
@@ -111,7 +111,8 @@ jobs:
           Get-Content $env:LOG
           Get-Process | Where-Object { $_.Path -eq $env:EXE } | Stop-Process -Force -ErrorAction SilentlyContinue
           if (-not (Select-String -Path $env:LOG -Pattern "(previous update to build .* ran|update to build .* installed)" -Quiet)) { throw "update not confirmed after restart" }
-          if (-not ((Stamp) -gt $before)) { throw "the installer did not run (uninstaller not rewritten)" }
+          if (-not ((Stamp) -gt $before)) { throw "the installer did not rewrite the app" }
+          if (Get-Process | Where-Object { $_.Name -match "MartinBHub-Setup|Setup$" }) { throw "installer still running" }
           Stop-Process -Id $srv.Id -Force
           "Path 1 OK: downloaded, shown, installed on close"
       - name: Path 2 - install now and reopen by itself
@@ -119,7 +120,7 @@ jobs:
         run: |
           Get-Process | Where-Object { $_.Path -eq $env:EXE } | Stop-Process -Force -ErrorAction SilentlyContinue
           $srv = Start-Process python -ArgumentList "-m","http.server","8000","--directory","feed" -PassThru -WindowStyle Hidden
-          function Stamp { $d = Split-Path $env:EXE; $u = Get-ChildItem $d -Filter "Uninstall*.exe" | Select-Object -First 1; @((Get-Item $env:EXE).CreationTimeUtc, $(if ($u) { $u.LastWriteTimeUtc } else { [datetime]::MinValue })) | Sort-Object | Select-Object -Last 1 }
+          function Stamp { $d = Split-Path $env:EXE; (@(Get-Item (Join-Path $d "resources"), (Join-Path $d "locales") -ErrorAction SilentlyContinue | ForEach-Object LastWriteTimeUtc) + [datetime]::MinValue | Sort-Object | Select-Object -Last 1) }
           $starts = (Select-String -Path $env:LOG -Pattern "started version").Count
           $before = Stamp
           $env:MB_UPDATE_URL = "http://127.0.0.1:8000/update.json"
