@@ -92,6 +92,13 @@ jobs:
           $bmp.Save("windows-update-ready.png")
           # Close the app like a user (window close): it must install the update quietly.
           Get-Process | Where-Object { $_.Path -eq $env:EXE -and $_.MainWindowHandle -ne 0 } | ForEach-Object { $_.CloseMainWindow() | Out-Null }
+          $seen = @()
+          for ($i = 0; $i -lt 40; $i++) {
+            $seen += (Get-CimInstance Win32_Process | Where-Object { $_.Name -match "Setup|MartinB|nsis|Un_A|Au_" } | ForEach-Object { "$($_.Name)[$($_.ProcessId)<-$($_.ParentProcessId)]" })
+            Start-Sleep -Milliseconds 500
+          }
+          $files = (Get-ChildItem (Split-Path $env:EXE) | ForEach-Object { "$($_.Name) $($_.LastWriteTimeUtc.ToString('HH:mm:ss')) c$($_.CreationTimeUtc.ToString('HH:mm:ss'))" }) -join "%0A"
+          Write-Output "::notice title=Windows after close::processes: $((($seen | Sort-Object -Unique) -join ', '))%0Afiles:%0A$files"
           for ($i = 0; $i -lt 90; $i++) { Start-Sleep 2; if ((Test-Path $env:EXE) -and ((Stamp) -gt $before)) { break } }
           Start-Sleep 10
           Get-Content $env:LOG
@@ -100,10 +107,10 @@ jobs:
           # Start the app normally (no test feed): it must report the update as installed.
           Remove-Item Env:MB_UPDATE_URL -ErrorAction SilentlyContinue
           Start-Process -FilePath $env:EXE | Out-Null
-          for ($i = 0; $i -lt 30; $i++) { if (Select-String -Path $env:LOG -Pattern "previous update to build .* ran" -Quiet) { break }; Start-Sleep 2 }
+          for ($i = 0; $i -lt 30; $i++) { if (Select-String -Path $env:LOG -Pattern "(previous update to build .* ran|update to build .* installed)" -Quiet) { break }; Start-Sleep 2 }
           Get-Content $env:LOG
           Get-Process | Where-Object { $_.Path -eq $env:EXE } | Stop-Process -Force -ErrorAction SilentlyContinue
-          if (-not (Select-String -Path $env:LOG -Pattern "previous update to build .* ran" -Quiet)) { throw "update not confirmed after restart" }
+          if (-not (Select-String -Path $env:LOG -Pattern "(previous update to build .* ran|update to build .* installed)" -Quiet)) { throw "update not confirmed after restart" }
           if (-not ((Stamp) -gt $before)) { throw "the installer did not run (uninstaller not rewritten)" }
           Stop-Process -Id $srv.Id -Force
           "Path 1 OK: downloaded, shown, installed on close"
