@@ -46,7 +46,8 @@ jobs:
       - name: Install it (silent, per user)
         shell: pwsh
         run: |
-          Start-Process -FilePath .\Setup.exe -ArgumentList "/S","/currentuser" -Wait
+          $inst = Start-Process -FilePath .\Setup.exe -ArgumentList "/S","/currentuser" -Wait -PassThru
+          Write-Output "::notice title=Windows installer::exit code $($inst.ExitCode)"
           $name = Get-Content name.txt
           # The installer hands over to a copy of itself, so wait for the app to appear (up to 3 min).
           $found = $null
@@ -56,6 +57,10 @@ jobs:
           }
           Start-Sleep 10
           if (-not $found) {
+            $reg = (Get-ChildItem HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall, HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall -ErrorAction SilentlyContinue | ForEach-Object { $_.GetValue("DisplayName") + " -> " + $_.GetValue("InstallLocation") } | Where-Object { $_ -match "MartinB" }) -join "%0A"
+            $pf = (Get-ChildItem "$env:ProgramFiles", "$env:LOCALAPPDATA\Programs" -Directory -ErrorAction SilentlyContinue | Where-Object Name -match "MartinB|hub" | ForEach-Object FullName) -join "%0A"
+            $procs = (Get-Process | Where-Object { $_.ProcessName -match "Setup|MartinB|hub|nsis" } | ForEach-Object { $_.ProcessName + " " + $_.Id }) -join ", "
+            Write-Output "::error title=Windows install diag::registry: $reg%0Afolders: $pf%0Aprocesses: $procs"
             $list = (Get-ChildItem "$env:LOCALAPPDATA\Programs" -Recurse -Depth 2 -ErrorAction SilentlyContinue | Select-Object -First 40 | ForEach-Object FullName) -join "%0A"
             Write-Output "::error title=Windows install::$name.exe not found under LOCALAPPDATA\Programs%0A$list"
             throw "not installed"
