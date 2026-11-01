@@ -144,7 +144,21 @@ def prune():
                 print(f"removed channel {tag}")
 
 
+def check_token():
+    """Say in the log whether SOURCE_TOKEN is there and accepted (needed once oi1 is private)."""
+    if not SOURCE_TOKEN:
+        print("SOURCE_TOKEN: missing (fine while the app repos are public)")
+        return
+    for repo in APPS.values():
+        try:
+            with api(f"https://api.github.com/repos/{repo}"):
+                print(f"SOURCE_TOKEN: accepted for {repo}")
+        except Exception as e:
+            print(f"::error::SOURCE_TOKEN refused for {repo}: {e}")
+
+
 def main():
+    check_token()
     if not sys.argv[1:]:
         prune()
     force = os.environ.get("FORCE", "false") == "true"
