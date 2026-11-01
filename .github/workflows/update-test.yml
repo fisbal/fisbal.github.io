@@ -46,8 +46,11 @@ jobs:
       - name: Install it (silent, per user)
         shell: pwsh
         run: |
-          $inst = Start-Process -FilePath .\Setup.exe -ArgumentList "/S","/currentuser" -Wait -PassThru
-          Write-Output "::notice title=Windows installer::exit code $($inst.ExitCode)"
+          foreach ($i in 1..3) {
+            $inst = Start-Process -FilePath .\Setup.exe -ArgumentList "/S" -Wait -PassThru
+            Write-Output "::notice title=Windows installer::try $i exit code $($inst.ExitCode)"
+            if ($inst.ExitCode -eq 0) { break }; Start-Sleep 3
+          }
           $name = Get-Content name.txt
           # The installer hands over to a copy of itself, so wait for the app to appear (up to 3 min).
           $found = $null

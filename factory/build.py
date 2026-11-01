@@ -341,10 +341,12 @@ def cmd_electron(app_id, src, work):
             # Mac: one app for Apple Silicon and Intel; signed ad hoc and packed into a .dmg by the workflow.
             "mac": {"target": [{"target": "dir", "arch": ["universal"]}], "icon": "icon.png",
                     "category": "public.app-category.productivity", "identity": None},
+            # One-click, per user: no screens and no admin rights, so the app can update itself silently
+            # (screen-based installers can crash with 0xC0000005 when run silently).
             "nsis": {
-                "oneClick": False,
+                "oneClick": True,
                 "perMachine": False,
-                "allowToChangeInstallationDirectory": True,
+                "runAfterFinish": True,
                 "createDesktopShortcut": True,
                 "createStartMenuShortcut": True,
                 "shortcutName": meta["name"],

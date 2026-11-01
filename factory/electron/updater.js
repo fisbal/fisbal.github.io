@@ -102,17 +102,15 @@ class Updater {
     this.log(`applying build ${build} (relaunch=${relaunch})`);
     try {
       if (process.platform === "win32") {
-        // Same install mode as now: per user (no admin) unless the app lives in Program Files (all users).
-        const pf = [process.env.ProgramFiles, process.env["ProgramFiles(x86)"]].filter(Boolean).map((d) => d.toLowerCase());
-        const allUsers = pf.some((d) => process.execPath.toLowerCase().startsWith(d));
-        const args = ["/S", allUsers ? "/allusers" : "/currentuser"];
+        const args = ["/S"];
         if (relaunch) args.push("--force-run");
         // Wait until this app has fully closed, run the installer silently, and note its result in update.log.
         const ps = (v) => "'" + String(v).replace(/'/g, "''") + "'";
         const cmd = [
           `Wait-Process -Id ${process.pid} -ErrorAction SilentlyContinue`,
           "Start-Sleep -Seconds 2",
-          `$p = Start-Process -FilePath ${ps(file)} -ArgumentList ${args.map(ps).join(",")} -Wait -PassThru`,
+          // Up to 3 tries: Windows can stop an installer with a transient error.
+          `foreach ($i in 1..3) { $p = Start-Process -FilePath ${ps(file)} -ArgumentList ${args.map(ps).join(",")} -Wait -PassThru; if ($p.ExitCode -eq 0) { break }; Start-Sleep -Seconds 3 }`,
           `Add-Content -LiteralPath ${ps(this.logFile)} -Value ((Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') + ' windows installer finished exit=' + $p.ExitCode)`
         ].join("; ");
         spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-Command", cmd],
