@@ -102,14 +102,14 @@ def cmd_plan():
     template_hash = hashlib.sha256(parts.encode()).hexdigest()[:16]
     todo, prints = [], {}
     for app in load_apps():
-        if only and app["id"] != only:
-            continue
+        # A run asked for one app still builds every other app that changed: a newer run waiting in line
+        # replaces an older one, so no run may leave pending apps behind.
         if app.get("hold"):
             print(f"{app['id']}: on hold ({app['hold']})")
             continue
         fp = fingerprint(app, template_hash)
         prints[app["id"]] = fp
-        if force or only or current_fingerprint(app["id"]) != fp:
+        if (force and (not only or app["id"] == only)) or app["id"] == only or current_fingerprint(app["id"]) != fp:
             todo.append(app["id"])
     print("Fingerprints:", json.dumps(prints, indent=1))
     print("To build:", todo)
