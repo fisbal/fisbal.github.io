@@ -112,7 +112,7 @@ class Updater {
         fs.writeFileSync(bat, [
           "@echo off",
           "setlocal EnableDelayedExpansion",
-          `echo windows helper started>>"${log}"`,
+          `>>"${log}" echo windows helper started`,
           ":wait",
           `tasklist /FI "PID eq ${process.pid}" 2>nul | find "${process.pid}" >nul && (ping -n 2 127.0.0.1 >nul & goto wait)`,
           "ping -n 3 127.0.0.1 >nul",
@@ -124,7 +124,8 @@ class Updater {
           `    if not "!code!"=="0" ping -n 4 127.0.0.1 >nul`,
           "  )",
           ")",
-          `echo windows installer finished exit=!code!>>"${log}"`,
+          // Redirection first: "exit=0>>" would otherwise be read as a redirect of stream 0.
+          `>>"${log}" echo windows installer finished exit=!code!`,
           `del "%~f0"`
         ].join("\r\n") + "\r\n", "utf8");
         spawn("cmd.exe", ["/d", "/s", "/c", `""${bat}""`], { detached: true, stdio: "ignore", windowsHide: true, windowsVerbatimArguments: true }).unref();
