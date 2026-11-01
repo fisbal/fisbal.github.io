@@ -48,8 +48,14 @@ jobs:
         run: |
           Start-Process -FilePath .\Setup.exe -ArgumentList "/S" -Wait
           $name = Get-Content name.txt
-          $exe = Join-Path $env:LOCALAPPDATA "Programs\$name\$name.exe"
-          if (-not (Test-Path $exe)) { Get-ChildItem "$env:LOCALAPPDATA\Programs" -Recurse -Depth 1 | Select FullName; throw "not installed at $exe" }
+          $found = Get-ChildItem "$env:LOCALAPPDATA\Programs" -Recurse -Depth 2 -Filter "$name.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $found) {
+            $list = (Get-ChildItem "$env:LOCALAPPDATA\Programs" -Recurse -Depth 2 -ErrorAction SilentlyContinue | Select-Object -First 40 | ForEach-Object FullName) -join "%0A"
+            Write-Output "::error title=Windows install::$name.exe not found under LOCALAPPDATA\Programs%0A$list"
+            throw "not installed"
+          }
+          $exe = $found.FullName
+          Write-Output "::notice title=Windows install::installed at $exe"
           "EXE=$exe" | Out-File -Append $env:GITHUB_ENV -Encoding utf8
           "LOG=$(Join-Path $env:APPDATA "$name\update.log")" | Out-File -Append $env:GITHUB_ENV -Encoding utf8
       - name: Path 1 - update found, ready in the gold bar, installed quietly on close
@@ -100,6 +106,11 @@ jobs:
           if (-not (Get-Process | Where-Object { $_.Path -eq $env:EXE })) { throw "app not running after the update" }
           Stop-Process -Id $srv.Id -Force
           "Path 2 OK: installed and reopened"
+      - name: Report
+        if: always()
+        shell: pwsh
+        run: |
+          if ($env:LOG -and (Test-Path $env:LOG)) { $t = (Get-Content $env:LOG | Select-Object -Last 40) -join "%0A"; Write-Output "::notice title=Windows update.log::$t" } else { Write-Output "::notice title=Windows update.log::(no log)" }
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -161,6 +172,10 @@ jobs:
           pgrep -f "$BIN" >/dev/null || { echo "not running"; exit 1; }
           kill $SRV
           echo "Path 2 OK"
+      - name: Report
+        if: always()
+        run: |
+          if [ -f "$LOG" ]; then echo "::notice title=Mac update.log::$(tail -40 "$LOG" | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/%0A/g')"; else echo "::notice title=Mac update.log::(no log at $LOG) $(ls "$HOME/Library/Application Support" | tr '\n' ' ')"; fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -197,6 +212,10 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: bash .github/scripts/android-update-test.sh
+      - name: Report
+        if: always()
+        run: |
+          [ -f android-result.txt ] && echo "::notice title=Android result::$(tail -60 android-result.txt | sed -e ':a' -e 'N' -e '$!ba' -e 's/%/%25/g' -e 's/\n/%0A/g')" || echo "::notice title=Android result::(none)"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
