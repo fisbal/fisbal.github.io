@@ -1,0 +1,39 @@
+{
+  "tag_name": "v1.0.11",
+  "name": "MillionOS 1.0.11",
+  "published_at": "2026-10-26T21:26:55Z",
+  "assets": [
+    {
+      "name": "latest.json",
+      "browser_download_url": "https://github.com/fisbal/fisbal.github.io/releases/download/millionos-updates/latest.json"
+    },
+    {
+      "name": "MillionOS-mac.app.tar.gz",
+      "browser_download_url": "https://github.com/fisbal/fisbal.github.io/releases/download/millionos-updates/MillionOS-mac.app.tar.gz"
+    },
+    {
+      "name": "MillionOS-mac.app.tar.gz.sig",
+      "browser_download_url": "https://github.com/fisbal/fisbal.github.io/releases/download/millionos-updates/MillionOS-mac.app.tar.gz.sig"
+    },
+    {
+      "name": "MillionOS-Setup.exe",
+      "browser_download_url": "https://github.com/fisbal/fisbal.github.io/releases/download/millionos-updates/MillionOS-Setup.exe"
+    },
+    {
+      "name": "MillionOS-Setup.exe.sig",
+      "browser_download_url": "https://github.com/fisbal/fisbal.github.io/releases/download/millionos-updates/MillionOS-Setup.exe.sig"
+    },
+    {
+      "name": "MillionOS.apk",
+      "browser_download_url": "https://github.com/fisbal/fisbal.github.io/releases/download/millionos-updates/MillionOS.apk"
+    },
+    {
+      "name": "MillionOS.dmg",
+      "browser_download_url": "https://github.com/fisbal/fisbal.github.io/releases/download/millionos-updates/MillionOS.dmg"
+    },
+    {
+      "name": "MillionOS.msi",
+      "browser_download_url": "https://github.com/fisbal/fisbal.github.io/releases/download/millionos-updates/MillionOS.msi"
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "tag_name": "v0.1.154",
+  "name": "Office In 1 0.1.154",
+  "published_at": "2026-11-01T10:18:33Z",
+  "assets": [
+    {
+      "name": "latest.json",
+      "browser_download_url": "https://github.com/fisbal/fisbal.github.io/releases/download/oi1-updates/latest.json"
+    },
+    {
+      "name": "OfficeIn1-mac.app.tar.gz",
+      "browser_download_url": "https://github.com/fisbal/fisbal.github.io/releases/download/oi1-updates/OfficeIn1-mac.app.tar.gz"
+    },
+    {
+      "name": "OfficeIn1-mac.app.tar.gz.sig",
+      "browser_download_url": "https://github.com/fisbal/fisbal.github.io/releases/download/oi1-updates/OfficeIn1-mac.app.tar.gz.sig"
+    },
+    {
+      "name": "OfficeIn1-Setup.exe",
+      "browser_download_url": "https://github.com/fisbal/fisbal.github.io/releases/download/oi1-updates/OfficeIn1-Setup.exe"
+    },
+    {
+      "name": "OfficeIn1-Setup.exe.sig",
+      "browser_download_url": "https://github.com/fisbal/fisbal.github.io/releases/download/oi1-updates/OfficeIn1-Setup.exe.sig"
+    },
+    {
+      "name": "OfficeIn1.apk",
+      "browser_download_url": "https://github.com/fisbal/fisbal.github.io/releases/download/oi1-updates/OfficeIn1.apk"
+    },
+    {
+      "name": "OfficeIn1.dmg",
+      "browser_download_url": "https://github.com/fisbal/fisbal.github.io/releases/download/oi1-updates/OfficeIn1.dmg"
+    },
+    {
+      "name": "OfficeIn1.msi",
+      "browser_download_url": "https://github.com/fisbal/fisbal.github.io/releases/download/oi1-updates/OfficeIn1.msi"
+    }
+  ]
+}

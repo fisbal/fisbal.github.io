@@ -1,0 +1,19 @@
+{
+  "version": "0.1.154",
+  "notes": "Office In 1 0.1.154",
+  "pub_date": "2026-11-01T10:18:15Z",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRUk5DTjVqRzA3Z0JicnVHZ1ZTcVE3Z0RzM29Sc2c4dnpTVm1ySnBIR2NwcEdIc3E5SG9tdXY0MUYrT2R5NDBhcVkrYUJieVRpOUcrVWZUOEZwUTJmNUpXYjQ4bHIxalFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNTI3MDgwCWZpbGU6T2ZmaWNlIEluIDFfMC4xLjE1NF94NjQtc2V0dXAuZXhlCXZlcnNpb246MC4xLjE1NAp1UDkxb01PaWtPSFVvTUZIY1R6ZlFhR2tzNXRiZEF6WDdMRnVBMm9rSUFFTFN4MTRBa2tra1FMTkVIak5qRDh4ajhqQnlwbXVCZVkvMXQxTnBJQ2xDUT09Cg==",
+      "url": "https://github.com/fisbal/fisbal.github.io/releases/download/oi1-updates/OfficeIn1-Setup.exe"
+    },
+    "darwin-aarch64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRUk5DTjVqRzA3Z09TK3Q1bmlZb2VOd29ZR2xYUUU5YWFFcDZxbmJtNDZuV0t1M0lReDh3K25jd2h2V1JmbGFVYWpUc2xIWnE4d3lGdGZlTUJsS3AzWENpR1BKVUVpNUFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNTI3MDIxCWZpbGU6T2ZmaWNlIEluIDEuYXBwLnRhci5negl2ZXJzaW9uOjAuMS4xNTQKbUZIUEcxVmttaUQ2M2p1cXE2Zy9GbGk1TEVYSzdsRzZvREpxaDREM0RWZ0NnWHBzMlRMOXJGcWhNNjhXWHRSL0xXTTlUZGp0U1JNdU1xUkg2aHpxRHc9PQo=",
+      "url": "https://github.com/fisbal/fisbal.github.io/releases/download/oi1-updates/OfficeIn1-mac.app.tar.gz"
+    },
+    "darwin-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRUk5DTjVqRzA3Z09TK3Q1bmlZb2VOd29ZR2xYUUU5YWFFcDZxbmJtNDZuV0t1M0lReDh3K25jd2h2V1JmbGFVYWpUc2xIWnE4d3lGdGZlTUJsS3AzWENpR1BKVUVpNUFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzNTI3MDIxCWZpbGU6T2ZmaWNlIEluIDEuYXBwLnRhci5negl2ZXJzaW9uOjAuMS4xNTQKbUZIUEcxVmttaUQ2M2p1cXE2Zy9GbGk1TEVYSzdsRzZvREpxaDREM0RWZ0NnWHBzMlRMOXJGcWhNNjhXWHRSL0xXTTlUZGp0U1JNdU1xUkg2aHpxRHc9PQo=",
+      "url": "https://github.com/fisbal/fisbal.github.io/releases/download/oi1-updates/OfficeIn1-mac.app.tar.gz"
+    }
+  }
+}

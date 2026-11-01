@@ -1,0 +1,19 @@
+{
+  "version": "1.0.6",
+  "notes": "MarbleOS 1.0.6",
+  "pub_date": "2026-10-26T16:03:25Z",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTdWVFblJFbUlvWGlHZm1aZzJSSXJXOEZZWHg4dE0rd2RlZWtXNjczSXg4em9RNVlnemRLSGtVSGk3UUpRWFp2ZG9SQWZpU0dMQkltTW9CZTRtYkljK1FYOHpYTGVZSWc0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMDI5OTg3CWZpbGU6TWFyYmxlT1NfMS4wLjZfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjEuMC42CmZtazlaajVzZXpPbkR1c1pTajltcmVnWDltbE5Ua0lOVDN1ZGlsYVhVWEsyUGlZb3RMdFNOVjFJTUhaSXkvcFRkVis3a2xDNW1yQnhyRjBRN3g5UUNRPT0K",
+      "url": "https://github.com/fisbal/fisbal.github.io/releases/download/marbleos-updates/MarbleOS-Setup.exe"
+    },
+    "darwin-aarch64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTdWVFblJFbUlvWHBxemp3eUduYjRVeUpYemxMNzFNdjZsZmh0bmhRZ2Q2M28yK2lNWTBXYXlTRW04bmxTL1hqN0Y3eUEvbnFGYnVZWlE1c0MvUnN5U3BkbFh4THhiVWc0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMDMwNTkzCWZpbGU6TWFyYmxlT1MuYXBwLnRhci5negl2ZXJzaW9uOjEuMC42CnEvaXR5bERkMUxvR1BFWGlrdTdTazNHYlZ3ZzRoQmhYcXFGaDBLcUkwaWdhcDR3K21hWXJTVTBsVzg0U3lKZzNhMVM5NWU2SG95UWJPMG8raEcrWEJRPT0K",
+      "url": "https://github.com/fisbal/fisbal.github.io/releases/download/marbleos-updates/MarbleOS-mac.app.tar.gz"
+    },
+    "darwin-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTdWVFblJFbUlvWHBxemp3eUduYjRVeUpYemxMNzFNdjZsZmh0bmhRZ2Q2M28yK2lNWTBXYXlTRW04bmxTL1hqN0Y3eUEvbnFGYnVZWlE1c0MvUnN5U3BkbFh4THhiVWc0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkzMDMwNTkzCWZpbGU6TWFyYmxlT1MuYXBwLnRhci5negl2ZXJzaW9uOjEuMC42CnEvaXR5bERkMUxvR1BFWGlrdTdTazNHYlZ3ZzRoQmhYcXFGaDBLcUkwaWdhcDR3K21hWXJTVTBsVzg0U3lKZzNhMVM5NWU2SG95UWJPMG8raEcrWEJRPT0K",
+      "url": "https://github.com/fisbal/fisbal.github.io/releases/download/marbleos-updates/MarbleOS-mac.app.tar.gz"
+    }
+  }
+}

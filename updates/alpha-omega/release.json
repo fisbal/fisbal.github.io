@@ -1,0 +1,39 @@
+{
+  "tag_name": "v1.0.11",
+  "name": "Alpha & Omega 1.0.11",
+  "published_at": "2026-10-26T21:25:06Z",
+  "assets": [
+    {
+      "name": "AlphaOmega-mac.app.tar.gz",
+      "browser_download_url": "https://github.com/fisbal/fisbal.github.io/releases/download/alpha-omega-updates/AlphaOmega-mac.app.tar.gz"
+    },
+    {
+      "name": "AlphaOmega-mac.app.tar.gz.sig",
+      "browser_download_url": "https://github.com/fisbal/fisbal.github.io/releases/download/alpha-omega-updates/AlphaOmega-mac.app.tar.gz.sig"
+    },
+    {
+      "name": "AlphaOmega-Setup.exe",
+      "browser_download_url": "https://github.com/fisbal/fisbal.github.io/releases/download/alpha-omega-updates/AlphaOmega-Setup.exe"
+    },
+    {
+      "name": "AlphaOmega-Setup.exe.sig",
+      "browser_download_url": "https://github.com/fisbal/fisbal.github.io/releases/download/alpha-omega-updates/AlphaOmega-Setup.exe.sig"
+    },
+    {
+      "name": "AlphaOmega.apk",
+      "browser_download_url": "https://github.com/fisbal/fisbal.github.io/releases/download/alpha-omega-updates/AlphaOmega.apk"
+    },
+    {
+      "name": "AlphaOmega.dmg",
+      "browser_download_url": "https://github.com/fisbal/fisbal.github.io/releases/download/alpha-omega-updates/AlphaOmega.dmg"
+    },
+    {
+      "name": "AlphaOmega.msi",
+      "browser_download_url": "https://github.com/fisbal/fisbal.github.io/releases/download/alpha-omega-updates/AlphaOmega.msi"
+    },
+    {
+      "name": "latest.json",
+      "browser_download_url": "https://github.com/fisbal/fisbal.github.io/releases/download/alpha-omega-updates/latest.json"
+    }
+  ]
+}
