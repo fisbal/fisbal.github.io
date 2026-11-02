@@ -183,6 +183,23 @@
       "iconBg": "#060605"
     },
     {
+      "id": "budgetos",
+      "name": "BudgetOS",
+      "os": true,
+      "file": "BudgetOS",
+      "pkg": "com.martinb.budgetos",
+      "desc": "Tes comptes paie par paie, au style Office In 1. Synchro privée téléphone ↔ ordi.",
+      "factory": true,
+      "source": {
+        "local": "budgetos"
+      },
+      "web": "/budgetos/",
+      "code": "https://github.com/fisbal/fisbal.github.io/tree/main/budgetos",
+      "icon": "icons/budgetos.png",
+      "bg": "#F4F1E8",
+      "iconBg": "#060605"
+    },
+    {
       "id": "holochrono",
       "name": "HoloChrono",
       "file": "HoloChrono",
