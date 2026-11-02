@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>BudgetOS</title>
+<title>Budget ++</title>
 <meta name="description" content="Tes comptes paie par paie, au style Office In 1.">
 <meta name="theme-color" content="#F4F1E8">
-<link rel="icon" href="../icons/budgetos.png">
-<link rel="apple-touch-icon" href="../icons/budgetos.png">
+<link rel="icon" href="../icons/budgetplus.png">
+<link rel="apple-touch-icon" href="../icons/budgetplus.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Manrope:wght@400;500;600;700;800&display=swap">
 <style>
@@ -195,7 +195,7 @@ nav.dock{display:none}
     <div class="bar">
       <div class="logo" aria-hidden="true">1</div>
       <div class="brand">Office In<small> 1</small></div>
-      <div class="doc-pill"><i>$</i><span>Budget<b style="color:var(--gold)">OS</b> · Comptes</span></div>
+      <div class="doc-pill"><i>$</i><span>Budget <b style="color:var(--gold)">++</b> · Comptes</span></div>
       <div class="spacer"></div>
       <div class="sync" id="sync"><b></b><span>Connexion…</span></div>
       <button class="iconbtn" id="themeBtn" aria-label="Changer le thème"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg></button>
@@ -235,7 +235,7 @@ const CHECK='<svg viewBox="0 0 24 24"><path d="M5 12l5 5L19 7"/></svg>';
 const CACHE='budget-martin-cache-v1';
 
 let S=null, view='home', saveTimer=null, saving=false, dirty=false, lastSync=0;
-const SYNC_KEY='budgetos-sync-v1';
+const SYNC_KEY='budgetplus-sync-v1';
 let SYNC=(()=>{try{return JSON.parse(localStorage.getItem(SYNC_KEY))||{}}catch(e){return{}}})();
 let remoteSha=null;
 let openForm=null;
@@ -296,7 +296,7 @@ async function pull(){
 async function flush(){
   if(saving||!dirty||!syncOn())return; saving=true; dirty=false;
   try{
-    const res=await gh('PUT',{message:'BudgetOS '+new Date().toISOString(),content:b64e(JSON.stringify(S,null,1)),sha:remoteSha||undefined});
+    const res=await gh('PUT',{message:'Budget ++ '+new Date().toISOString(),content:b64e(JSON.stringify(S,null,1)),sha:remoteSha||undefined});
     remoteSha=res.content.sha; lastSync=Date.now(); setSync('ok','Enregistré · synchronisé');
   }catch(e){
     if(e.status===409||e.status===422){ // l'autre appareil a écrit entre-temps : on relit, la version la plus récente gagne
@@ -448,7 +448,7 @@ function vInsights(rows){
 }
 
 function vWelcome(hasBudget){
-  return `<section class="view"><div class="panel empty"><b>${hasBudget?'Ajoute ta première paie':'Bienvenue dans BudgetOS'}</b>
+  return `<section class="view"><div class="panel empty"><b>${hasBudget?'Ajoute ta première paie':'Bienvenue dans Budget ++'}</b>
   <p style="max-width:52ch;margin:0 auto 16px">Tes comptes restent sur cet appareil. Pour retrouver les mêmes chiffres sur ton téléphone et ton ordi, connecte la synchro privée.</p>
   <div class="toolbar" style="justify-content:center">
    <button class="btn pri" data-v="settings">Connecter la synchro</button>
@@ -493,7 +493,7 @@ function importFile(input){
   const r=new FileReader(); r.onload=()=>{try{const d=JSON.parse(r.result);
       if(!d||!Array.isArray(d.periods)||!Array.isArray(d.categories))throw 0;
       d.cells=d.cells||{};d.paid=d.paid||{};S=d;view='home';scheduleSave();render();toast('Budget importé');}
-    catch(e){toast('Ce fichier n’est pas un budget BudgetOS');}};
+    catch(e){toast('Ce fichier n’est pas un budget Budget ++');}};
   r.readAsText(f);
 }
 function exportFile(){
