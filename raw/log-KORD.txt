@@ -1,1 +1,1 @@
-KORD FAILED HTTP Error 504: Gateway Timeout
+KORD ok 7184 elements 6524 KB 1556s via https://overpass-api.de/api/interpreter
