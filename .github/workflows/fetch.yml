@@ -8,12 +8,12 @@ permissions:
 jobs:
   fetch:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120
     strategy:
       fail-fast: false
-      max-parallel: 7
+      max-parallel: 2
       matrix:
-        icao: [KATL, KLAX, KORD, KJFK, KSFO, KDEN, KMIA, EGLL, LFPG, EHAM, EDDF, LEMD, LIRF, LSZH]
+        icao: [KATL, KLAX, KORD, KJFK, KDEN, KMIA, LFPG, EDDF, LEMD, LIRF]
     steps:
       - uses: actions/checkout@v4
         with: { ref: osm-data2 }

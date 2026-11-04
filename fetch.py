@@ -16,9 +16,10 @@ def bbox(lat, lon, r):
     dl = r / 110540; dn = r / (111320 * math.cos(math.radians(lat)))
     return f"{lat-dl:.5f},{lon-dn:.5f},{lat+dl:.5f},{lon+dn:.5f}"
 
-def query(icao, lat, lon):
+def queries(icao, lat, lon):
     A, E = bbox(lat, lon, R_AIR), bbox(lat, lon, R_ENV)
-    return f"""[out:json][timeout:340][maxsize:1073741824];
+    head = "[out:json][timeout:900][maxsize:1073741824];"
+    q1 = head + f"""
 wr["aeroway"="aerodrome"]["icao"="{icao}"]->.ad;
 .ad map_to_area->.a;
 (
@@ -29,15 +30,19 @@ wr["aeroway"="aerodrome"]["icao"="{icao}"]->.ad;
   way["building"](area.a);
   rel["building"](area.a);
   nwr["amenity"="fire_station"](area.a);
-  nwr["man_made"="tower"]["tower:type"~"observation|control"](area.a);
-  way["highway"~"^(motorway|trunk|primary|secondary|tertiary|motorway_link|trunk_link)$"]({E});
-  way["natural"="water"]({E});
-  rel["natural"="water"]({E});
-  way["landuse"~"^(reservoir|basin)$"]({E});
-  way["waterway"~"^(river|canal|stream|riverbank)$"]({E});
-  way["natural"="coastline"]({E});
 );
 out geom qt;"""
+    q2 = head + f"""
+(
+  way["highway"~"^(motorway|trunk|primary|secondary|tertiary|motorway_link|trunk_link)$"]({E});
+  way["waterway"~"^(river|canal|stream|riverbank)$"]({E});
+  way["natural"~"^(water|coastline)$"]({E});
+  way["landuse"~"^(reservoir|basin)$"]({E});
+);
+out geom qt;
+rel["natural"="water"]({E});
+out geom qt;"""
+    return [q1, q2]
 
 def fetch(q):
     data = urllib.parse.urlencode({"data": q}).encode()
@@ -46,7 +51,7 @@ def fetch(q):
         url = SERVERS[attempt % len(SERVERS)]
         try:
             req = urllib.request.Request(url, data=data, headers={"User-Agent": "SkyControl3D-airport-builder/1.0 (github.com/fisbal)"})
-            with urllib.request.urlopen(req, timeout=360) as r:
+            with urllib.request.urlopen(req, timeout=960) as r:
                 body = r.read()
             j = json.loads(body)
             if j.get("remark") and "error" in j["remark"].lower(): raise RuntimeError(j["remark"])
@@ -63,9 +68,12 @@ for icao in only:
     if os.path.exists(out) and os.path.getsize(out) > 1000: print(icao, "already"); continue
     lat, lon = AP[icao]; t = time.time()
     try:
-        body, url = fetch(query(icao, lat, lon))
+        els, url = [], ""
+        for q in queries(icao, lat, lon):
+            body, url = fetch(q); els += json.loads(body)["elements"]; time.sleep(5)
+        body = json.dumps({"elements": els}).encode()
         with gzip.open(out, "wb") as f: f.write(body)
-        n = len(json.loads(body)["elements"])
+        n = len(els)
         msg = f"{icao} ok {n} elements {len(body)//1024} KB {time.time()-t:.0f}s via {url}"
     except Exception as e:
         msg = f"{icao} FAILED {e}"
