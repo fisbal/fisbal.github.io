@@ -39,7 +39,7 @@ def fetch(q):
             if j.get("remark") and "error" in j["remark"].lower(): raise RuntimeError(j["remark"])
             return body, url
         except Exception as e:
-            last = e; print("  ", url, "failed:", str(e)[:200], flush=True); time.sleep(20 + 15 * attempt)
+            last = f"{url.split('/')[2]}: {str(e)[:120]}"; print("  ", last, flush=True); open("raw/log.txt", "a").write(f"  {icao_now} {last}\n"); time.sleep(20 + 15 * attempt)
     raise RuntimeError(last)
 
 os.makedirs("raw", exist_ok=True)
@@ -48,7 +48,7 @@ log = []
 for icao in only:
     out = f"raw/{icao}.json.gz"
     if os.path.exists(out) and os.path.getsize(out) > 1000: print(icao, "already"); continue
-    lat, lon = AP[icao]; t = time.time()
+    lat, lon = AP[icao]; t = time.time(); globals()["icao_now"] = icao
     try:
         els, url = [], ""
         for q in queries(icao, lat, lon):
