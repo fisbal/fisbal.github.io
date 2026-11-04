@@ -1,0 +1,15 @@
+  LIRF overpass.private.coffee: HTTP Error 502: Bad Gateway
+  LIRF maps.mail.ru: HTTP Error 504: Gateway Time-out
+  LIRF overpass-api.de: HTTP Error 502: Bad Gateway
+  LIRF overpass.kumi.systems: HTTP Error 504: Gateway Timeout
+  LIRF overpass.private.coffee: HTTP Error 504: Gateway Timeout
+  LIRF maps.mail.ru: HTTP Error 504: Gateway Timeout
+  LIRF overpass.private.coffee: HTTP Error 504: Gateway Timeout
+  LIRF maps.mail.ru: HTTP Error 504: Gateway Timeout
+  LIRF overpass-api.de: HTTP Error 502: Bad Gateway
+  LIRF overpass.kumi.systems: HTTP Error 502: Bad Gateway
+  LIRF overpass.private.coffee: HTTP Error 502: Bad Gateway
+  LIRF maps.mail.ru: HTTP Error 504: Gateway Time-out
+  LIRF overpass-api.de: HTTP Error 502: Bad Gateway
+  LIRF overpass.kumi.systems: HTTP Error 504: Gateway Timeout
+LIRF FAILED overpass.kumi.systems: HTTP Error 504: Gateway Timeout
