@@ -1,7 +1,7 @@
-name: Sky Control airport data (OSM, batch 3)
+name: Sky Control airport data (OSM, batch 4)
 on:
   push:
-    branches: [osm-data3]
+    branches: [osm-data4]
     paths: [fetch.py, .github/workflows/fetch.yml, trigger.txt]
 permissions:
   contents: write
@@ -13,10 +13,10 @@ jobs:
       fail-fast: false
       max-parallel: 1
       matrix:
-        icao: [KATL, KLAX, KORD, KJFK]
+        icao: [LEMD, LIRF, KLAX]
     steps:
       - uses: actions/checkout@v4
-        with: { ref: osm-data3 }
+        with: { ref: osm-data4 }
       - run: python3 fetch.py ${{ matrix.icao }} || true
       - name: Save
         if: always()

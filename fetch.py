@@ -19,30 +19,12 @@ def bbox(lat, lon, r):
 def queries(icao, lat, lon):
     A, E = bbox(lat, lon, R_AIR), bbox(lat, lon, R_ENV)
     head = "[out:json][timeout:900][maxsize:1073741824];"
-    q1 = head + f"""
-wr["aeroway"="aerodrome"]["icao"="{icao}"]->.ad;
-.ad map_to_area->.a;
-(
-  .ad;
-  way["aeroway"~"^(runway|taxiway|taxilane|apron|parking_position|helipad|control_tower|terminal|hangar)$"]({A});
-  rel["aeroway"~"^(apron|terminal)$"]({A});
-  node["aeroway"~"^(helipad|control_tower|parking_position)$"]({A});
-  way["building"](area.a);
-  rel["building"](area.a);
-  nwr["amenity"="fire_station"](area.a);
-);
-out geom qt;"""
-    q2 = head + f"""
-(
-  way["highway"~"^(motorway|trunk|primary|secondary|tertiary|motorway_link|trunk_link)$"]({E});
-  way["waterway"~"^(river|canal|stream|riverbank)$"]({E});
-  way["natural"~"^(water|coastline)$"]({E});
-  way["landuse"~"^(reservoir|basin)$"]({E});
-);
-out geom qt;
-rel["natural"="water"]({E});
-out geom qt;"""
-    return [q1, q2]
+    ad = f'wr["aeroway"="aerodrome"]["icao"="{icao}"]->.ad; .ad map_to_area->.a;'
+    return [
+      head + ad + f"""( .ad; way["aeroway"~"^(runway|taxiway|taxilane|apron|parking_position|helipad|control_tower|terminal|hangar)$"]({A}); rel["aeroway"~"^(apron|terminal)$"]({A}); node["aeroway"~"^(helipad|control_tower|parking_position)$"]({A}); ); out geom qt;""",
+      head + ad + """( way["building"](area.a); rel["building"](area.a); nwr["amenity"="fire_station"](area.a); ); out geom qt;""",
+      head + f"""way["highway"~"^(motorway|trunk|primary|secondary|tertiary|motorway_link|trunk_link)$"]({E}); out geom qt;""",
+      head + f"""( way["waterway"~"^(river|canal|stream|riverbank)$"]({E}); way["natural"~"^(water|coastline)$"]({E}); way["landuse"~"^(reservoir|basin)$"]({E}); ); out geom qt; rel["natural"="water"]({E}); out geom qt;"""]
 
 def fetch(q):
     data = urllib.parse.urlencode({"data": q}).encode()
