@@ -98,7 +98,7 @@
       "name": "Sky Control 3D",
       "file": "SkyControl3D",
       "pkg": "com.martinb.skycontrol",
-      "desc": "Contrôle aérien 3D sur 18 vrais aéroports : Canada, États-Unis et Europe.",
+      "desc": "Contrôle aérien 3D sur 22 vrais aéroports : Canada, États-Unis et Europe.",
       "factory": true,
       "source": {
         "local": "skycontrol"
