@@ -1,9 +1,1 @@
-  KLAX overpass.private.coffee: HTTP Error 504: Gateway Timeout
-  KLAX maps.mail.ru: HTTP Error 504: Gateway Time-out
-  KLAX overpass-api.de: HTTP Error 502: Bad Gateway
-  KLAX overpass.kumi.systems: HTTP Error 502: Bad Gateway
-  KLAX overpass.private.coffee: HTTP Error 502: Bad Gateway
-  KLAX maps.mail.ru: HTTP Error 504: Gateway Time-out
-  KLAX overpass-api.de: HTTP Error 502: Bad Gateway
-  KLAX overpass.kumi.systems: HTTP Error 504: Gateway Timeout
-KLAX FAILED overpass.kumi.systems: HTTP Error 504: Gateway Timeout
+KLAX ok 8850 elements 6388 KB 1424s via OSM API, boundary rings 1
