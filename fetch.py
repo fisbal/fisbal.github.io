@@ -8,9 +8,9 @@ AP = {  # ICAO: (lat, lon) reference point (OurAirports)
  "KMIA": (25.796011, -80.289751), "EGLL": (51.470748, -0.459909), "LFPG": (49.00896, 2.554117),
  "EHAM": (52.308601, 4.76389), "EDDF": (50.026706, 8.55835), "LEMD": (40.493407, -3.572249),
  "LIRF": (41.804532, 12.251998), "LSZH": (47.458056, 8.548056)}
-SERVERS = ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter",
-           "https://maps.mail.ru/osm/tools/overpass/api/interpreter", "https://overpass.kumi.systems/api/interpreter"]
-R_AIR, R_ENV = 9000, 8000   # metres: aerodrome features / surroundings (roads, water)
+SERVERS = ["https://overpass.private.coffee/api/interpreter", "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+           "https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"]
+R_AIR, R_ENV = 6000, 7500   # metres: aerodrome features / surroundings (roads, water)
 
 def bbox(lat, lon, r):
     dl = r / 110540; dn = r / (111320 * math.cos(math.radians(lat)))
@@ -47,7 +47,7 @@ out geom qt;"""
 def fetch(q):
     data = urllib.parse.urlencode({"data": q}).encode()
     last = None
-    for attempt in range(6):
+    for attempt in range(8):
         url = SERVERS[attempt % len(SERVERS)]
         try:
             req = urllib.request.Request(url, data=data, headers={"User-Agent": "SkyControl3D-airport-builder/1.0 (github.com/fisbal)"})
