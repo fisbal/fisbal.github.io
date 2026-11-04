@@ -1,0 +1,11 @@
+  KJFK overpass.private.coffee: HTTP Error 504: Gateway Timeout
+  KJFK maps.mail.ru: HTTP Error 504: Gateway Timeout
+  KJFK overpass.private.coffee: HTTP Error 504: Gateway Timeout
+  KJFK maps.mail.ru: HTTP Error 504: Gateway Time-out
+  KJFK overpass-api.de: HTTP Error 504: Gateway Timeout
+  KJFK overpass.kumi.systems: HTTP Error 504: Gateway Timeout
+  KJFK overpass.private.coffee: HTTP Error 502: Bad Gateway
+  KJFK maps.mail.ru: HTTP Error 504: Gateway Timeout
+  KJFK overpass-api.de: HTTP Error 502: Bad Gateway
+  KJFK overpass.kumi.systems: HTTP Error 504: Gateway Timeout
+KJFK FAILED overpass.kumi.systems: HTTP Error 504: Gateway Timeout
