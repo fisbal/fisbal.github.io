@@ -1,22 +1,28 @@
-name: Sky Control airport data (OSM)
+name: Sky Control airport data (OSM, parallel)
 on:
   push:
-    branches: [osm-data]
+    branches: [osm-data2]
     paths: [fetch.py, .github/workflows/fetch.yml, trigger.txt]
 permissions:
   contents: write
-concurrency: { group: osm-data, cancel-in-progress: false }
 jobs:
   fetch:
     runs-on: ubuntu-latest
-    timeout-minutes: 300
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      max-parallel: 7
+      matrix:
+        icao: [KATL, KLAX, KORD, KJFK, KSFO, KDEN, KMIA, EGLL, LFPG, EHAM, EDDF, LEMD, LIRF, LSZH]
     steps:
       - uses: actions/checkout@v4
-        with: { ref: osm-data }
-      - run: python3 fetch.py
+        with: { ref: osm-data2 }
+      - run: python3 fetch.py ${{ matrix.icao }} || true
       - name: Save
         if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add raw && git commit -m "Raw OSM airport data [skip ci]" && git pull --rebase && git push || echo nothing
+          mv raw/log.txt raw/log-${{ matrix.icao }}.txt 2>/dev/null || true
+          git add raw && git commit -m "Raw OSM ${{ matrix.icao }} [skip ci]" || exit 0
+          for i in 1 2 3 4 5 6 7 8; do git pull --rebase -q && git push -q && exit 0; sleep $((RANDOM % 10 + 3)); done

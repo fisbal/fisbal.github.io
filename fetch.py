@@ -18,7 +18,7 @@ def bbox(lat, lon, r):
 
 def query(icao, lat, lon):
     A, E = bbox(lat, lon, R_AIR), bbox(lat, lon, R_ENV)
-    return f"""[out:json][timeout:600][maxsize:1073741824];
+    return f"""[out:json][timeout:340][maxsize:1073741824];
 wr["aeroway"="aerodrome"]["icao"="{icao}"]->.ad;
 .ad map_to_area->.a;
 (
@@ -42,17 +42,17 @@ out geom qt;"""
 def fetch(q):
     data = urllib.parse.urlencode({"data": q}).encode()
     last = None
-    for attempt in range(8):
+    for attempt in range(6):
         url = SERVERS[attempt % len(SERVERS)]
         try:
             req = urllib.request.Request(url, data=data, headers={"User-Agent": "SkyControl3D-airport-builder/1.0 (github.com/fisbal)"})
-            with urllib.request.urlopen(req, timeout=700) as r:
+            with urllib.request.urlopen(req, timeout=360) as r:
                 body = r.read()
             j = json.loads(body)
             if j.get("remark") and "error" in j["remark"].lower(): raise RuntimeError(j["remark"])
             return body, url
         except Exception as e:
-            last = e; print("  ", url, "failed:", str(e)[:200], flush=True); time.sleep(30 + 20 * attempt)
+            last = e; print("  ", url, "failed:", str(e)[:200], flush=True); time.sleep(20 + 15 * attempt)
     raise RuntimeError(last)
 
 os.makedirs("raw", exist_ok=True)
