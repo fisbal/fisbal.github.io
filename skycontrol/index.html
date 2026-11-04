@@ -90,6 +90,7 @@ h3{font-family:var(--f-display);font-weight:800;font-size:18px;letter-spacing:.0
 #zoomCtl .icon-btn{width:46px;height:46px;font-size:22px;font-weight:600;line-height:1}
 #zoomCtl .zl{font-size:11px;text-align:center;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:3px 0;font-variant-numeric:tabular-nums}
 @media (max-width:520px){ .card{padding:18px} .hud-stats{gap:10px} .legend{display:none} }
+@media (max-width:520px), (max-height:500px){ .hud{gap:8px;padding-top:calc(8px + env(safe-area-inset-top,0px));padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px))} .hud-box{padding:6px 10px;max-width:min(330px,calc(100vw - 172px))} .hud-lvl{font-size:15px;display:flex;align-items:baseline;min-width:0} #hLevel{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0} .hud-lvl small{font-size:10px;margin-left:6px;flex:none} .hud-stats{font-size:12px;margin-top:3px} .bar{margin-top:4px} .hud-wx{font-size:11px;gap:2px 8px;margin-top:3px} .legend{display:none} .icon-btn,.compass{width:38px;height:38px} .hud-btns{gap:6px} }
 @media (prefers-reduced-motion:reduce){ .lvl{transition:none} }
 </style>
 
@@ -1761,7 +1762,7 @@ function updatePathViz(p) {
   const show = routed;
   V.core.visible = V.glow.visible = V.shadow.visible = V.drops.visible = show;
   if (show) {
-    fillRibbon(V.core, pts, locked ? .17 : .13); fillRibbon(V.glow, pts, .55); fillRibbon(V.shadow, pts, .22, .17);
+    const bw = p.boost || 1; fillRibbon(V.core, pts, (locked ? .17 : .13) * bw); fillRibbon(V.glow, pts, .55 * bw); fillRibbon(V.shadow, pts, .22 * bw, .17);
     V.core.material.opacity = locked ? .95 : beingDrawn ? .7 : .55; V.glow.material.opacity = locked ? .25 : .12;
     const da = V.drops.geometry.attributes.position.array; let nd = 0, acc = 0;
     for (let i = 1; i < pts.length && nd < 90; i++) { acc += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z); if (acc >= 9) { acc = 0; da.set([pts[i].x, pts[i].y, pts[i].z, pts[i].x, .17, pts[i].z], nd * 6); nd++; } }
@@ -1776,7 +1777,7 @@ function updatePathViz(p) {
       const f = (next - acc) / seg;
       vizDummy.position.set(a.x + (b.x - a.x) * f, a.y + (b.y - a.y) * f + .05, a.z + (b.z - a.z) * f);
       vizDummy.rotation.set(0, -Math.atan2(b.z - a.z, b.x - a.x), Math.atan2(b.y - a.y, seg));
-      vizDummy.scale.setScalar(routed ? 1.7 : 1.2); vizDummy.updateMatrix(); V.chev.setMatrixAt(k++, vizDummy.matrix); next += step;
+      vizDummy.scale.setScalar((routed ? 1.7 : 1.2) * (p.boost || 1)); vizDummy.updateMatrix(); V.chev.setMatrixAt(k++, vizDummy.matrix); next += step;
     }
     acc += seg;
   }
@@ -1799,13 +1800,25 @@ function makePathMesh(type) {
   const m = new THREE.Mesh(geo, basicMat(TYPE[type].color, { transparent: true, opacity: .7, depthWrite: false, side: THREE.DoubleSide }));
   m.frustumCulled = false; m.renderOrder = 2; m.visible = false; scene.add(m); return m;
 }
+// Readability on small screens: an airborne aircraft is drawn at least AC_MIN_PX long (up to AC_MAX_BOOST x its true size),
+// shrinking back to true size as it descends so it still fits the runway. Collision distances never change.
+const AC_MIN_PX = 32, _pa = new THREE.Vector3(), _pb = new THREE.Vector3(), _cr = new THREE.Vector3();
+function pxPerUnit(x, y, z) {
+  _cr.setFromMatrixColumn(camera.matrixWorld, 0); _pa.set(x, y, z).project(camera); _pb.set(x, y, z).add(_cr).project(camera);
+  return Math.hypot((_pb.x - _pa.x) * innerWidth / 2, (_pb.y - _pa.y) * innerHeight / 2) || 1;
+}
+// Upright phones have the least room (the whole board fits ~390 px), so they may grow to 2x; other screens to 1.6x.
+const boostFor = (lenU, ppu) => clamp(AC_MIN_PX / (lenU * ppu), 1, innerHeight > innerWidth * 1.2 && innerWidth < 600 ? 2 : 1.6);
 function spawnPlane(variant, pos, heading) {
   const V = VARIANT[variant], cfg = TYPE[V.type], model = makePlaneModel(variant);
   scene.add(model.root);
   const mats = []; model.root.traverse(o => { if (o.material && mats.indexOf(o.material) < 0) mats.push(o.material); });
   const p = Object.assign(model, { variant, type: V.type, cfg, r: V.r, mats, pos: pos.clone(), heading, alt: ALT + 7, speed: V.speed * rand(.94, 1.06), cur: 0, roll: 0, pitch: 0, gearT: V.type === 'heli' ? 1 : 0,
     path: [], target: null, state: 'fly', entered: false, warn: false, viz: makePathViz(V.type), touched: false, taxiT: 0 });
-  p.cruise = p.speed;
+  p.cruise = p.speed; p.s0 = p.root.scale.x; p.boost = 1;
+  // Type-coloured halo under the aircraft, shown only while it is enlarged (small screens) to make it easy to spot and tap.
+  p.halo = new THREE.Mesh(new THREE.RingGeometry(6.2, 7.6, 40).rotateX(-Math.PI / 2), basicMat(cfg.color, { transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }));
+  p.halo.position.y = -p.groundOff / p.s0 - .4; p.halo.renderOrder = 3; p.halo.visible = false; p.root.add(p.halo);
   planes.push(p);
   if (state === 'play' && WX && landed >= 2 && V.type !== 'heli' && !planes.some(o => o.emerg && !o.emerg.done) && Math.random() < .13) makeEmergency(p, Math.random() < .55 ? 'fire' : 'fuel');
   return p;
@@ -1984,6 +1997,10 @@ function updatePlane(p, dt) {
     }
   }
   p.gear.forEach(g => { g.visible = p.gearT > .02; g.scale.y = Math.max(.01, p.gearT); });
+  { const air = p.state === 'fly' ? 1 : p.state === 'land' ? clamp(p.alt / ALT, 0, 1) : 0;
+    p.boost = air > 0 ? 1 + (boostFor(11.85 * p.s0, pxPerUnit(p.pos.x, p.alt, p.pos.z)) - 1) * air : 1;
+    p.root.scale.setScalar(p.s0 * p.boost);
+    const ho = clamp((p.boost - 1) * 1.6, 0, .55) * air; p.halo.visible = ho > .02; p.halo.material.opacity = ho; }
   p.root.position.set(p.pos.x, p.alt + p.groundOff, p.pos.z);
   p.root.rotation.y = -p.heading;
   p.body.rotation.x = p.roll;
@@ -2389,7 +2406,7 @@ function wxReset() {
 function wxHud() {
   if (!WX) return;
   const I = WX_INFO[WX.kind], w = WX.windKt < 4 ? 'calm' : `${String(compassDeg(WX.windFrom)).padStart(3, '0')}° ${WX.windKt} kt`;
-  $('#hWx').innerHTML = `<span>${I.icon} ${I.label}</span><span>Wind ${w}</span><span>Land <b>${WX.active || 'none open'}</b></span>${comboN > 1 ? `<span class="combo">Combo ×${comboMult()}</span>` : ''}`;
+  $('#hWx').innerHTML = `<span>${I.icon} ${I.label}</span><span>Wind ${w}</span><span>Land <b>${WX.active || 'none open'}</b></span>${comboMult() > 1 ? `<span class="combo">Combo ×${comboMult()}</span>` : ''}`;
 }
 function wxChange() {
   const prev = WX.kind; let kind = wxPick(); if (kind === prev) kind = wxPick();
@@ -2915,7 +2932,7 @@ function frame(now) {
   }
   for (let i = pending.length - 1; i >= 0; i--) {
     const s = pending[i]; s.t -= dt;
-    s.ind.material.opacity = .5 + .5 * Math.sin(time * 10); s.ind.scale.setScalar(1 + .15 * Math.sin(time * 10));
+    s.ind.material.opacity = .5 + .5 * Math.sin(time * 10); s.ind.scale.setScalar((1 + .15 * Math.sin(time * 10)) * boostFor(9, pxPerUnit(s.ind.position.x, ALT, s.ind.position.z)));
     if (s.t <= 0) { scene.remove(s.ind); s.ind.geometry.dispose(); s.ind.material.dispose(); pending.splice(i, 1); if (state === 'play' || state === 'menu') spawnPlane(s.variant, s.pos, s.heading); }
   }
 
