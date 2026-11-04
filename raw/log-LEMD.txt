@@ -1,9 +1,1 @@
-  LEMD overpass.private.coffee: HTTP Error 504: Gateway Timeout
-  LEMD maps.mail.ru: HTTP Error 504: Gateway Time-out
-  LEMD overpass-api.de: HTTP Error 502: Bad Gateway
-  LEMD overpass.kumi.systems: HTTP Error 504: Gateway Timeout
-  LEMD overpass.private.coffee: HTTP Error 504: Gateway Timeout
-  LEMD maps.mail.ru: HTTP Error 504: Gateway Timeout
-  LEMD overpass-api.de: HTTP Error 502: Bad Gateway
-  LEMD overpass.kumi.systems: HTTP Error 504: Gateway Timeout
-LEMD FAILED overpass.kumi.systems: HTTP Error 504: Gateway Timeout
+LEMD ok 7205 elements 5258 KB 180s via OSM API, boundary rings 1
