@@ -196,7 +196,7 @@ table.sheet{border-collapse:separate;border-spacing:0;font-size:13.5px;min-width
 
 .empty{padding:40px 20px;text-align:center;color:var(--muted)}
 .empty b{display:block;color:var(--ink);font-family:var(--f-brand);font-weight:400;font-size:22px;margin-bottom:6px}
-.toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:999px;font-weight:600;font-size:13.5px;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
+.toast{width:max-content;max-width:min(92vw,560px);white-space:normal;text-align:center;line-height:1.35;border-radius:16px;position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;font-weight:600;font-size:13.5px;z-index:60;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.on{opacity:1}
 
 .fab{position:fixed;right:max(20px,calc(env(safe-area-inset-right,0px) + 16px));bottom:calc(22px + env(safe-area-inset-bottom,0px));z-index:25;display:flex;align-items:center;gap:8px;
@@ -315,7 +315,7 @@ $('#themeBtn').onclick=()=>{
   render();
 };
 function setSync(state,text){const el=$('#sync');el.className='sync '+state;el.querySelector('span').textContent=text;}
-function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('on'),2000);}
+function toast(t,ms){const el=$('#toast');el.textContent=t;el.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('on'),ms||2000);}
 
 /* ---------- model ---------- */
 function migrate(d){
@@ -843,6 +843,7 @@ function fromGrid(grid){
     let c=byName[g+'|'+plain(name)]; if(!c){c={id:uid('c'),name,group:g,note};categories.push(c);byName[g+'|'+plain(name)]=c;}
     for(const k of Object.keys(colPid)){const v=cellNum(row[k]);if(isFinite(v)&&v!==0){const key=c.id+'|'+colPid[k];cells[key]=Math.round(((cells[key]||0)+Math.abs(v))*100)/100;}}
   }
+  if(categories.length&&!Object.keys(cells).length)importWhy.empty=Math.max(importWhy.empty||0,periods.length);
   if(!categories.length||!Object.keys(cells).length)return null;
   return migrate({v:2,startBalance:0,periods,categories,cells,paid:{},extras:[]});
 }
@@ -1026,8 +1027,10 @@ function textGrids(text,ext){
   if(/^\{\\rtf/.test(text))text=text.replace(/\\par[d]?/g,'\n').replace(/\\cell/g,'\t').replace(/\\row/g,'\n').replace(/\{\\[^{}]*\}|\\[a-z]+-?\d* ?|[{}]/g,'');
   return[parseDelimited(text)];
 }
+let importWhy={};
 function pickBudget(grids){
-  if(grids&&grids.budget)return grids.budget;
+  importWhy={tables:(grids&&grids.length)||0,rows:Math.max(0,...((grids&&grids.length?grids:[[]]).map(g=>(g||[]).length)))};
+  if(grids&&grids.budget){if(!Object.keys(grids.budget.cells).length&&!grids.budget.extras.length)importWhy.emptySave=true;return grids.budget;}
   const found=(grids||[]).map(g=>{try{return toBudget(g);}catch(e){return null;}}).filter(Boolean).sort((a,b)=>Object.keys(b.cells).length-Object.keys(a.cells).length);
   if(!found.length)return null;
   // pages of a PDF, or one sheet per month: join the parts that cover other pay dates
@@ -1043,7 +1046,11 @@ function pickBudget(grids){
   return migrate(out);
 }
 function useImported(d,from){
-  if(!d){toast('Je n’ai pas trouvé de montants avec des dates dans '+(from||'ce document'));return false;}
+  const name=from||'ce document', w=importWhy;
+  if(!d){toast(w.empty?`« ${name} » est un budget vide : ${w.empty} paies, mais aucun montant. Exporte-le depuis l’appareil où tes montants sont entrés (ou utilise la synchro).`
+    :!w.tables||!w.rows?`« ${name} » ne contient pas de tableau lisible (photo ou PDF scanné ?)`
+    :`Dans « ${name} », je n’ai pas trouvé de dates de paie avec des montants (${w.rows} lignes lues).`,7000);return false;}
+  if(w.emptySave){toast(`« ${name} » est une sauvegarde vide : rien n’a été changé.`,7000);return false;}
   try{if(S)localStorage.setItem('budgetplus-before-import',JSON.stringify(S));}catch(e){}
   S=d; view='sheet'; save(); render();
   toast(`Budget importé : ${d.periods.length} paies, ${d.categories.length} lignes`); return true;
