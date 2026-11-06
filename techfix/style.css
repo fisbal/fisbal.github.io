@@ -482,3 +482,25 @@ button{ font-family: inherit; }
   .sheet{ border-radius: var(--radius-l) var(--radius-l) 0 0; max-height: 88vh; }
   .sheet-actions .btn{ flex:1; justify-content:center; }
 }
+
+/* ---------- Security tab: system lamps, forecast, details ---------- */
+.lamp-panel{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:10px; }
+.sys-lamp{ display:flex; align-items:center; gap:6px; padding:6px 10px; background: var(--surface-2); border:1px solid var(--border-soft);
+  border-radius: var(--radius-s); font-family: var(--font-mono); font-size:11px; color: var(--text-faint); letter-spacing:.4px; }
+.sys-lamp .lamp{ width:9px; height:9px; border-radius:50%; background: var(--surface-3); flex-shrink:0; }
+.sys-lamp.ok{ color: var(--text); } .sys-lamp.ok .lamp{ background: var(--ok); box-shadow:0 0 8px var(--ok); }
+.sys-lamp.bad{ color: var(--text); border-color: rgba(226,98,106,.35); } .sys-lamp.bad .lamp{ background: var(--crit); box-shadow:0 0 10px var(--crit); animation: lamp-pulse 1.3s ease-in-out infinite; }
+.forecast-list{ display:flex; flex-direction:column; gap:8px; }
+.forecast{ display:flex; align-items:center; gap:14px; padding:12px 14px; background: var(--surface-2); border:1px solid var(--border-soft); border-radius: var(--radius-m); }
+.forecast.crit{ border-color: rgba(226,98,106,.35); } .forecast.warn{ border-color: rgba(226,165,63,.30); }
+.forecast-lamp{ display:flex; flex-direction:column; align-items:center; gap:5px; width:70px; flex-shrink:0; font-family: var(--font-mono); font-size:10px; text-transform:uppercase; letter-spacing:.6px; color: var(--text-dim); }
+.forecast-lamp .lamp{ width:12px; height:12px; border-radius:50%; background: var(--border); }
+.forecast-lamp .lamp.warn{ background: var(--warn); box-shadow:0 0 8px var(--warn); }
+.forecast-lamp .lamp.crit{ background: var(--crit); box-shadow:0 0 10px var(--crit); animation: lamp-pulse 1.3s ease-in-out infinite; }
+.forecast-body{ flex:1; min-width:0; }
+.sec-details summary{ cursor:pointer; font-weight:600; color: var(--text); display:flex; align-items:center; gap:8px; list-style:none; }
+.sec-details summary svg{ width:16px; height:16px; color: var(--gold-2); }
+.sec-details .kb-block{ margin-top:12px; }
+.sec-details code{ font-family: var(--font-mono); font-size:11.5px; color: var(--gold-1); overflow-wrap:anywhere; }
+@media (max-width:560px){ .forecast{ flex-wrap:wrap; gap:10px; } .forecast-lamp{ flex-direction:row; width:auto; } .forecast-body{ flex:1 1 100%; order:2; } .forecast > .btn, .forecast > button{ order:3; } }
+

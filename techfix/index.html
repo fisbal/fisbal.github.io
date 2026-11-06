@@ -38,6 +38,7 @@
     <button class="nav-item" data-view="scan"><span class="ico" data-icon="scan"></span><span>Live Scan</span></button>
     <button class="nav-item" data-view="wizard"><span class="ico" data-icon="wand"></span><span>Diagnose Wizard</span></button>
     <button class="nav-item" data-view="log"><span class="ico" data-icon="log"></span><span>Analyze Log</span></button>
+    <button class="nav-item" data-view="security"><span class="ico" data-icon="shield"></span><span>Security</span></button>
     <div class="nav-section-label">Reference</div>
     <button class="nav-item" data-view="kb"><span class="ico" data-icon="book"></span><span>Knowledge Base</span><span class="nav-count" id="nav-kb-count"></span></button>
     <button class="nav-item" data-view="saved"><span class="ico" data-icon="bookmark"></span><span>Saved Fixes</span><span class="nav-count" id="nav-saved-count"></span></button>
@@ -86,6 +87,15 @@
         <p>Copy a clean, plain-text summary of everything on this page — paste it into a chat with Claude or any assistant, along with what you were doing when the problem started, for help beyond TechFix's built-in fixes.</p>
         <button class="btn primary" id="scan-copy-report-btn"><span class="ico" data-icon="copy"></span><span>Copy diagnostic report</span></button>
       </div>
+    </section>
+
+    <section class="view" id="view-security">
+      <div class="view-head">
+        <div class="view-eyebrow">Protection</div>
+        <h1 class="view-title">Security &amp; antivirus</h1>
+        <p class="view-sub">Is this device protected? TechFix checks the antivirus, firewall, updates, startup programs and risky settings — and fixes them with one click.</p>
+      </div>
+      <div id="security-body"></div>
     </section>
 
     <section class="view" id="view-wizard">
@@ -174,6 +184,7 @@
 
 <script src="data.js"></script>
 <script src="fixit.js"></script>
+<script src="security-ui.js"></script>
 <script src="app.js"></script>
 
 </body></html>

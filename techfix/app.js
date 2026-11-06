@@ -29,6 +29,7 @@ const ICON = {
   log:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6M9 9h1"/></svg>`,
   upload:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>`,
   pulse:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l2 7 4-14 2 7h8"/></svg>`,
+  shield:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3.5V11c0 5-3.4 8.9-8 11-4.6-2.1-8-6-8-11V5.5z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>`,
   report:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6a1 1 0 0 1 1 1v1H8V4a1 1 0 0 1 1-1z"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2"/><path d="M8 11h8M8 15h8M8 19h5"/></svg>`
 };
 
@@ -225,7 +226,9 @@ const state = {
   scanResults: null,
   scanFindings: [],
   log: { result: null, watching: false, handle: null, timer: null, fileName: null },
-  native: { result: null, fixes: [] }
+  native: { result: null, fixes: [] },
+  securityResult: null,
+  securityBusy: false
 };
 
 /* ---------- Persistence (per-viewer convenience only) ---------- */
@@ -290,6 +293,10 @@ function setView(view){
   els(".nav-item").forEach(b => b.classList.toggle("active", b.dataset.view === view));
   els(".view").forEach(v => v.classList.toggle("active", v.id === "view-"+view));
   window.scrollTo({top:0, behavior:"instant" in window ? "instant":"auto"});
+  if(view === "security"){
+    renderSecurityView();
+    if(!state.securityResult && !state.securityBusy && (window.techfixNative || window.TechFixAndroid)) runSecurityScan(false);
+  }
   snapshotHot();
 }
 
