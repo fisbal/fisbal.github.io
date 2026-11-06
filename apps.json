@@ -133,10 +133,13 @@
       "name": "TechFix",
       "file": "TechFix",
       "pkg": "com.martinb.techfix",
-      "desc": "Diagnostic de ton appareil et base de 100 pannes connues.",
+      "desc": "Diagnostic de ton appareil et base de 180+ pannes connues, PC et téléphones, 1980 à aujourd'hui.",
       "factory": true,
       "source": {
         "local": "techfix"
+      },
+      "electron": {
+        "diagnostics": true
       },
       "web": "/techfix/",
       "code": "https://github.com/fisbal/fisbal.github.io/tree/main/techfix",

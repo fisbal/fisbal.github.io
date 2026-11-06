@@ -85,6 +85,57 @@ const LOG_SIGNATURES = [
   { id:"ios-12-01", label:"Group FaceTime eavesdrop bug reference", pattern:/group facetime/i },
 ];
 
+/* ---------- Offline "closest known issue" matching ----------
+   LOG_SIGNATURES above are exact, hand-picked regexes — precise but only ever
+   as wide as the list TechFix's authors thought to write. Martin asked for
+   TechFix to lean on its knowledge base (now ~180 entries, 1980-present,
+   PCs and phones) to recognize problems that AREN'T an exact signature match
+   too — i.e. "AI-style" detection of new/unlisted problems, done with zero
+   network access: pure token-overlap scoring against the KB's own text,
+   entirely in this tab. It is explicitly NOT a confirmed diagnosis — every
+   caller must present it as "closest known issue", never as a match. */
+const STOPWORDS = new Set(["the","a","an","and","or","to","of","in","on","at","for","with","is","was","were","are","be",
+  "this","that","it","its","as","by","from","has","have","had","not","no","but","if","then","than","so","can","could",
+  "will","would","should","may","might","after","before","during","while","when","your","you","i","we","our","their",
+  "device","phone","computer","pc","mac","android","ios","windows","error","failed","failure","issue","problem"]);
+
+function tokenize(text){
+  return String(text||"").toLowerCase().replace(/0x[0-9a-f]+/gi,"").split(/[^a-z0-9]+/i)
+    .filter(w => w.length > 2 && !STOPWORDS.has(w));
+}
+
+let _kbTokenIndex = null;
+function kbTokenIndex(){
+  if(_kbTokenIndex) return _kbTokenIndex;
+  _kbTokenIndex = KB.map(entry => ({
+    entry,
+    title: new Set(tokenize(entry.title)),
+    body: new Set(tokenize([entry.title, ...(entry.symptoms||[]), ...(entry.causes||[])].join(" "))),
+    tags: new Set((entry.tags||[]).map(t=>t.toLowerCase()))
+  }));
+  return _kbTokenIndex;
+}
+
+// Weighted overlap: a hit on a KB entry's title or tags counts far more than
+// a hit buried in its symptom/cause prose, since titles/tags are the terms
+// an author chose to name the issue by.
+function fuzzyKbMatches(text, { max = 3, minScore = 3 } = {}){
+  const qTokens = new Set(tokenize(text));
+  if(qTokens.size === 0) return [];
+  const scored = [];
+  for(const row of kbTokenIndex()){
+    let score = 0;
+    for(const t of qTokens){
+      if(row.title.has(t)) score += 3;
+      else if(row.tags.has(t)) score += 2;
+      else if(row.body.has(t)) score += 1;
+    }
+    if(score >= minScore) scored.push({ entry: row.entry, score });
+  }
+  scored.sort((a,b)=> b.score - a.score);
+  return scored.slice(0, max);
+}
+
 function normalizeLogLine(line){
   return line
     .replace(/^\s*\[?\d{4}-\d{2}-\d{2}[ t][\d:.,]+\]?\s*/i, "")
@@ -131,13 +182,34 @@ function analyzeLogText(text){
   let fatalExceptions = 0;
   for(const raw of lines){ if(/fatal exception/i.test(raw)) fatalExceptions++; }
 
+  // Closest-known-issue pass (offline, no network): only for repeated lines that
+  // read as an actual error/failure and weren't already pinned to an exact
+  // LOG_SIGNATURES match — this is where an unlisted problem gets a best-effort
+  // pointer into the KB instead of silently producing nothing.
+  const matchedIds = new Set(matches.map(m=>m.id));
+  const errorish = /\b(error|exception|fail|failed|failure|crash|panic|fatal|denied|timeout|timed out|cannot|can't|unable|not responding|not found|refused)\b/i;
+  const fuzzySuggestions = [];
+  const seenFuzzyIds = new Set();
+  for(const [line, count] of topRepeated){
+    if(!errorish.test(line)) continue;
+    if([...LOG_SIGNATURES].some(sig => matchedIds.has(sig.id) && sig.pattern.test(line))) continue;
+    for(const { entry, score } of fuzzyKbMatches(line, { max: 1 })){
+      if(seenFuzzyIds.has(entry.id)) continue;
+      seenFuzzyIds.add(entry.id);
+      fuzzySuggestions.push({ id: entry.id, title: entry.title, fromLine: line, count, score });
+      if(fuzzySuggestions.length >= 5) break;
+    }
+    if(fuzzySuggestions.length >= 5) break;
+  }
+
   return {
     totalLines: allLines.length,
     analyzedLines: lines.length,
     truncated,
     fatalCount, errorCount, warnCount, fatalExceptions,
     topRepeated,
-    matches
+    matches,
+    fuzzySuggestions
   };
 }
 
@@ -152,7 +224,8 @@ const state = {
   saved: new Set(),
   scanResults: null,
   scanFindings: [],
-  log: { result: null, watching: false, handle: null, timer: null, fileName: null }
+  log: { result: null, watching: false, handle: null, timer: null, fileName: null },
+  native: { result: null, fixes: [] }
 };
 
 /* ---------- Persistence (per-viewer convenience only) ---------- */
@@ -343,6 +416,69 @@ function sevChipClass(pct, invert){ // helper for stat chips based on numeric pr
   return "ok";
 }
 
+/* ---------- Cockpit instruments (gauges + annunciator lights) ----------
+   A bridge/cockpit-style readout for the same honest numbers the tiles already
+   show — nothing here is a new data source, just a nicer instrument for a
+   real percentage TechFix already has (storage used, battery level, real
+   memory/disk usage from a native scan). Categorical values (platform,
+   display res) stay as plain text — a dial implies a measurable quantity,
+   and forcing one on a category would be the same kind of dishonest reading
+   the September pass removed from the plain tiles. */
+function polarToXY(cx, cy, r, deg){
+  const rad = (deg - 90) * Math.PI / 180;
+  return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
+}
+function arcPath(cx, cy, r, startDeg, endDeg){
+  const [x1,y1] = polarToXY(cx,cy,r,startDeg);
+  const [x2,y2] = polarToXY(cx,cy,r,endDeg);
+  const large = (endDeg - startDeg) > 180 ? 1 : 0;
+  return `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
+}
+function gaugeTier(pct, dangerAbove){
+  if(pct == null) return "info";
+  if(pct > dangerAbove) return "crit";
+  if(pct > dangerAbove - 0.2) return "warn";
+  return "ok";
+}
+function gaugeSVG({ pct, tier, valueLabel, unitLabel }){
+  const cx = 60, cy = 62, r = 44, START = 125, SWEEP = 290;
+  const p = pct == null ? 0 : Math.max(0, Math.min(1, pct));
+  const valDeg = START + SWEEP * p;
+  const color = tier === "crit" ? "var(--crit)" : tier === "warn" ? "var(--warn)" : tier === "info" ? "var(--border-soft)" : "var(--gold-2)";
+  let ticks = "";
+  const TICKS = 10;
+  for(let i=0;i<=TICKS;i++){
+    const d = START + (SWEEP*i/TICKS);
+    const [x1,y1] = polarToXY(cx,cy,r+6,d);
+    const [x2,y2] = polarToXY(cx,cy,r+11,d);
+    ticks += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="var(--border-soft)" stroke-width="1.4"/>`;
+  }
+  return `<svg viewBox="0 0 120 124" class="gauge-svg" aria-hidden="true">
+    <path d="${arcPath(cx,cy,r,START,START+SWEEP)}" fill="none" stroke="var(--surface-3)" stroke-width="9" stroke-linecap="round"/>
+    ${pct != null ? `<path d="${arcPath(cx,cy,r,START,valDeg)}" fill="none" stroke="${color}" stroke-width="9" stroke-linecap="round"/>` : ""}
+    ${ticks}
+    <circle cx="${cx}" cy="${cy}" r="${r-15}" fill="var(--surface-2)" stroke="var(--border-soft)" stroke-width="1"/>
+    <text x="${cx}" y="${cy-1}" text-anchor="middle" class="gauge-value">${esc(valueLabel)}</text>
+    <text x="${cx}" y="${cy+15}" text-anchor="middle" class="gauge-unit">${esc(unitLabel||"")}</text>
+  </svg>`;
+}
+function annunciatorRow(counts){
+  // counts: {crit, high, medium, low} — lights up like a warning-light strip, dark when zero.
+  const defs = [
+    { key:"crit", cls:"crit", label:"CRIT" },
+    { key:"high", cls:"warn", label:"WARN" },
+    { key:"ok", cls:"ok", label:"OK" }
+  ];
+  const crit = (counts.crit||0) + (counts.high||0);
+  const warn = (counts.medium||0) + (counts.low||0);
+  const clean = crit===0 && warn===0;
+  return `<div class="annunciator-row">
+    <div class="annunciator ${crit>0?'on':''}"><span class="lamp crit"></span>CRIT${crit>0?` · ${crit}`:''}</div>
+    <div class="annunciator ${warn>0 && crit===0?'on':''}"><span class="lamp warn"></span>WARN${warn>0?` · ${warn}`:''}</div>
+    <div class="annunciator ${clean?'on':''}"><span class="lamp ok"></span>CLEAR</div>
+  </div>`;
+}
+
 function renderScan(){
   const r = state.scanResults;
   const wrap = el("#scan-stats");
@@ -364,11 +500,10 @@ function renderScan(){
       <div class="stat-value" style="font-family:var(--font-body); font-size:19px;">${plat.icon} ${esc(plat.short)}</div>
       <div class="stat-note">${r.touchPoints>0 ? "Touch input available" : "No touch input detected"} · ${esc(r.tz)}</div>
     </div>
-    <div class="stat-tile">
+    <div class="stat-tile has-gauge">
       <div class="stat-tile-top"><span class="stat-label">This tab's storage sandbox</span>
         <span class="stat-chip ${storagePct==null?'info':sevChipClass(storagePct)}">${storagePct==null?'N/A':(storagePct>0.9?'critical':storagePct>0.7?'watch':'fine')}</span></div>
-      <div class="stat-value">${storagePct==null? '—' : (storagePct*100).toFixed(0)+'%'} <small>used</small></div>
-      <div class="stat-bar ${storagePct>0.9?'crit':storagePct>0.7?'warn':''}"><span style="width:${storagePct? Math.min(100,storagePct*100):0}%"></span></div>
+      ${gaugeSVG({ pct: storagePct, tier: gaugeTier(storagePct, 0.9), valueLabel: storagePct==null?'—':(storagePct*100).toFixed(0)+'%', unitLabel:'USED' })}
       <div class="stat-note">${fmtBytes(r.storageUsage)} of ${fmtBytes(r.storageQuota)} — a browser sandbox limit, NOT your real free disk space</div>
     </div>
     <div class="stat-tile">
@@ -382,10 +517,10 @@ function renderScan(){
       <div class="stat-value" style="font-size:19px;">${r.connType ? r.connType.toUpperCase()+'-class' : '—'}</div>
       <div class="stat-note">${r.downlink? '~'+r.downlink+' Mbps · ' : ''}${r.rtt? r.rtt+'ms RTT · ' : ''}Chrome's rough quality bucket — not your literal network type (Wi-Fi/Ethernet/cellular all get labeled this way)</div>
     </div>
-    <div class="stat-tile">
+    <div class="stat-tile has-gauge">
       <div class="stat-tile-top"><span class="stat-label">Battery</span>
         <span class="stat-chip ${r.battery ? (r.battery.level<=0.2 && !r.battery.charging?'crit':(r.battery.charging?'info':'ok')) : 'info'}">${r.battery ? (r.battery.charging?'charging':'on battery') : 'n/a'}</span></div>
-      <div class="stat-value">${r.battery ? Math.round(r.battery.level*100)+'%' : '—'}</div>
+      ${gaugeSVG({ pct: r.battery ? r.battery.level : null, tier: r.battery ? (r.battery.level<=0.2 && !r.battery.charging ? 'crit' : (r.battery.charging ? 'info' : 'ok')) : 'info', valueLabel: r.battery ? Math.round(r.battery.level*100)+'%' : '—', unitLabel: r.battery ? (r.battery.charging?'CHARGING':'ON BATTERY') : 'N/A' })}
       <div class="stat-note">${r.battery ? '' : 'Battery Status API not available on this browser/device'}</div>
     </div>
     <div class="stat-tile">
@@ -397,11 +532,15 @@ function renderScan(){
 
   const crit = state.scanFindings.filter(f=>f.severity==="critical").length;
   const high = state.scanFindings.filter(f=>f.severity==="high").length;
+  const medium = state.scanFindings.filter(f=>f.severity==="medium").length;
+  const low = state.scanFindings.filter(f=>f.severity==="low").length;
   summary.className = "status-pill always";
   if(crit>0){ summary.innerHTML = `<span class="status-dot crit"></span> ${crit} critical finding${crit>1?'s':''}`; }
   else if(high>0){ summary.innerHTML = `<span class="status-dot warn"></span> ${high} finding${high>1?'s':''} to review`; }
   else if(state.scanFindings.length>0){ summary.innerHTML = `<span class="status-dot warn"></span> ${state.scanFindings.length} minor note${state.scanFindings.length>1?'s':''}`; }
   else { summary.innerHTML = `<span class="status-dot"></span> Scan clean`; }
+  const annunciators = el("#scan-annunciators");
+  if(annunciators) annunciators.innerHTML = annunciatorRow({ crit, high, medium, low });
 
   if(state.scanFindings.length === 0){
     findWrap.innerHTML = `<div class="empty-good">${ICON.check}<span><strong>Nothing wrong in what a browser can see</strong> — that's a narrow slice (memory ceiling, storage sandbox, rough connection quality, battery). It is not a clean bill of health for the PC itself: real disk health, running processes, driver status, and crash history are invisible to any webpage. If something's actually wrong, describe it in the Diagnose Wizard, run Analyze Log on any error text you have, or use the native TechFix app for a real scan.</span></div>`;
@@ -422,6 +561,226 @@ function renderScan(){
       });
     });
   }
+}
+
+/* ---------- Native diagnostics (installed Windows app only) ----------
+   window.techfixNative only exists inside the factory-built Electron app,
+   and only for this one app id (see diagnostics-preload.js). On the web,
+   on Android, and in every other MartinB app it's simply undefined, so
+   all of this is inert there — the panel stays hidden and nothing here runs. */
+const SEV_RANK = { critical:0, high:1, medium:2, low:3 };
+
+function renderNativeResults(){
+  const wrap = el("#native-results");
+  const res = state.native.result;
+  if(!res){
+    wrap.innerHTML = `<div class="stat-note">Run a native scan to read real disk, memory, driver, and event-log state from Windows.</div>`;
+    return;
+  }
+  if(!res.supported){
+    wrap.innerHTML = `<div class="stat-note">${esc(res.message || "Native diagnostics aren't available on this platform yet.")}</div>`;
+    return;
+  }
+  if(res.error){
+    wrap.innerHTML = `<div class="stat-note">Scan failed: ${esc(res.error)}</div>`;
+    return;
+  }
+
+  const sys = res.system || {};
+  const memPct = res.memory && res.memory.totalKB ? Math.round((1 - res.memory.freeKB/res.memory.totalKB)*100) : null;
+  const sysLine = `${esc(sys.caption||"Windows")} (build ${esc(sys.build||"?")}) · ${res.admin ? "Administrator" : "standard user"} · RAM ${memPct==null?'—':memPct+'%'} in use`;
+
+  const findings = (res.findings||[]).slice().sort((a,b)=>(SEV_RANK[a.severity]??9)-(SEV_RANK[b.severity]??9));
+  const primaryDisk = (res.disks||[])[0];
+  const diskPct = primaryDisk && primaryDisk.sizeBytes ? (1 - primaryDisk.freeBytes/primaryDisk.sizeBytes) : null;
+  const sevCounts = {
+    crit: findings.filter(f=>f.severity==="critical").length, high: findings.filter(f=>f.severity==="high").length,
+    medium: findings.filter(f=>f.severity==="medium").length, low: findings.filter(f=>f.severity==="low").length
+  };
+  const cockpitRow = `<div class="cockpit-row">
+    <div class="gauge-card">${gaugeSVG({ pct: memPct==null?null:memPct/100, tier: gaugeTier(memPct==null?null:memPct/100, 0.9), valueLabel: memPct==null?'—':memPct+'%', unitLabel:'MEMORY' })}<div class="gauge-label">Memory</div></div>
+    <div class="gauge-card">${gaugeSVG({ pct: diskPct, tier: gaugeTier(diskPct, 0.9), valueLabel: diskPct==null?'—':Math.round(diskPct*100)+'%', unitLabel: primaryDisk ? primaryDisk.id+' USED' : 'DISK' })}<div class="gauge-label">${esc(primaryDisk ? primaryDisk.id : "Disk")}</div></div>
+    <div class="gauge-card" style="justify-content:center; min-height:98px;">${annunciatorRow(sevCounts)}<div class="gauge-label" style="margin-top:10px;">Status</div></div>
+  </div>`;
+
+  if(findings.length === 0){
+    wrap.innerHTML = `${cockpitRow}<div class="stat-note" style="margin-bottom:10px;">${esc(sysLine)}</div>
+      <div class="empty-good">${ICON.check}<span><strong>Nothing found</strong> — disk health, driver errors, the event log, pending reboot, and network all checked clean just now.</span></div>`;
+    return;
+  }
+
+  wrap.innerHTML = `${cockpitRow}<div class="stat-note" style="margin-bottom:10px;">${esc(sysLine)}</div>
+    <div class="finding-list">${findings.map((f,i)=>{
+      const kb = f.kbId ? KB.find(k=>k.id===f.kbId) : null;
+      // No exact KB id on this finding (e.g. a generic native-scan detail) — offline
+      // token-overlap search against the whole KB for a "closest known issue" instead
+      // of just showing bare text with nothing to follow up on.
+      const fuzzy = (!kb && f.detail) ? fuzzyKbMatches(f.detail, { max: 1 })[0] : null;
+      const title = kb ? kb.title : f.detail;
+      const linkTarget = kb ? kb.id : (fuzzy ? fuzzy.entry.id : null);
+      return `
+      <div class="finding" data-idx="${i}">
+        <div class="finding-sev ${f.severity}"></div>
+        <div class="finding-body">
+          <div class="finding-title">${esc(title)}</div>
+          <div class="finding-meta">${esc(f.detail)}</div>
+          ${fuzzy ? `<div class="finding-meta" style="margin-top:4px;">Closest known issue (pattern match, not confirmed): <strong>${esc(fuzzy.entry.title)}</strong></div>` : ""}
+          ${f.safeFixId || f.riskyFixId ? `<div class="finding-meta" style="margin-top:6px;" data-fix-row="${i}"></div>` : ""}
+        </div>
+        ${linkTarget ? `<div class="finding-arrow" data-kb="${linkTarget}">${ICON.chevron}</div>` : ""}
+      </div>`;
+    }).join("")}</div>`;
+
+  els(".finding .finding-arrow", wrap).forEach(node=>{
+    node.addEventListener("click", ()=> openKbEntry(node.dataset.kb));
+  });
+
+  findings.forEach((f,i)=>{
+    if(!f.safeFixId && !f.riskyFixId) return;
+    const row = wrap.querySelector(`[data-fix-row="${i}"]`);
+    if(!row) return;
+    if(f.safeFixId){
+      const btn = document.createElement("button");
+      btn.className = "btn sm primary";
+      btn.innerHTML = `${ICON.wrench}<span>Fix now</span>`;
+      btn.addEventListener("click", (e)=>{ e.stopPropagation(); runNativeFix(f.safeFixId, btn); });
+      row.appendChild(btn);
+    }
+    if(f.riskyFixId){
+      const entry = state.native.fixes.find(x=>x.id===f.riskyFixId);
+      const btn = document.createElement("button");
+      btn.className = "btn sm ghost";
+      btn.style.marginLeft = f.safeFixId ? "8px" : "0";
+      btn.innerHTML = `${ICON.wrench}<span>${entry ? entry.label : "Fix…"}</span>`;
+      btn.addEventListener("click", (e)=>{
+        e.stopPropagation();
+        const cmd = entry ? entry.cmd : f.riskyFixId;
+        if(confirm(`Run this now?\n\n${cmd}\n\nThis changes real system state on this PC.`)){
+          runNativeFix(f.riskyFixId, btn);
+        }
+      });
+      row.appendChild(btn);
+    }
+  });
+}
+
+async function runNativeFix(fixId, btn){
+  if(btn){ btn.disabled = true; }
+  try{
+    const result = await window.techfixNative.fix(fixId);
+    showToast(result.ok ? `Done — ${result.message}` : `Could not apply fix: ${result.message}`);
+    await runNativeScan(true);
+  }catch(e){
+    showToast("Fix failed: " + (e && e.message ? e.message : e));
+    if(btn){ btn.disabled = false; }
+  }
+}
+
+async function runNativeScan(silent){
+  if(!window.techfixNative) return;
+  const btn = el("#native-scan-btn");
+  if(btn && !silent){ btn.disabled = true; btn.querySelector("span:last-child").textContent = "Scanning…"; }
+  try{
+    const [result, fixes] = await Promise.all([window.techfixNative.scan(), window.techfixNative.listFixes()]);
+    state.native.result = result;
+    state.native.fixes = fixes || [];
+  }catch(e){
+    state.native.result = { supported:true, error: String(e && e.message ? e.message : e) };
+  }
+  renderNativeResults();
+  if(btn){ btn.disabled = false; btn.querySelector("span:last-child").textContent = "Run native scan"; }
+}
+
+function renderResolveLog(){
+  const wrap = el("#native-resolve-log");
+  if(!wrap) return;
+  const log = state.native.resolveLog;
+  if(!log || !log.length){ wrap.innerHTML = ""; return; }
+  wrap.innerHTML = `<div class="panel" style="margin-top:12px;">
+    <div class="panel-title" style="font-size:13px;">${ICON.activity} Resolution log</div>
+    <div style="font-family:var(--font-mono); font-size:12px; color:var(--text-dim); line-height:1.6; margin-top:6px;">
+      ${log.map(l=>esc(l)).join("<br>")}
+    </div>
+  </div>`;
+}
+
+// One upfront, specific consent, then TechFix keeps scanning and fixing on its own —
+// exactly what Martin asked for: go deep, not surface-level, and when a real fix is
+// available, apply it with the best knowledge TechFix has, repeating until either the
+// device comes up clean or nothing more is fixable, rather than stopping at one suggestion.
+async function runDeepResolve(){
+  if(!window.techfixNative) return;
+  const resolveBtn = el("#native-resolve-btn");
+  if(!state.native.fixes.length){
+    try{ state.native.fixes = await window.techfixNative.listFixes(); }catch(e){}
+  }
+  const safeList = state.native.fixes.filter(f=>f.tier==="safe").map(f=>f.label);
+  const riskyList = state.native.fixes.filter(f=>f.tier==="risky").map(f=>`${f.label} — exact command: ${f.cmd}`);
+  const consent = [
+    "TechFix will scan this PC for real problems, then keep fixing and re-scanning on its own — up to 5 passes — until either it's clean or nothing more is fixable by the actions below. It will only ever use these, and only when a matching problem is actually found:",
+    "",
+    "Always, no further asking:",
+    ...safeList.map(s=>"  - "+s),
+    "",
+    "Only if needed — you're approving all of these right now, once, instead of one at a time:",
+    ...riskyList.map(s=>"  - "+s),
+    "",
+    "Proceed?"
+  ].join("\n");
+  if(!confirm(consent)) return;
+
+  if(resolveBtn){ resolveBtn.disabled = true; resolveBtn.querySelector("span:last-child").textContent = "Resolving…"; }
+  const log = [];
+  let lastActionableCount = -1;
+  let pass = 0;
+  const MAX_PASSES = 5;
+
+  for(; pass < MAX_PASSES; pass++){
+    let result;
+    try{ result = await window.techfixNative.scan(); }
+    catch(e){ log.push(`✗ Scan failed: ${e && e.message ? e.message : e}`); break; }
+    state.native.result = result;
+    renderNativeResults();
+    if(!result.supported || result.error) break;
+
+    const actionable = (result.findings||[]).filter(f=>f.safeFixId || f.riskyFixId);
+    if(actionable.length === 0) break;
+    if(pass > 0 && actionable.length === lastActionableCount) break; // no progress since last pass — stop rather than spin
+    lastActionableCount = actionable.length;
+
+    for(const f of actionable){
+      const fixId = f.safeFixId || f.riskyFixId;
+      try{
+        const r = await window.techfixNative.fix(fixId);
+        log.push(`${r.ok ? "✓" : "✗"} [pass ${pass+1}] ${r.message}`);
+      }catch(e){
+        log.push(`✗ [pass ${pass+1}] ${fixId} failed: ${e && e.message ? e.message : e}`);
+      }
+    }
+    renderResolveLog();
+  }
+
+  try{ state.native.result = await window.techfixNative.scan(); }catch(e){}
+  state.native.resolveLog = log;
+  renderNativeResults();
+  renderResolveLog();
+
+  if(resolveBtn){ resolveBtn.disabled = false; resolveBtn.querySelector("span:last-child").textContent = "Diagnose deeply & resolve"; }
+
+  const remaining = (state.native.result && state.native.result.findings || []).length;
+  showToast(remaining === 0
+    ? `Clean — resolved everything it could across ${pass+1} pass${pass>0?'es':''}.`
+    : `${log.filter(l=>l.startsWith("✓")).length} fix(es) applied across ${pass+1} pass${pass>0?'es':''} — ${remaining} finding(s) remain that need a part, a repair shop, or your own call. See the findings above.`);
+}
+
+function initNativeDiagnostics(){
+  if(!window.techfixNative) return; // web / Android / every other MartinB app: nothing to do
+  const panel = el("#native-panel");
+  if(!panel) return;
+  panel.hidden = false;
+  el("#native-scan-btn").addEventListener("click", ()=> runNativeScan(false));
+  el("#native-resolve-btn").addEventListener("click", runDeepResolve);
+  renderNativeResults();
 }
 
 /* ---------- Wizard ---------- */
@@ -726,6 +1085,22 @@ function renderLogResults(){
   }
   html += `</div>`;
 
+  if(r.fuzzySuggestions && r.fuzzySuggestions.length){
+    html += `<div class="panel">
+      <div class="panel-head"><div class="panel-title">${ICON.wand}Closest known issues (pattern match, not a confirmed signature)</div></div>
+      <p style="font-size:12px; color:var(--text-dim); margin:0 0 12px;">These aren't exact knowledge-base matches like above — TechFix compared the repeated error text against every entry's title/symptoms/tags, offline, and these came closest. Worth a look, not a diagnosis.</p>
+      <div class="finding-list">${r.fuzzySuggestions.map(s=>`
+        <div class="finding" data-kb="${s.id}">
+          <div class="finding-sev low"></div>
+          <div class="finding-body">
+            <div class="finding-title">${esc(s.title)}</div>
+            <div class="finding-meta">From the repeated line <code>${esc(s.fromLine.slice(0,120))}</code></div>
+          </div>
+          <div class="finding-arrow">${ICON.chevron}</div>
+        </div>`).join("")}</div>
+    </div>`;
+  }
+
   if(r.topRepeated.length){
     html += `<div class="panel">
       <div class="panel-head"><div class="panel-title">${ICON.activity}Most repeated messages</div></div>
@@ -911,6 +1286,11 @@ function buildDiagnosticReport(){
     if(log.fatalExceptions > 0){
       lines.push(`  - ${log.fatalExceptions} generic Android "FATAL EXCEPTION" crash trace(s) (not tied to a specific KB entry)`);
     }
+    if(log.fuzzySuggestions && log.fuzzySuggestions.length){
+      lines.push("");
+      lines.push("Closest known issues (offline pattern match against the knowledge base — NOT a confirmed signature match):");
+      log.fuzzySuggestions.forEach(s=> lines.push(`  - ${s.title} — from repeated line "${s.fromLine}"`));
+    }
     if(log.topRepeated.length){
       lines.push("");
       lines.push("Most repeated messages:");
@@ -919,14 +1299,33 @@ function buildDiagnosticReport(){
     lines.push("");
   }
 
+  if(state.native.result && state.native.result.supported && !state.native.result.error){
+    const nr = state.native.result;
+    lines.push("── NATIVE WINDOWS SCAN (real OS state, not browser-limited) ──");
+    const sys = nr.system || {};
+    lines.push(`${sys.caption || "Windows"} build ${sys.build || "?"} — ${nr.admin ? "Administrator" : "standard user"}`);
+    if(!nr.findings || nr.findings.length === 0){
+      lines.push("Findings: none — disk health, Device Manager driver errors, the System event log, pending reboot, and network all checked clean.");
+    } else {
+      lines.push(`Findings (${nr.findings.length}):`);
+      nr.findings.forEach(f=>{
+        const kb = f.kbId ? KB.find(k=>k.id===f.kbId) : null;
+        lines.push(`  [${f.severity.toUpperCase()}] ${kb ? kb.title : f.detail} — ${f.detail}`);
+      });
+    }
+    lines.push("");
+  }
+
   lines.push("── FOR THE AI READING THIS ──");
-  lines.push("This report was generated by TechFix, a browser-based diagnostic tool, from signals available to a web page (not deep OS access). Please help interpret these findings and suggest next steps, and ask me what I was doing when the problem started if that would help.");
+  lines.push(state.native.result && state.native.result.supported
+    ? "This report combines TechFix's browser-level signals with a native Windows scan (real disk health, Device Manager, event log) from the installed app. Please help interpret these findings and suggest next steps, and ask me what I was doing when the problem started if that would help."
+    : "This report was generated by TechFix, a browser-based diagnostic tool, from signals available to a web page (not deep OS access). Please help interpret these findings and suggest next steps, and ask me what I was doing when the problem started if that would help.");
 
   return lines.join("\n");
 }
 
 function copyDiagnosticReport(){
-  if(!state.scanResults && !state.log.result){
+  if(!state.scanResults && !state.log.result && !state.native.result){
     showToast("Run a scan or analyze a log first, then copy the report");
     return;
   }
@@ -991,6 +1390,7 @@ function boot(initial){
 
   wireLogView();
   wireGlobalSearch();
+  initNativeDiagnostics();
   renderKbFilters();
   renderKbResults();
   renderWizard();

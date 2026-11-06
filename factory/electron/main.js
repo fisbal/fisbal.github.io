@@ -7,6 +7,11 @@ const { pathToFileURL } = require("url");
 const { Updater } = require("./updater");
 
 const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, "mb-config.json"), "utf8"));
+// Opt-in native bridge (real OS diagnostics + fixes) for the one app that declares it in
+// apps.json (`electron.diagnostics`, wired through by build.py). Every other MartinB app
+// has no such key in its mb-config.json, so `diagnostics` is undefined/require never runs
+// and this shell behaves exactly as before for them — same preload-less, sandboxed view.
+const diagnostics = cfg.diagnostics ? require("./diagnostics") : null;
 const BAR = 36;
 const MAC = process.platform === "darwin";
 const LOCAL = !cfg.url;
@@ -60,7 +65,12 @@ function createWindow() {
   win.loadFile(path.join(__dirname, "bar.html"), { query: { name: cfg.name, platform: process.platform } });
 
   view = new WebContentsView({
-    webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false }
+    webPreferences: {
+      contextIsolation: true, sandbox: true, nodeIntegration: false,
+      // Only this one app's view gets a preload, and it exposes exactly three
+      // IPC calls (scan / listFixes / fix) — see diagnostics-preload.js.
+      ...(diagnostics ? { preload: path.join(__dirname, "diagnostics-preload.js") } : {})
+    }
   });
   view.setBackgroundColor(cfg.bg || "#0B0A08");
   win.contentView.addChildView(view);
@@ -111,6 +121,25 @@ ipcMain.on("mb-window", (e, action) => {
   // "Redémarrer pour mettre à jour" in the gold bar: install the downloaded version now and reopen.
   if (action === "update" && updater.apply(true)) app.quit();
 });
+
+// Native diagnostics bridge — registered only for the app(s) that opted in (see `diagnostics`
+// above). Each handler checks the call came from this window's own content view, same pattern
+// as the "mb-window" guard above, so nothing else in the app (or another window) could reach it.
+if (diagnostics) {
+  const fromOurView = (e) => !!view && e.sender === view.webContents;
+  ipcMain.handle("techfix:scan", async (e) => {
+    if (!fromOurView(e)) return { supported: false, error: "unauthorized" };
+    return diagnostics.scan();
+  });
+  ipcMain.handle("techfix:fixes", async (e) => {
+    if (!fromOurView(e)) return [];
+    return diagnostics.listFixes();
+  });
+  ipcMain.handle("techfix:fix", async (e, id) => {
+    if (!fromOurView(e)) return { ok: false, message: "unauthorized" };
+    return diagnostics.fix(String(id || ""));
+  });
+}
 
 // Closing the app installs a downloaded update quietly, so the next start is the new version.
 app.on("before-quit", () => {

@@ -63,8 +63,22 @@
       <div class="panel">
         <div class="panel-head">
           <div class="panel-title"><span class="ico" data-icon="activity"></span>Proactive findings</div>
+          <div id="scan-annunciators"></div>
         </div>
         <div id="scan-findings"></div>
+      </div>
+
+      <div class="panel" id="native-panel" hidden>
+        <div class="panel-head">
+          <div class="panel-title"><span class="ico" data-icon="cpu"></span>Native diagnostics — real OS state</div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn ghost sm" id="native-scan-btn"><span class="ico" data-icon="refresh"></span><span>Run native scan</span></button>
+            <button class="btn primary sm" id="native-resolve-btn"><span class="ico" data-icon="wand"></span><span>Diagnose deeply &amp; resolve</span></button>
+          </div>
+        </div>
+        <p style="font-size:13px; color:var(--text-dim); margin:0 0 4px;">You're running the installed TechFix app, so this reads actual Windows state — disk health, Device Manager driver errors, the real event log, pending reboot, network — and can apply fixes for real, not just copy a command. "Diagnose deeply &amp; resolve" asks once, upfront, exactly what it may do, then keeps scanning and fixing on its own until nothing more is fixable or you're clean.</p>
+        <div id="native-results"></div>
+        <div id="native-resolve-log"></div>
       </div>
 
       <div class="panel ai-handoff">
@@ -78,7 +92,7 @@
       <div class="view-head">
         <div class="view-eyebrow">Guided Diagnosis</div>
         <h1 class="view-title">Diagnose Wizard</h1>
-        <p class="view-sub">Answer two quick questions and TechFix narrows a 100-entry fault database down to the fixes that actually apply.</p>
+        <p class="view-sub">Answer two quick questions and TechFix narrows a 180+-entry fault database — spanning PCs and phones, 1980 to today — down to the fixes that actually apply.</p>
       </div>
       <div class="wizard-progress" id="wizard-progress"></div>
       <div class="panel" id="wizard-body"></div>

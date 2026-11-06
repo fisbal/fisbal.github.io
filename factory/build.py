@@ -171,6 +171,10 @@ def cmd_source(app_id, out):
     meta = {"id": app["id"], "name": app["name"], "file": app["file"], "pkg": app["pkg"], "desc": app.get("desc", "")}
     cfg = {"name": app["name"], "entry": app.get("entry", "index.html"), "bg": app.get("bg", "#0B0A08")}
     cfg.update({k: v for k, v in app.get("android", {}).items() if k in ("immersive", "keepScreenOn")})
+    # Opt-in native bridge for the Electron build only (main.js requires ./diagnostics when this
+    # is true). Absent for every app except the ones that declare `electron.diagnostics` in
+    # apps.json, so this changes nothing for any other app's mb-config.json.
+    cfg.update({k: v for k, v in app.get("electron", {}).items() if k in ("diagnostics",)})
 
     if "url" in src:
         cfg["url"] = src["url"]
@@ -335,7 +339,10 @@ def cmd_electron(app_id, src, work):
             "productName": meta["name"],
             "artifactName": meta["file"] + "-Setup.${ext}",
             "directories": {"output": "dist"},
-            "files": ["main.js", "preload.js", "updater.js", "bar.html", "mb-config.json", "icon.png", "package.json"],
+            # diagnostics.js / diagnostics-preload.js are only required at runtime when
+            # mb-config.json has diagnostics:true, but they're harmless to package for every
+            # app (a few extra KB) — far simpler than making this list conditional per app.
+            "files": ["main.js", "preload.js", "updater.js", "bar.html", "diagnostics.js", "diagnostics-preload.js", "mb-config.json", "icon.png", "package.json"],
             "extraResources": [{"from": "www", "to": "www"}],
             "win": {"target": [{"target": "nsis", "arch": ["x64"]}], "icon": "icon.png"},
             # Mac: one app for Apple Silicon and Intel; signed ad hoc and packed into a .dmg by the workflow.
