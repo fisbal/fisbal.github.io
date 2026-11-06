@@ -681,6 +681,8 @@ async function runNativeScan(silent){
     state.native.result = { supported:true, error: String(e && e.message ? e.message : e) };
   }
   renderNativeResults();
+  if(state.native.result && state.native.result.supported && !state.native.result.error) tfRecordScan(state.native.result);
+  renderNativeForecast();
   if(btn){ btn.disabled = false; btn.querySelector("span:last-child").textContent = "Run native scan"; }
 }
 
@@ -763,6 +765,7 @@ async function runDeepResolve(){
   try{ state.native.result = await window.techfixNative.scan(); }catch(e){}
   state.native.resolveLog = log;
   renderNativeResults();
+  renderNativeForecast();
   renderResolveLog();
 
   if(resolveBtn){ resolveBtn.disabled = false; resolveBtn.querySelector("span:last-child").textContent = "Diagnose deeply & resolve"; }
@@ -1395,6 +1398,7 @@ function boot(initial){
   wireLogView();
   wireGlobalSearch();
   initNativeDiagnostics();
+  initAndroidPanel();
   renderKbFilters();
   renderKbResults();
   renderWizard();

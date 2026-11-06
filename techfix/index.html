@@ -79,7 +79,17 @@
         </div>
         <p style="font-size:13px; color:var(--text-dim); margin:0 0 4px;">You're running the installed TechFix app, so this reads actual Windows state — disk health, Device Manager driver errors, the real event log, pending reboot, network — and can apply fixes for real, not just copy a command. "Diagnose deeply &amp; resolve" asks once, upfront, exactly what it may do, then keeps scanning and fixing on its own until nothing more is fixable or you're clean.</p>
         <div id="native-results"></div>
+        <div id="native-forecast"></div>
         <div id="native-resolve-log"></div>
+      </div>
+
+      <div class="panel" id="android-panel" hidden>
+        <div class="panel-head">
+          <div class="panel-title"><span class="ico" data-icon="smartphone"></span>This phone — real readings</div>
+          <button class="btn ghost sm" id="android-scan-btn"><span class="ico" data-icon="refresh"></span><span>Re-scan phone</span></button>
+        </div>
+        <p style="font-size:13px; color:var(--text-dim); margin:0 0 4px;">You're running the TechFix app on Android, so these are the phone's real storage, memory, battery and heat readings. Android doesn't let an app change system settings by itself, so "Fix it" opens the exact screen to fix.</p>
+        <div id="android-results"></div>
       </div>
 
       <div class="panel ai-handoff">
@@ -185,6 +195,7 @@
 <script src="data.js"></script>
 <script src="fixit.js"></script>
 <script src="security-ui.js"></script>
+<script src="device-ui.js"></script>
 <script src="app.js"></script>
 
 </body></html>
