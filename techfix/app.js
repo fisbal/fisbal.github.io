@@ -641,28 +641,12 @@ function renderNativeResults(){
     if(!f.safeFixId && !f.riskyFixId) return;
     const row = wrap.querySelector(`[data-fix-row="${i}"]`);
     if(!row) return;
-    if(f.safeFixId){
-      const btn = document.createElement("button");
-      btn.className = "btn sm primary";
-      btn.innerHTML = `${ICON.wrench}<span>Fix now</span>`;
-      btn.addEventListener("click", (e)=>{ e.stopPropagation(); runNativeFix(f.safeFixId, btn); });
-      row.appendChild(btn);
-    }
-    if(f.riskyFixId){
-      const entry = state.native.fixes.find(x=>x.id===f.riskyFixId);
-      const btn = document.createElement("button");
-      btn.className = "btn sm ghost";
-      btn.style.marginLeft = f.safeFixId ? "8px" : "0";
-      btn.innerHTML = `${ICON.wrench}<span>${entry ? entry.label : "Fix…"}</span>`;
-      btn.addEventListener("click", (e)=>{
-        e.stopPropagation();
-        const cmd = entry ? entry.cmd : f.riskyFixId;
-        if(confirm(`Run this now?\n\n${cmd}\n\nThis changes real system state on this PC.`)){
-          runNativeFix(f.riskyFixId, btn);
-        }
-      });
-      row.appendChild(btn);
-    }
+    const kb = f.kbId ? KB.find(k=>k.id===f.kbId) : null;
+    const btn = document.createElement("button");
+    btn.className = "btn sm primary fixit-btn";
+    btn.innerHTML = `${ICON.wrench}<span>Fix it</span>`;
+    btn.addEventListener("click", (e)=>{ e.stopPropagation(); fixItForFinding(f, f.detail || (kb && kb.title)); });
+    row.appendChild(btn);
   });
 }
 
@@ -942,6 +926,7 @@ function kbCardHtml(entry){
         <div class="kb-block-label">Fix — step by step</div>
         <ol>${entry.fixes.map(s=>`<li>${esc(s)}</li>`).join("")}</ol>
       </div>
+      ${typeof entryHasFix === "function" && entryHasFix(entry) ? `<div class="fixit-row"><button class="btn primary fixit-btn" data-fixit="${entry.id}">${ICON.wrench}<span>Fix it</span></button><span class="fixit-hint">${window.techfixNative ? "TechFix does it on this PC" : window.TechFixAndroid ? "Opens the right phone setting" : "Works in the installed TechFix app"}</span></div>` : ""}
       ${entry.actions && entry.actions.length ? `<div class="action-row">${entry.actions.map((a,i)=>`
         <button class="btn sm action-btn" data-id="${entry.id}" data-i="${i}">${ICON.copy} ${esc(a.label)}</button>`).join("")}</div>` : ""}
       <div class="tag-row">${entry.tags.map(t=>`<span class="tag-pill">${esc(t)}</span>`).join("")}</div>
@@ -969,6 +954,9 @@ function wireKbCard(card, list){
     updateNavCounts();
     if(state.view === "saved") renderSaved();
   });
+
+  const fixBtn = el(".fixit-btn", card);
+  if(fixBtn) fixBtn.addEventListener("click", (e)=>{ e.stopPropagation(); fixItForEntry(entry); });
 
   els(".action-btn", card).forEach(btn=>{
     btn.addEventListener("click", (e)=>{

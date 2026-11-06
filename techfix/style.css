@@ -435,3 +435,50 @@ button{ font-family: inherit; }
 @media (max-width:480px){
   #scan-annunciators .annunciator-row{ justify-content:flex-start; margin-top:8px; }
 }
+
+/* ---------- "Fix it" ---------- */
+.fixit-row{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin: 4px 0 14px; padding: 12px 14px;
+  background: linear-gradient(135deg, rgba(212,169,74,.10), rgba(212,169,74,.03)); border:1px solid rgba(212,169,74,.28); border-radius: var(--radius-m); }
+.fixit-hint{ font-size:12px; color: var(--text-dim); }
+.finding-fixes{ margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; }
+
+/* ---------- Sheet (in-app dialog) ---------- */
+.sheet-backdrop{ position:fixed; inset:0; z-index:1000; background: rgba(5,6,8,.72); backdrop-filter: blur(4px);
+  display:flex; align-items:center; justify-content:center; padding:16px; animation: sheet-in .16s ease-out; }
+@keyframes sheet-in{ from{ opacity:0; } to{ opacity:1; } }
+.sheet{ width:min(620px, 100%); max-height: calc(100vh - 32px); display:flex; flex-direction:column;
+  background: var(--surface); border:1px solid rgba(212,169,74,.30); border-radius: var(--radius-l);
+  box-shadow: 0 24px 70px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.02); }
+.sheet-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 18px 10px; border-bottom:1px solid var(--border-soft); }
+.sheet-title{ display:flex; align-items:center; gap:9px; font-family: var(--font-display, inherit); font-size:17px; font-weight:600; color: var(--text); }
+.sheet-title svg{ width:18px; height:18px; color: var(--gold-2); flex-shrink:0; }
+.sheet-x svg{ width:16px; height:16px; }
+.sheet-body{ padding:14px 18px; overflow:auto; font-size:13.5px; color: var(--text); line-height:1.55; }
+.sheet-actions{ display:flex; justify-content:flex-end; gap:10px; padding:12px 18px 16px; border-top:1px solid var(--border-soft); flex-wrap:wrap; }
+.sheet-p{ margin:0 0 10px; }
+.sheet-note{ margin:12px 0 0; font-size:12px; color: var(--text-dim); }
+.sheet-list{ margin:6px 0 0; padding-left:20px; }
+.sheet-list li{ margin-bottom:6px; }
+.fix-plan{ display:flex; flex-direction:column; gap:8px; }
+.fix-row{ display:flex; gap:10px; align-items:flex-start; padding:10px 12px; background: var(--surface-2); border:1px solid var(--border-soft); border-radius: var(--radius-s); cursor:pointer; }
+.fix-row input{ margin-top:3px; accent-color: var(--gold-2); width:16px; height:16px; flex-shrink:0; }
+.fix-row-text{ display:flex; flex-direction:column; gap:4px; min-width:0; }
+.fix-row-label{ font-weight:600; }
+.fix-row-tag{ font-size:11.5px; }
+.fix-row-tag.ok{ color: var(--ok); }
+.fix-row-tag.warn{ color: var(--warn); }
+.fix-row-tag.crit{ color: var(--crit); font-weight:600; }
+.fix-row code{ font-family: var(--font-mono); font-size:11.5px; color: var(--gold-1); background: var(--bg, #0e0f13); border:1px solid var(--border-soft); border-radius:6px; padding:4px 7px; overflow-wrap:anywhere; }
+.fix-progress{ display:flex; flex-direction:column; gap:6px; }
+.fix-step{ display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius: var(--radius-s); background: var(--surface-2); }
+.fix-step small{ color: var(--text-dim); }
+.fix-step .mark{ width:18px; text-align:center; font-family: var(--font-mono); font-weight:700; color: var(--text-faint); }
+.fix-step.running .mark{ color: var(--gold-2); animation: lamp-pulse 1s ease-in-out infinite; }
+.fix-step.ok .mark{ color: var(--ok); }
+.fix-step.bad .mark{ color: var(--crit); }
+.android-open{ justify-content:flex-start; width:100%; }
+@media (max-width:560px){
+  .sheet-backdrop{ align-items:flex-end; padding:0; }
+  .sheet{ border-radius: var(--radius-l) var(--radius-l) 0 0; max-height: 88vh; }
+  .sheet-actions .btn{ flex:1; justify-content:center; }
+}
