@@ -253,7 +253,7 @@ nav.dock{display:none}
       <button role="tab" data-v="periods" aria-selected="false">Paies</button>
       <button role="tab" data-v="sheet" aria-selected="false">Grille</button>
       <button role="tab" data-v="insights" aria-selected="false" class="gold">● Analyse et « Et si… »</button>
-      <button role="tab" data-v="settings" aria-selected="false" class="hubonly">Réglages</button>
+      <button role="tab" data-v="settings" aria-selected="false">Réglages</button>
     </div>
   </div>
 </header>
@@ -267,7 +267,7 @@ nav.dock{display:none}
   <button data-v="periods" aria-selected="false"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Paies</button>
   <button data-v="sheet" aria-selected="false"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16"/></svg>Grille</button>
   <button data-v="insights" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Et si…</button>
-  <button data-v="settings" aria-selected="false" class="hubonly"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Réglages</button>
+  <button data-v="settings" aria-selected="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Réglages</button>
 </nav>
 <div id="modalRoot"></div>
 <div class="toast" id="toast" role="status"></div>
@@ -663,14 +663,14 @@ function vWelcome(hasBudget){
   return `<section class="view"><div class="panel empty"><b>${hasBudget?'Ajoute ta première paie':'Bienvenue dans Budget ++'}</b>
   <p style="max-width:52ch;margin:0 auto 16px">${HUB?'Tes comptes restent sur cet appareil. Pour retrouver les mêmes chiffres sur ton téléphone et ton ordi, connecte la synchro privée.':'Ton budget se charge ici dès qu’il est enregistré.'}</p>
   <div class="toolbar" style="justify-content:center">
-   ${HUB?'<button class="btn pri" data-v="settings">Connecter la synchro</button><label class="btn gold" for="importFile2" style="cursor:pointer">Importer un fichier</label><input type="file" id="importFile2" accept=".json,application/json" hidden>':''}
+   ${HUB?'<button class="btn pri" data-v="settings">Connecter la synchro</button>':''}<label class="btn gold" for="importFile2" style="cursor:pointer">Importer un fichier</label><input type="file" id="importFile2" hidden>
    ${hasBudget?'<button class="btn" data-v="sheet">Ouvrir la grille</button>':'<button class="btn" data-new>Budget vide sur un an (15 et 30)</button>'}
   </div></div></section>`;
 }
 function vSettings(){
   const on=syncOn();
   return `<section class="view">
-  <div class="panel"><h2>Synchro téléphone ↔ ordi</h2><p class="sub">Tes chiffres sont gardés dans un fichier <b>budget.json</b> de ton dépôt GitHub <b>privé</b>. Personne d’autre ne les voit. Le jeton reste seulement sur cet appareil.</p>
+  ${HUB?`<div class="panel"><h2>Synchro téléphone ↔ ordi</h2><p class="sub">Tes chiffres sont gardés dans un fichier <b>budget.json</b> de ton dépôt GitHub <b>privé</b>. Personne d’autre ne les voit. Le jeton reste seulement sur cet appareil.</p>
    <form id="fSync" class="formrow" style="background:none;padding:0">
     <label class="field">Dépôt privé<input id="syncRepo" value="${esc(SYNC.repo||'fisbal/budget-data')}" autocomplete="off" spellcheck="false"></label>
     <label class="field">Jeton GitHub<input id="syncToken" type="password" value="${esc(SYNC.token||'')}" placeholder="github_pat_…" autocomplete="off" spellcheck="false"></label>
@@ -683,10 +683,14 @@ function vSettings(){
      <li>Settings → Developer settings → Personal access tokens → <b>Fine-grained tokens</b> → Generate new token.</li>
      <li>Repository access : <b>Only select repositories</b> → <b>budget-data</b>. Permissions → Repository → <b>Contents : Read and write</b>. Expiration : 1 an.</li>
      <li>Colle le jeton ici, sur l’ordi puis sur le téléphone.</li></ol></details>
-  </div>
-  <div class="panel"><h2>Sauvegarde</h2><p class="sub">Un fichier de ton budget, à garder ou à ouvrir sur un autre appareil.</p>
+  </div>`:''}
+  <div class="panel"><h2>Sauvegarde et import</h2><p class="sub">Importe un budget <b>.json</b>, ton fichier Excel <b>.xlsx</b> (dates en haut, lignes Salaire, Loyer…) ou un <b>.csv</b>. L’import remplace le budget affiché.</p>
    <div class="toolbar"><button class="btn gold" data-export ${S?'':'disabled'}>Exporter (.json)</button>
-   <label class="btn" for="importFile" style="cursor:pointer">Importer…</label><input type="file" id="importFile" accept=".json,application/json" hidden></div>
+   <label class="btn" for="importFile" style="cursor:pointer">Importer un fichier…</label><input type="file" id="importFile" hidden></div>
+   <details style="margin-top:10px"><summary style="cursor:pointer;font-weight:700">Coller un budget</summary>
+    <p class="sub">Copie ton tableau dans Excel ou In 1 Class (de « Date de Dépôt » jusqu’à la dernière ligne), ou le texte d’un .json, puis colle-le ici.</p>
+    <textarea id="pasteBox" rows="5" style="width:100%;box-sizing:border-box;font:12px ui-monospace,monospace;border-radius:10px;padding:8px;border:1px solid var(--line,#ccc);background:transparent;color:inherit" placeholder="Colle ici…"></textarea>
+    <div class="toolbar" style="margin-top:8px"><button class="btn pri" data-paste>Importer le texte collé</button></div></details>
    ${S?`<p class="sub">Dernière modification : ${S.updatedAt?new Date(S.updatedAt).toLocaleString('fr-CA'):'—'}</p>`:''}</div>
   </section>`;
 }
@@ -739,6 +743,7 @@ function submitExpense(){
 }
 
 /* ---------- import / export ---------- */
+/* import: Budget ++ .json, Excel .xlsx, .csv, or a table pasted from a spreadsheet */
 function newBudget(){
   const d=new Date(); S={v:2,startBalance:0,periods:[],categories:[['sal','Salaire','revenu'],['aut','Autres revenus','revenu'],['loy','Loyer','fixe'],['epi','Épicerie','fixe'],['ess','Essence','fixe'],['hyd','Hydro','fixe'],['cel','Cellulaire','fixe'],['ass','Assurances','fixe'],['div','Divers','variable'],['epa','Épargne et placement','variable']].map(([id,name,group])=>({id,name,group,note:''})),cells:{},paid:{},extras:[]};
   const y=d.getFullYear(), m=d.getMonth();
@@ -746,11 +751,106 @@ function newBudget(){
     for(const day of [15,Math.min(30,lastDay(yy,mm))])addPeriod(yy+'-'+String(mm+1).padStart(2,'0')+'-'+String(day).padStart(2,'0'),false);}
   view='sheet';save();render();toast('Budget d’un an créé');
 }
+const MONTHS=[['janv','jan'],['fevr','fev','feb'],['mars','mar'],['avr','apr'],['mai','may'],['juin','jun'],['juil','jul'],['aout','aug'],['sept','sep'],['oct'],['nov'],['dec']];
+const plain=s=>String(s==null?'':s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
+function monthOf(w){w=plain(w).replace(/[^a-z]/g,'');if(w.length<3)return -1;for(let i=0;i<12;i++)if(MONTHS[i].some(m=>w.startsWith(m)||(w.length>=3&&m.startsWith(w))))return i;return -1;}
+/* A header cell as {y?,m,d}: Excel serial dates, ISO, 30/10/2026, "30-Oct", "15 janv", "15 fév 2027". */
+function cellDate(v){
+  if(typeof v==='number'){ if(v>30000&&v<80000){const t=new Date(Math.round((v-25569)*864e5));return{y:t.getUTCFullYear(),m:t.getUTCMonth(),d:t.getUTCDate()};} return null; }
+  const s=String(v==null?'':v).trim(); if(!s)return null; let r;
+  if(r=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))return{y:+r[1],m:+r[2]-1,d:+r[3]};
+  if(r=s.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{2,4})$/))return{y:+r[3]<100?2000+ +r[3]:+r[3],m:+r[2]-1,d:+r[1]};
+  if(r=s.match(/^(\d{1,2})(?:er)?[\s\-\/.]*([A-Za-zÀ-ÿ.]+)[\s\-\/.,]*(\d{4})?$/)){const m=monthOf(r[2]);if(m<0)return null;return{y:r[3]?+r[3]:undefined,m,d:+r[1]};}
+  if(r=s.match(/^([A-Za-zÀ-ÿ.]+)[\s\-\/.]*(\d{1,2})(?:,?\s*(\d{4}))?$/)){const m=monthOf(r[1]);if(m<0)return null;return{y:r[3]?+r[3]:undefined,m,d:+r[2]};}
+  return null;
+}
+const cellNum=v=>{if(typeof v==='number')return v;const t=String(v==null?'':v).replace(/[\s  $€]/g,'').replace(/^\((.*)\)$/,'-$1');if(!/^-?\d+([.,]\d+)?$/.test(t))return NaN;return parseFloat(t.replace(',','.'));};
+/* Turn a sheet (rows of cells, like his "Budget martin" sheet) into a budget. */
+function fromGrid(grid){
+  let hr=-1,cols=[];
+  for(let r=0;r<Math.min(grid.length,15)&&hr<0;r++){const row=grid[r]||[];const c=[];for(let k=1;k<row.length;k++){const d=cellDate(row[k]);if(d)c.push([k,d]);}
+    if(c.length>=2){hr=r;cols=c;}}
+  if(hr<0)return null;
+  // years: given ones kept; missing ones follow the months in order, starting near today
+  const now=new Date(); let y=cols.find(x=>x[1].y)?.[1].y;
+  if(!y){const m0=cols[0][1].m; y=now.getFullYear(); if(m0-now.getMonth()>6)y--; else if(now.getMonth()-m0>6)y++;}
+  let prevM=-1; const dates=cols.map(([k,d])=>{ if(d.y){y=d.y;} else if(prevM>=0&&d.m<prevM)y++; prevM=d.m;
+    const dd=Math.min(d.d,lastDay(y,d.m)); return [k,y+'-'+String(d.m+1).padStart(2,'0')+'-'+String(dd).padStart(2,'0')]; });
+  const seen=new Set(); const periods=[]; const colPid={};
+  for(const [k,ds] of dates){ if(seen.has(ds))continue; seen.add(ds); const id=uid('p'); periods.push({id,date:ds,label:lab(ds)}); colPid[k]=id; }
+  const categories=[],cells={}; let group='revenu';
+  for(let r=hr+1;r<grid.length;r++){
+    const row=grid[r]||[]; const label=String(row[0]==null?'':row[0]).trim(); const p=plain(label); if(!label)continue;
+    if(/^(totaux?|total|net|solde|balance|reste)\b/.test(p))continue;
+    const filled=Object.keys(colPid).filter(k=>row[k]!==''&&row[k]!=null);
+    const dateRow=filled.length>0&&filled.every(k=>cellDate(row[k]));
+    const nums=dateRow?[]:filled.map(k=>cellNum(row[k])).filter(v=>isFinite(v)&&v!==0);
+    if(!nums.length&&/depenses?\s*fixe|fixed/.test(p)){group='fixe';continue;}
+    if(!nums.length&&/variable/.test(p)){group='variable';continue;}
+    if(!nums.length&&/revenu|income/.test(p)&&!categories.length){group='revenu';continue;}
+    if(dateRow)continue; // a repeated date row
+    const m=label.match(/\(([^)]*)\)/); let name=label.replace(/\s*\([^)]*\)\s*/g,' ').trim()||label;
+    if(/^autres sources/.test(plain(name)))name='Autres revenus';
+    const id=uid('c'); categories.push({id,name,group,note:m?m[1].trim():''});
+    for(const k of Object.keys(colPid)){const v=cellNum(row[k]);if(isFinite(v)&&v!==0)cells[id+'|'+colPid[k]]=Math.round(v*100)/100;}
+  }
+  if(!categories.length)return null;
+  return migrate({v:2,startBalance:0,periods,categories,cells,paid:{},extras:[]});
+}
+function parseDelimited(text){
+  const first=text.split(/\r?\n/).find(l=>l.trim())||''; const cnt=c=>first.split(c).length;
+  const sep=cnt('\t')>1?'\t':cnt(';')>cnt(',')?';':',';
+  const rows=[];let row=[],cell='',q=false;
+  for(let i=0;i<text.length;i++){const ch=text[i];
+    if(q){if(ch==='"'){if(text[i+1]==='"'){cell+='"';i++;}else q=false;}else cell+=ch;continue;}
+    if(ch==='"'&&cell==='')q=true; else if(ch===sep){row.push(cell);cell='';} else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(cell);rows.push(row);row=[];cell='';} else cell+=ch;}
+  if(cell!==''||row.length){row.push(cell);rows.push(row);}
+  return rows;
+}
+/* Minimal .xlsx reader: unzip with the browser's own inflate, then read the first sheet. */
+async function xlsxGrid(buf){
+  const u8=new Uint8Array(buf),dv=new DataView(buf); let e=u8.length-22; while(e>=0&&dv.getUint32(e,true)!==0x06054b50)e--; if(e<0)throw new Error('zip');
+  const n=dv.getUint16(e+10,true); let p=dv.getUint32(e+16,true); const files={};
+  for(let i=0;i<n;i++){const meth=dv.getUint16(p+10,true),csize=dv.getUint32(p+20,true),nl=dv.getUint16(p+28,true),xl=dv.getUint16(p+30,true),cl=dv.getUint16(p+32,true),off=dv.getUint32(p+42,true);
+    files[new TextDecoder().decode(u8.subarray(p+46,p+46+nl))]={meth,csize,off}; p+=46+nl+xl+cl;}
+  const read=async name=>{const f=files[name]; if(!f)return null; const o=f.off+30+dv.getUint16(f.off+26,true)+dv.getUint16(f.off+28,true); const raw=u8.subarray(o,o+f.csize);
+    if(f.meth===0)return new TextDecoder().decode(raw);
+    const s=new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw')); return await new Response(s).text();};
+  const X=t=>new DOMParser().parseFromString(t,'application/xml');
+  let sheet='xl/worksheets/sheet1.xml';
+  try{const wb=X(await read('xl/workbook.xml')),rels=X(await read('xl/_rels/workbook.xml.rels'));const s0=wb.getElementsByTagName('sheet')[0];
+    const rid=s0.getAttribute('r:id')||s0.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships','id');
+    for(const r of rels.getElementsByTagName('Relationship'))if(r.getAttribute('Id')===rid){const t=r.getAttribute('Target');sheet=t.startsWith('/')?t.slice(1):'xl/'+t.replace(/^\.\//,'');}}catch(err){}
+  const ss=[]; const sst=await read('xl/sharedStrings.xml');
+  if(sst)for(const si of X(sst).getElementsByTagName('si'))ss.push([...si.getElementsByTagName('t')].map(t=>t.textContent).join(''));
+  const doc=X(await read(sheet)); const grid=[];
+  for(const c of doc.getElementsByTagName('c')){const ref=c.getAttribute('r')||'';const m=ref.match(/^([A-Z]+)(\d+)$/);if(!m)continue;
+    let col=0;for(const ch of m[1])col=col*26+ch.charCodeAt(0)-64;col--;const row=+m[2]-1;
+    const t=c.getAttribute('t'),v=c.getElementsByTagName('v')[0]; let val;
+    if(t==='s')val=ss[+(v&&v.textContent)]; else if(t==='inlineStr')val=[...c.getElementsByTagName('t')].map(x=>x.textContent).join(''); else if(t==='str'||t==='b'||t==='e')val=v?v.textContent:''; else val=v?+v.textContent:'';
+    (grid[row]=grid[row]||[])[col]=val;}
+  for(let i=0;i<grid.length;i++)grid[i]=grid[i]||[];
+  return grid;
+}
+function useImported(d){
+  if(!d){toast('Je ne reconnais pas ce budget');return false;}
+  try{if(S)localStorage.setItem('budgetplus-before-import',JSON.stringify(S));}catch(e){}
+  S=d; view='sheet'; save(); render();
+  toast(`Budget importé : ${d.periods.length} paies, ${d.categories.length} lignes`); return true;
+}
+function importText(text){
+  text=String(text||'').replace(/^﻿/,'').trim(); if(!text){toast('Rien à importer');return false;}
+  if(text[0]==='{'){try{return useImported(migrate(JSON.parse(text)));}catch(e){toast('Ce texte .json est incomplet');return false;}}
+  return useImported(fromGrid(parseDelimited(text)));
+}
 function importFile(input){
   const f=input.files&&input.files[0]; if(!f)return;
-  const r=new FileReader(); r.onload=()=>{try{const d=migrate(JSON.parse(r.result)); if(!d)throw 0; S=d;view='home';save();render();toast('Budget importé');}
-    catch(e){toast('Ce fichier n’est pas un budget Budget ++');}};
-  r.readAsText(f);
+  f.arrayBuffer().then(async buf=>{
+    const b=new Uint8Array(buf);
+    if(b[0]===0x50&&b[1]===0x4b){ if(typeof DecompressionStream==='undefined'){toast('Cet appareil ne lit pas les .xlsx — exporte en .csv');return;}
+      try{useImported(fromGrid(await xlsxGrid(buf)));}catch(e){toast('Ce fichier Excel n’a pas pu être lu');} return; }
+    importText(new TextDecoder().decode(b));
+  }).catch(()=>toast('Fichier illisible'));
 }
 function exportFile(){
   const blob=new Blob([JSON.stringify(S,null,1)],{type:'application/json'});
@@ -773,6 +873,7 @@ document.addEventListener('click',e=>{
   if(d.new!==undefined){newBudget();return;}
   if(d.unsync!==undefined){SYNC={};try{localStorage.removeItem(SYNC_KEY)}catch(err){}remoteSha=null;setSync('ok','Enregistré sur cet appareil');render();toast('Synchro déconnectée');return;}
   if(d.export!==undefined&&S){exportFile();return;}
+  if(d.paste!==undefined){const box=$('#pasteBox');if(box&&importText(box.value))box.value='';return;}
   if(!S)return;
   if(d.paid){const k=d.paid;if(S.paid[k])delete S.paid[k];else S.paid[k]=true;save();render();return;}
   if(d.addexp){openExpense(d.addexp);return;}

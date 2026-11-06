@@ -280,7 +280,7 @@ public class MainActivity extends Activity {
                 if (fileCallback != null) fileCallback.onReceiveValue(null);
                 fileCallback = callback;
                 try {
-                    startActivityForResult(params.createIntent(), REQ_FILE);
+                    startActivityForResult(pickIntent(params), REQ_FILE);
                 } catch (ActivityNotFoundException e) {
                     fileCallback = null;
                     return false;
@@ -297,6 +297,30 @@ public class MainActivity extends Activity {
                 openOutside(Uri.parse(url));
             }
         });
+    }
+
+    /* The file picker for an <input type=file>. WebView's own createIntent() takes the first accept
+       entry as the MIME type, so accept=".json,..." asks Android for files of type ".json": none match
+       and every file is greyed out. Filter only on real MIME types (image/*, ...); when the page lists
+       file extensions, show every file and let the page check the content. */
+    private Intent pickIntent(WebChromeClient.FileChooserParams params) {
+        Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+        i.addCategory(Intent.CATEGORY_OPENABLE);
+        java.util.ArrayList<String> mimes = new java.util.ArrayList<>();
+        boolean anyFile = false;
+        String[] accept = params.getAcceptTypes();
+        if (accept != null) for (String a : accept) {
+            for (String t : a.split(",")) {
+                t = t.trim().toLowerCase(java.util.Locale.ROOT);
+                if (t.isEmpty()) continue;
+                if (t.contains("/")) mimes.add(t); else anyFile = true;
+            }
+        }
+        if (anyFile || mimes.isEmpty()) i.setType("*/*");
+        else if (mimes.size() == 1) i.setType(mimes.get(0));
+        else { i.setType("*/*"); i.putExtra(Intent.EXTRA_MIME_TYPES, mimes.toArray(new String[0])); }
+        if (params.getMode() == WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE) i.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+        return Intent.createChooser(i, null);
     }
 
     private void openOutside(Uri u) {
@@ -361,7 +385,14 @@ public class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQ_FILE && fileCallback != null) {
-            fileCallback.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(resultCode, data));
+            Uri[] picked = null;
+            if (resultCode == RESULT_OK && data != null && data.getClipData() != null && data.getClipData().getItemCount() > 0) {
+                picked = new Uri[data.getClipData().getItemCount()];
+                for (int k = 0; k < picked.length; k++) picked[k] = data.getClipData().getItemAt(k).getUri();
+            } else {
+                picked = WebChromeClient.FileChooserParams.parseResult(resultCode, data);
+            }
+            fileCallback.onReceiveValue(picked);
             fileCallback = null;
             return;
         }
