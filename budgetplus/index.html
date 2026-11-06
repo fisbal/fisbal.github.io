@@ -272,6 +272,12 @@ nav.dock{display:none}
 <div id="modalRoot"></div>
 <div class="toast" id="toast" role="status"></div>
 
+<!-- Readers and writers for other formats: not run at start (type="text/plain"); loaded when a file needs them. The hub ships a copy with the app. -->
+<script type="text/plain" data-lib="sheetjs" src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script type="text/plain" data-lib="pdfjs" src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script type="text/plain" data-lib="pdfjs-worker" src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js"></script>
+<script type="text/plain" data-lib="jspdf" src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script type="text/plain" data-lib="jspdf-autotable" src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 <script>
 (function(){
 "use strict";
@@ -684,13 +690,21 @@ function vSettings(){
      <li>Repository access : <b>Only select repositories</b> → <b>budget-data</b>. Permissions → Repository → <b>Contents : Read and write</b>. Expiration : 1 an.</li>
      <li>Colle le jeton ici, sur l’ordi puis sur le téléphone.</li></ol></details>
   </div>`:''}
-  <div class="panel"><h2>Sauvegarde et import</h2><p class="sub">Importe un budget <b>.json</b>, ton fichier Excel <b>.xlsx</b> (dates en haut, lignes Salaire, Loyer…) ou un <b>.csv</b>. L’import remplace le budget affiché.</p>
-   <div class="toolbar"><button class="btn gold" data-export ${S?'':'disabled'}>Exporter (.json)</button>
-   <label class="btn" for="importFile" style="cursor:pointer">Importer un fichier…</label><input type="file" id="importFile" hidden></div>
+  <div class="panel"><h2>Importer</h2><p class="sub">N’importe quel document : Excel (.xlsx, .xls), In 1 Class, OpenDocument (.ods), Numbers, .csv, Word (.docx), PDF, page web, relevé bancaire (.ofx, .qfx, .qif) ou une sauvegarde Budget ++. Budget ++ trouve tout seul les dates, les revenus et les dépenses — un tableau avec les paies en haut, en colonne, ou une liste de transactions. Tu peux aussi glisser le fichier sur la page. L’import remplace le budget affiché.</p>
+   <div class="toolbar"><label class="btn pri" for="importFile" style="cursor:pointer">Importer un document…</label><input type="file" id="importFile" hidden></div>
    <details style="margin-top:10px"><summary style="cursor:pointer;font-weight:700">Coller un budget</summary>
     <p class="sub">Copie ton tableau dans Excel ou In 1 Class (de « Date de Dépôt » jusqu’à la dernière ligne), ou le texte d’un .json, puis colle-le ici.</p>
     <textarea id="pasteBox" rows="5" style="width:100%;box-sizing:border-box;font:12px ui-monospace,monospace;border-radius:10px;padding:8px;border:1px solid var(--line,#ccc);background:transparent;color:inherit" placeholder="Colle ici…"></textarea>
-    <div class="toolbar" style="margin-top:8px"><button class="btn pri" data-paste>Importer le texte collé</button></div></details>
+    <div class="toolbar" style="margin-top:8px"><button class="btn pri" data-paste>Importer le texte collé</button></div></details></div>
+  <div class="panel"><h2>Exporter</h2><p class="sub">Ton budget dans le format qu’il te faut. Excel garde les couleurs, les formules et les dollars canadiens (s’ouvre dans In 1 Class, Excel, Google Sheets).</p>
+   <div class="toolbar" style="flex-wrap:wrap">
+    <button class="btn gold" data-exp="xlsx" ${S?'':'disabled'}>Excel / In 1 Class (.xlsx)</button>
+    <button class="btn" data-exp="pdf" ${S?'':'disabled'}>PDF</button>
+    <button class="btn" data-exp="csv" ${S?'':'disabled'}>CSV</button>
+    <button class="btn" data-exp="doc" ${S?'':'disabled'}>Word (.doc)</button>
+    <button class="btn" data-exp="ods" ${S?'':'disabled'}>OpenDocument (.ods)</button>
+    <button class="btn" data-exp="html" ${S?'':'disabled'}>Page web</button>
+    <button class="btn" data-export ${S?'':'disabled'}>Sauvegarde Budget ++ (.json)</button></div>
    ${S?`<p class="sub">Dernière modification : ${S.updatedAt?new Date(S.updatedAt).toLocaleString('fr-CA'):'—'}</p>`:''}</div>
   </section>`;
 }
@@ -743,7 +757,7 @@ function submitExpense(){
 }
 
 /* ---------- import / export ---------- */
-/* import: Budget ++ .json, Excel .xlsx, .csv, or a table pasted from a spreadsheet */
+/* Import any document (spreadsheets, Word, PDF, bank files, pasted tables) and turn it into a budget; export in any format. */
 function newBudget(){
   const d=new Date(); S={v:2,startBalance:0,periods:[],categories:[['sal','Salaire','revenu'],['aut','Autres revenus','revenu'],['loy','Loyer','fixe'],['epi','Épicerie','fixe'],['ess','Essence','fixe'],['hyd','Hydro','fixe'],['cel','Cellulaire','fixe'],['ass','Assurances','fixe'],['div','Divers','variable'],['epa','Épargne et placement','variable']].map(([id,name,group])=>({id,name,group,note:''})),cells:{},paid:{},extras:[]};
   const y=d.getFullYear(), m=d.getMonth();
@@ -753,111 +767,408 @@ function newBudget(){
 }
 const MONTHS=[['janv','jan'],['fevr','fev','feb'],['mars','mar'],['avr','apr'],['mai','may'],['juin','jun'],['juil','jul'],['aout','aug'],['sept','sep'],['oct'],['nov'],['dec']];
 const plain=s=>String(s==null?'':s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim();
-function monthOf(w){w=plain(w).replace(/[^a-z]/g,'');if(w.length<3)return -1;for(let i=0;i<12;i++)if(MONTHS[i].some(m=>w.startsWith(m)||(w.length>=3&&m.startsWith(w))))return i;return -1;}
-/* A header cell as {y?,m,d}: Excel serial dates, ISO, 30/10/2026, "30-Oct", "15 janv", "15 fév 2027". */
+function monthOf(w){w=plain(w).replace(/[^a-z]/g,'');if(w.length<3)return -1;for(let i=0;i<12;i++)if(MONTHS[i].some(m=>w.startsWith(m)||m.startsWith(w)))return i;return -1;}
+/* A cell as a date {y?,m,d}: Excel serials, ISO, 30/10/2026, 2026/10/30, 20261030, "30-Oct", "15 janv", "Oct 30, 2026". */
 function cellDate(v){
+  if(v instanceof Date&&!isNaN(v))return{y:v.getFullYear(),m:v.getMonth(),d:v.getDate()};
   if(typeof v==='number'){ if(v>30000&&v<80000){const t=new Date(Math.round((v-25569)*864e5));return{y:t.getUTCFullYear(),m:t.getUTCMonth(),d:t.getUTCDate()};} return null; }
-  const s=String(v==null?'':v).trim(); if(!s)return null; let r;
-  if(r=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))return{y:+r[1],m:+r[2]-1,d:+r[3]};
-  if(r=s.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{2,4})$/))return{y:+r[3]<100?2000+ +r[3]:+r[3],m:+r[2]-1,d:+r[1]};
-  if(r=s.match(/^(\d{1,2})(?:er)?[\s\-\/.]*([A-Za-zÀ-ÿ.]+)[\s\-\/.,]*(\d{4})?$/)){const m=monthOf(r[2]);if(m<0)return null;return{y:r[3]?+r[3]:undefined,m,d:+r[1]};}
-  if(r=s.match(/^([A-Za-zÀ-ÿ.]+)[\s\-\/.]*(\d{1,2})(?:,?\s*(\d{4}))?$/)){const m=monthOf(r[1]);if(m<0)return null;return{y:r[3]?+r[3]:undefined,m,d:+r[2]};}
+  const s=String(v==null?'':v).trim().replace(/\s+/g,' '); if(!s||s.length>40)return null; let r;
+  const ok=(y,m,d)=>m>=0&&m<12&&d>=1&&d<=31?{y,m,d}:null;
+  if(r=s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})(?:[T ].*)?$/))return ok(+r[1],+r[2]-1,+r[3]);
+  if(r=s.match(/^(\d{4})(\d{2})(\d{2})(\d{6})?(?:\.\d+)?(?:\[.*)?$/))return ok(+r[1],+r[2]-1,+r[3]);
+  if(r=s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})(?: .*)?$/)){const y=+r[3]<100?2000+ +r[3]:+r[3];
+    return +r[1]>12?ok(y,+r[2]-1,+r[1]):+r[2]>12?ok(y,+r[1]-1,+r[2]):ok(y,+r[2]-1,+r[1]);}
+  if(r=s.match(/^(?:[a-zA-ZÀ-ÿ]+\.?,? )?(\d{1,2})(?:er)?[ \-\/.]*([A-Za-zÀ-ÿ.]+)[ \-\/.,]*(\d{4})?$/)){const m=monthOf(r[2]);if(m<0)return null;return ok(r[3]?+r[3]:undefined,m,+r[1]);}
+  if(r=s.match(/^([A-Za-zÀ-ÿ.]+)[ \-\/.]*(\d{1,2})(?:,? ?(\d{4}))?$/)){const m=monthOf(r[1]);if(m<0)return null;return ok(r[3]?+r[3]:undefined,m,+r[2]);}
   return null;
 }
-const cellNum=v=>{if(typeof v==='number')return v;const t=String(v==null?'':v).replace(/[\s  $€]/g,'').replace(/^\((.*)\)$/,'-$1');if(!/^-?\d+([.,]\d+)?$/.test(t))return NaN;return parseFloat(t.replace(',','.'));};
-/* Turn a sheet (rows of cells, like his "Budget martin" sheet) into a budget. */
+const iso=(y,m,d)=>y+'-'+String(m+1).padStart(2,'0')+'-'+String(Math.min(d,lastDay(y,m))).padStart(2,'0');
+/* Money in any common writing: 1 800 $, 1,800.00, 1.800,00 €, (125), 125-, -1 227,5 */
+function cellNum(v){
+  if(typeof v==='number')return v; if(typeof v==='boolean'||v==null)return NaN;
+  let t=String(v).replace(/[\s  ]/g,'').replace(/(CAD|USD|EUR|CA\$|US\$|[$€£])/gi,'');
+  let neg=false; if(/^\(.*\)$/.test(t)){neg=true;t=t.slice(1,-1);} if(/-$/.test(t)){neg=true;t=t.slice(0,-1);} if(/^[-−]/.test(t)){neg=!neg;t=t.slice(1);} if(/^\+/.test(t))t=t.slice(1);
+  if(!/^\d[\d.,']*$/.test(t))return NaN; t=t.replace(/'/g,'');
+  const lc=t.lastIndexOf(','),ld=t.lastIndexOf('.');
+  if(lc>=0&&ld>=0)t=lc>ld?t.replace(/\./g,'').replace(',','.'):t.replace(/,/g,'');
+  else if(lc>=0)t=/,\d{3}$/.test(t)&&t.split(',').length>1&&!/^0,/.test(t)&&t.length>4?t.replace(/,/g,''):t.replace(/,/g,'.');
+  else if((t.match(/\./g)||[]).length>1)t=t.replace(/\./g,'');
+  const n=parseFloat(t); return isFinite(n)?(neg?-n:n):NaN;
+}
+const isText=v=>typeof v==='string'&&v.trim()!==''&&!isFinite(cellNum(v))&&!cellDate(v);
+const splitNote=label=>{const m=label.match(/\(([^)]*)\)/);let name=label.replace(/\s*\([^)]*\)\s*/g,' ').replace(/\s+/g,' ').trim()||label.trim();
+  if(/^autres? sources?/.test(plain(name)))name='Autres revenus'; return{name,note:m?m[1].trim():''};};
+const INCOME=/salaire|paie\b|^paie|pay ?roll|\bpay\b|revenu|income|depot direct|direct dep|allocation|prestation|remboursement d.impot|retour d.impot|ristourne|interet|dividende|^autres revenus/;
+const FIXED=/loyer|hypoth|hydro|electric|energie|gaz metro|energir|assurance|cellulaire|telephone|internet|bell|videotron|telus|rogers|fizz|koodo|virgin|freedom|pension|voiture|location auto|pret|proposition|abonnement|netflix|spotify|microsoft|disney|amazon prime|frais bancaire|garderie|transport|stm|rtc|opus|saaq|medicament|pharmac/;
+const VAR=/epicerie|resto|restaurant|essence|cadeau|divers|loisir|vetement|sortie|cafe|tim hortons|uber|dons?\b|impot|ecole|entretien|reparation|sante/;
+function trimGrid(g){
+  g=(g||[]).map(r=>(r||[]).map(v=>v==null?'':typeof v==='string'?v.replace(/ /g,' ').trim():v));
+  while(g.length&&g[0].every(v=>v===''))g.shift(); while(g.length&&g[g.length-1].every(v=>v===''))g.pop();
+  const w=Math.max(0,...g.map(r=>r.length)); let c0=0; while(c0<w&&g.every(r=>(r[c0]??'')===''))c0++;
+  return g.map(r=>{const x=r.slice(c0);while(x.length<w-c0)x.push('');return x;});
+}
+const transpose=g=>{const w=Math.max(0,...g.map(r=>r.length));return Array.from({length:w},(_,c)=>g.map(r=>r[c]??''));};
+function yearsFor(ds){ // fill missing years: in order, starting near today
+  const now=new Date(); let y=ds.find(d=>d.y)?.y;
+  if(!y){const m0=ds[0].m;y=now.getFullYear();if(m0-now.getMonth()>6)y--;else if(now.getMonth()-m0>6)y++;}
+  let prev=-1; return ds.map(d=>{if(d.y)y=d.y;else if(prev>=0&&d.m<prev)y++;prev=d.m;return iso(y,d.m,d.d);});
+}
+/* Layout 1: pay dates across the top, lines (Salaire, Loyer…) down the first column — like "Budget martin". */
 function fromGrid(grid){
-  let hr=-1,cols=[];
-  for(let r=0;r<Math.min(grid.length,15)&&hr<0;r++){const row=grid[r]||[];const c=[];for(let k=1;k<row.length;k++){const d=cellDate(row[k]);if(d)c.push([k,d]);}
-    if(c.length>=2){hr=r;cols=c;}}
+  grid=trimGrid(grid); let hr=-1,cols=[];
+  for(let r=0;r<Math.min(grid.length,20)&&hr<0;r++){const row=grid[r];const c=[];for(let k=1;k<row.length;k++){const d=cellDate(row[k]);if(d)c.push([k,d]);}
+    if(c.length>=2&&c.length>=row.slice(1).filter(v=>v!=='').length*0.6){hr=r;cols=c;}}
   if(hr<0)return null;
-  // years: given ones kept; missing ones follow the months in order, starting near today
-  const now=new Date(); let y=cols.find(x=>x[1].y)?.[1].y;
-  if(!y){const m0=cols[0][1].m; y=now.getFullYear(); if(m0-now.getMonth()>6)y--; else if(now.getMonth()-m0>6)y++;}
-  let prevM=-1; const dates=cols.map(([k,d])=>{ if(d.y){y=d.y;} else if(prevM>=0&&d.m<prevM)y++; prevM=d.m;
-    const dd=Math.min(d.d,lastDay(y,d.m)); return [k,y+'-'+String(d.m+1).padStart(2,'0')+'-'+String(dd).padStart(2,'0')]; });
-  const seen=new Set(); const periods=[]; const colPid={};
-  for(const [k,ds] of dates){ if(seen.has(ds))continue; seen.add(ds); const id=uid('p'); periods.push({id,date:ds,label:lab(ds)}); colPid[k]=id; }
-  const categories=[],cells={}; let group='revenu';
+  let lc=0; // the label column: the text column left of the dates
+  for(let k=0;k<cols[0][0];k++)if(grid.slice(hr+1).filter(r=>isText(r[k])).length>grid.slice(hr+1).filter(r=>isText(r[lc])).length)lc=k;
+  const dates=yearsFor(cols.map(c=>c[1]));
+  if(new Set(dates).size<dates.length*0.8)return null; // many repeats: a list of transactions, not pay columns
+  const seen=new Set(),periods=[],colPid={};
+  cols.forEach(([k],i)=>{const ds=dates[i];if(seen.has(ds))return;seen.add(ds);const id=uid('p');periods.push({id,date:ds,label:lab(ds)});colPid[k]=id;});
+  const categories=[],cells={},byName={}; let group='revenu',sawHeader=false;
   for(let r=hr+1;r<grid.length;r++){
-    const row=grid[r]||[]; const label=String(row[0]==null?'':row[0]).trim(); const p=plain(label); if(!label)continue;
-    if(/^(totaux?|total|net|solde|balance|reste)\b/.test(p))continue;
+    const row=grid[r]; const label=String(row[lc]??'').trim(); const p=plain(label); if(!label)continue;
+    if(/^(totaux?|total|net|solde|balance|reste|sommaire|difference|ecart|cumul)\b/.test(p))continue;
     const filled=Object.keys(colPid).filter(k=>row[k]!==''&&row[k]!=null);
     const dateRow=filled.length>0&&filled.every(k=>cellDate(row[k]));
     const nums=dateRow?[]:filled.map(k=>cellNum(row[k])).filter(v=>isFinite(v)&&v!==0);
-    if(!nums.length&&/depenses?\s*fixe|fixed/.test(p)){group='fixe';continue;}
-    if(!nums.length&&/variable/.test(p)){group='variable';continue;}
-    if(!nums.length&&/revenu|income/.test(p)&&!categories.length){group='revenu';continue;}
-    if(dateRow)continue; // a repeated date row
-    const m=label.match(/\(([^)]*)\)/); let name=label.replace(/\s*\([^)]*\)\s*/g,' ').trim()||label;
-    if(/^autres sources/.test(plain(name)))name='Autres revenus';
-    const id=uid('c'); categories.push({id,name,group,note:m?m[1].trim():''});
-    for(const k of Object.keys(colPid)){const v=cellNum(row[k]);if(isFinite(v)&&v!==0)cells[id+'|'+colPid[k]]=Math.round(v*100)/100;}
+    if(!nums.length){
+      if(/fixe|fixed|obligatoire|recurrent/.test(p)){group='fixe';sawHeader=true;continue;}
+      if(/variable|depenses?$|expenses?$|sorties?$|depenses? diverses/.test(p)){group='variable';sawHeader=true;continue;}
+      if(/revenu|income|entree/.test(p)){group='revenu';sawHeader=true;continue;}
+      if(dateRow){if(plain(row[cols[0][0]])!==plain(grid[hr][cols[0][0]]))break; continue;} // other dates: the next table (next page)
+    }
+    const {name,note}=splitNote(label);
+    let g=group; if(!sawHeader){const q=plain(name);g=INCOME.test(q)?'revenu':FIXED.test(q)?'fixe':'variable';}
+    let c=byName[g+'|'+plain(name)]; if(!c){c={id:uid('c'),name,group:g,note};categories.push(c);byName[g+'|'+plain(name)]=c;}
+    for(const k of Object.keys(colPid)){const v=cellNum(row[k]);if(isFinite(v)&&v!==0){const key=c.id+'|'+colPid[k];cells[key]=Math.round(((cells[key]||0)+Math.abs(v))*100)/100;}}
   }
-  if(!categories.length)return null;
+  if(!categories.length||!Object.keys(cells).length)return null;
   return migrate({v:2,startBalance:0,periods,categories,cells,paid:{},extras:[]});
 }
+/* Layout 2: a list of transactions (bank statement, card export): date, description, amount (or debit / credit). */
+function fromTransactions(grid){
+  grid=trimGrid(grid); if(grid.length<2)return null;
+  const W=Math.max(...grid.map(r=>r.length)); let hdr=-1;
+  for(let r=0;r<Math.min(grid.length,15);r++){const t=grid[r].filter(isText).length;if(t>=2&&grid[r].filter(v=>v!=='').every(v=>isText(v))){hdr=r;break;}}
+  const body=grid.slice(hdr+1).filter(r=>r.some(v=>v!==''));
+  const H=k=>hdr>=0?plain(grid[hdr][k]):'';
+  const score=f=>Array.from({length:W},(_,k)=>body.filter(r=>f(r[k])).length/Math.max(1,body.filter(r=>r[k]!=='').length)*(body.filter(r=>r[k]!=='').length/body.length));
+  const ds=score(v=>!!cellDate(v)), ns=score(v=>isFinite(cellNum(v))), ts=score(isText);
+  let dc=-1;ds.forEach((s,k)=>{if(s>0.6&&(dc<0||s>ds[dc]||/date/.test(H(k))&&!/date/.test(H(dc))))dc=k;}); if(dc<0)return null;
+  let lc=-1;ts.forEach((s,k)=>{if(k===dc)return;const pref=/desc|libel|marchand|detail|nom|name|payee|memo|transaction|categ|poste/.test(H(k));if(s>0.5&&(lc<0||pref&&!/desc|libel|marchand|detail|nom|name|payee|memo|transaction|categ|poste/.test(H(lc))||s>ts[lc]))lc=k;}); if(lc<0)return null;
+  const numCols=[];for(let k=0;k<W;k++){if(k===dc||k===lc)continue;const f=body.filter(r=>r[k]!=='');if(f.length>=2&&f.filter(r=>isFinite(cellNum(r[k]))).length>=f.length*0.8)numCols.push(k);} // a Dépôt column may be mostly empty
+  let debit=numCols.find(k=>/debit|retrait|withdraw|sortie|depense|paiement|achat|out\b/.test(H(k))), credit=numCols.find(k=>/credit|depot|deposit|entree|revenu|\bin\b/.test(H(k)));
+  let amt=numCols.find(k=>/montant|amount|somme|valeur|total/.test(H(k)));
+  if(amt==null&&debit==null&&credit==null){amt=numCols.filter(k=>!/solde|balance/.test(H(k)))[0];}
+  if(amt==null&&debit==null&&credit==null)return null;
+  const raw=body.map(r=>{const d=cellDate(r[dc]);if(!d)return null;let a;
+    if(amt!=null)a=cellNum(r[amt]); else {const dv=debit!=null?cellNum(r[debit]):NaN,cv=credit!=null?cellNum(r[credit]):NaN;a=(isFinite(cv)?Math.abs(cv):0)-(isFinite(dv)?Math.abs(dv):0);if(!isFinite(dv)&&!isFinite(cv))a=NaN;}
+    if(!isFinite(a)||a===0)return null; return{d,label:String(r[lc]).trim(),a};}).filter(Boolean);
+  if(raw.length<2)return null;
+  const signed=amt==null||raw.some(x=>x.a<0)&&raw.some(x=>x.a>0); // debit / credit columns tell the side
+  const now=new Date(); const dated=raw.map(x=>{let y=x.d.y;if(!y){y=now.getFullYear();if(new Date(y,x.d.m,x.d.d)-now>60*864e5)y--;}return{...x,date:iso(y,x.d.m,x.d.d)};}).sort((a,b)=>a.date.localeCompare(b.date));
+  // pay periods on the 15th and the end of the month, like the rest of the app
+  const first=dated[0].date,last=dated[dated.length-1].date; let y=+first.slice(0,4),m=+first.slice(5,7)-1; const pays=[];
+  if(+first.slice(8)<15){m--;if(m<0){m=11;y--;}pays.push(iso(y,m,Math.min(30,lastDay(y,m))));m++;if(m>11){m=0;y++;}}
+  while(true){const a=iso(y,m,15),b=iso(y,m,Math.min(30,lastDay(y,m)));if(a>last)break;pays.push(a);if(b>last)break;pays.push(b);m++;if(m>11){m=0;y++;}}
+  const periods=pays.map(d=>({id:uid('p'),date:d,label:lab(d)}));
+  const pidFor=date=>{let p=periods[0];for(const x of periods)if(x.date<=date)p=x;return p.id;};
+  const categories=[],cells={},byName={};
+  for(const x of dated){
+    let name=x.label.replace(/\s+/g,' ').replace(/[#*]?\d{4,}/g,'').replace(/\s+\d{1,3}$/,'').trim().slice(0,40)||'Divers';
+    const q=plain(name); const isIn=signed?x.a>0:INCOME.test(q); const g=isIn?'revenu':FIXED.test(q)?'fixe':'variable';
+    let c=byName[g+'|'+q]; if(!c){c={id:uid('c'),name:name.charAt(0).toUpperCase()+name.slice(1),group:g,note:''};categories.push(c);byName[g+'|'+q]=c;}
+    const key=c.id+'|'+pidFor(x.date); cells[key]=Math.round(((cells[key]||0)+Math.abs(x.a))*100)/100;
+  }
+  return migrate({v:2,startBalance:0,periods,categories,cells,paid:{},extras:[]});
+}
+/* The converter: whatever the table looks like, find the budget in it. */
+function toBudget(grid){
+  if(!grid||!grid.length)return null;
+  const g=trimGrid(grid);
+  const a=fromGrid(g), b=fromGrid(transpose(g));
+  const size=s=>s?Object.keys(s.cells).length:0;
+  const best=size(b)>size(a)?b:a;
+  const t=fromTransactions(g)||(best?null:fromTransactions(transpose(g)));
+  if(best&&t&&best.categories.length<=3&&t.categories.length>best.categories.length)return t; // date + text + amount columns read the wrong way
+  return best||t;
+}
 function parseDelimited(text){
-  const first=text.split(/\r?\n/).find(l=>l.trim())||''; const cnt=c=>first.split(c).length;
-  const sep=cnt('\t')>1?'\t':cnt(';')>cnt(',')?';':',';
+  const lines=text.split(/\r?\n/).filter(l=>l.trim()).slice(0,20); const cnt=c=>lines.reduce((n,l)=>n+(l.split(c).length-1),0);
+  const sep=[['\t',cnt('\t')],[';',cnt(';')],[',',cnt(',')],['|',cnt('|')]].sort((a,b)=>b[1]-a[1])[0][0];
   const rows=[];let row=[],cell='',q=false;
   for(let i=0;i<text.length;i++){const ch=text[i];
     if(q){if(ch==='"'){if(text[i+1]==='"'){cell+='"';i++;}else q=false;}else cell+=ch;continue;}
-    if(ch==='"'&&cell==='')q=true; else if(ch===sep){row.push(cell);cell='';} else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(cell);rows.push(row);row=[];cell='';} else cell+=ch;}
+    if(ch==='"'&&cell.trim()==='')q=true; else if(ch===sep){row.push(cell);cell='';} else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(cell);rows.push(row);row=[];cell='';} else cell+=ch;}
   if(cell!==''||row.length){row.push(cell);rows.push(row);}
   return rows;
 }
-/* Minimal .xlsx reader: unzip with the browser's own inflate, then read the first sheet. */
-async function xlsxGrid(buf){
+/* Bank files: OFX / QFX (Desjardins, Banque Nationale, RBC…) and QIF. */
+function ofxGrid(text){
+  const rows=[['Date','Description','Montant']];
+  for(const t of text.split(/<STMTTRN>/i).slice(1)){const g=tag=>{const m=t.match(new RegExp('<'+tag+'>([^<\\r\\n]*)','i'));return m?m[1].trim():'';};
+    rows.push([g('DTPOSTED').slice(0,8),g('NAME')||g('MEMO')||g('PAYEE')||'Transaction',g('TRNAMT')]);}
+  return rows.length>1?rows:null;
+}
+function qifGrid(text){
+  const rows=[['Date','Description','Montant']];let cur={};
+  for(const l of text.split(/\r?\n/)){const k=l[0],v=l.slice(1).trim();
+    if(k==='D')cur.d=v.replace(/'/g,'/'); else if(k==='T'||k==='U')cur.a=v; else if(k==='P')cur.p=v; else if(k==='M'&&!cur.p)cur.p=v;
+    else if(k==='^'){if(cur.d&&cur.a)rows.push([cur.d,cur.p||'Transaction',cur.a]);cur={};}}
+  return rows.length>1?rows:null;
+}
+function htmlGrids(text){
+  const doc=new DOMParser().parseFromString(text,'text/html');
+  return [...doc.querySelectorAll('table')].map(t=>[...t.rows].map(r=>{const out=[];for(const c of r.cells){out.push(c.textContent.replace(/\s+/g,' ').trim());for(let i=1;i<(c.colSpan||1);i++)out.push('');}return out;}));
+}
+function jsonGrids(d){
+  const arr=Array.isArray(d)?d:Object.values(d||{}).find(v=>Array.isArray(v)&&v.length&&typeof v[0]==='object');
+  if(!arr||!arr.length)return[];
+  if(Array.isArray(arr[0]))return[arr];
+  const keys=[...new Set(arr.flatMap(o=>Object.keys(o||{})))];
+  return[[keys,...arr.map(o=>keys.map(k=>o[k]==null?'':typeof o[k]==='object'?JSON.stringify(o[k]):o[k]))]];
+}
+/* ---------- zip (for .xlsx / .docx / .ods, without any library) ---------- */
+function unzip(buf){
   const u8=new Uint8Array(buf),dv=new DataView(buf); let e=u8.length-22; while(e>=0&&dv.getUint32(e,true)!==0x06054b50)e--; if(e<0)throw new Error('zip');
   const n=dv.getUint16(e+10,true); let p=dv.getUint32(e+16,true); const files={};
   for(let i=0;i<n;i++){const meth=dv.getUint16(p+10,true),csize=dv.getUint32(p+20,true),nl=dv.getUint16(p+28,true),xl=dv.getUint16(p+30,true),cl=dv.getUint16(p+32,true),off=dv.getUint32(p+42,true);
     files[new TextDecoder().decode(u8.subarray(p+46,p+46+nl))]={meth,csize,off}; p+=46+nl+xl+cl;}
   const read=async name=>{const f=files[name]; if(!f)return null; const o=f.off+30+dv.getUint16(f.off+26,true)+dv.getUint16(f.off+28,true); const raw=u8.subarray(o,o+f.csize);
     if(f.meth===0)return new TextDecoder().decode(raw);
-    const s=new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw')); return await new Response(s).text();};
-  const X=t=>new DOMParser().parseFromString(t,'application/xml');
-  let sheet='xl/worksheets/sheet1.xml';
-  try{const wb=X(await read('xl/workbook.xml')),rels=X(await read('xl/_rels/workbook.xml.rels'));const s0=wb.getElementsByTagName('sheet')[0];
-    const rid=s0.getAttribute('r:id')||s0.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships','id');
-    for(const r of rels.getElementsByTagName('Relationship'))if(r.getAttribute('Id')===rid){const t=r.getAttribute('Target');sheet=t.startsWith('/')?t.slice(1):'xl/'+t.replace(/^\.\//,'');}}catch(err){}
-  const ss=[]; const sst=await read('xl/sharedStrings.xml');
-  if(sst)for(const si of X(sst).getElementsByTagName('si'))ss.push([...si.getElementsByTagName('t')].map(t=>t.textContent).join(''));
-  const doc=X(await read(sheet)); const grid=[];
-  for(const c of doc.getElementsByTagName('c')){const ref=c.getAttribute('r')||'';const m=ref.match(/^([A-Z]+)(\d+)$/);if(!m)continue;
-    let col=0;for(const ch of m[1])col=col*26+ch.charCodeAt(0)-64;col--;const row=+m[2]-1;
-    const t=c.getAttribute('t'),v=c.getElementsByTagName('v')[0]; let val;
-    if(t==='s')val=ss[+(v&&v.textContent)]; else if(t==='inlineStr')val=[...c.getElementsByTagName('t')].map(x=>x.textContent).join(''); else if(t==='str'||t==='b'||t==='e')val=v?v.textContent:''; else val=v?+v.textContent:'';
-    (grid[row]=grid[row]||[])[col]=val;}
-  for(let i=0;i<grid.length;i++)grid[i]=grid[i]||[];
-  return grid;
+    if(typeof DecompressionStream==='undefined')throw new Error('inflate');
+    return await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text();};
+  return{files,read};
 }
-function useImported(d){
-  if(!d){toast('Je ne reconnais pas ce budget');return false;}
+const XML=t=>new DOMParser().parseFromString(t,'application/xml');
+async function xlsxGrids(z){
+  const ss=[]; const sst=await z.read('xl/sharedStrings.xml');
+  if(sst)for(const si of XML(sst).getElementsByTagName('si'))ss.push([...si.getElementsByTagName('t')].map(t=>t.textContent).join(''));
+  let order=Object.keys(z.files).filter(f=>/^xl\/worksheets\/[^/]+\.xml$/.test(f)).sort();
+  try{const wb=XML(await z.read('xl/workbook.xml')),rels=XML(await z.read('xl/_rels/workbook.xml.rels'));const map={};
+    for(const r of rels.getElementsByTagName('Relationship')){const t=r.getAttribute('Target');map[r.getAttribute('Id')]=t.startsWith('/')?t.slice(1):'xl/'+t.replace(/^\.\//,'');}
+    const o=[...wb.getElementsByTagName('sheet')].map(s=>map[s.getAttribute('r:id')||s.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships','id')]).filter(Boolean); if(o.length)order=o;}catch(err){}
+  const grids=[];
+  for(const path of order){const txt=await z.read(path);if(!txt)continue;const grid=[];
+    for(const c of XML(txt).getElementsByTagName('c')){const m=(c.getAttribute('r')||'').match(/^([A-Z]+)(\d+)$/);if(!m)continue;
+      let col=0;for(const ch of m[1])col=col*26+ch.charCodeAt(0)-64;col--;const row=+m[2]-1;
+      const t=c.getAttribute('t'),v=c.getElementsByTagName('v')[0]; let val;
+      if(t==='s')val=ss[+(v&&v.textContent)]; else if(t==='inlineStr')val=[...c.getElementsByTagName('t')].map(x=>x.textContent).join(''); else if(t==='str'||t==='b'||t==='e')val=v?v.textContent:''; else val=v?+v.textContent:'';
+      (grid[row]=grid[row]||[])[col]=val;}
+    for(let i=0;i<grid.length;i++)grid[i]=grid[i]||[]; grids.push(grid);}
+  return grids;
+}
+async function docxGrids(z){
+  const doc=XML(await z.read('word/document.xml')); const W='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  const grids=[...doc.getElementsByTagNameNS(W,'tbl')].map(t=>[...t.getElementsByTagNameNS(W,'tr')].map(tr=>[...tr.getElementsByTagNameNS(W,'tc')].map(tc=>[...tc.getElementsByTagNameNS(W,'t')].map(x=>x.textContent).join('').trim())));
+  if(grids.length)return grids;
+  const text=[...doc.getElementsByTagNameNS(W,'p')].map(p=>[...p.getElementsByTagNameNS(W,'t')].map(x=>x.textContent).join('')).join('\n');
+  return[parseDelimited(text)];
+}
+/* ---------- libraries, loaded only when a file needs them (the hub ships them with the app, for offline use) ---------- */
+const libLoads={};
+function lib(name,ready){
+  if(ready())return Promise.resolve();
+  if(libLoads[name])return libLoads[name];
+  const tag=document.querySelector('script[data-lib="'+name+'"]'); if(!tag)return Promise.reject(new Error('lib'));
+  return libLoads[name]=new Promise((ok,ko)=>{const s=document.createElement('script');s.src=tag.src;s.onload=()=>ready()?ok():ko(new Error('lib'));s.onerror=()=>{delete libLoads[name];ko(new Error('lib'));};document.head.appendChild(s);});
+}
+const sheetjs=()=>lib('sheetjs',()=>typeof XLSX!=='undefined'&&XLSX.read);
+async function sheetjsGrids(buf){await sheetjs();const wb=XLSX.read(new Uint8Array(buf),{type:'array',cellDates:false});return wb.SheetNames.map(n=>XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:true,defval:''}));}
+async function pdfGrids(buf){
+  await lib('pdfjs',()=>typeof pdfjsLib!=='undefined');
+  const w=document.querySelector('script[data-lib="pdfjs-worker"]'); if(w)pdfjsLib.GlobalWorkerOptions.workerSrc=w.src;
+  const pdf=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;
+  const pages=[];
+  for(let n=1;n<=pdf.numPages;n++){const pg=await pdf.getPage(n);const tc=await pg.getTextContent();const h=pg.view[3];const items=[];
+    for(const it of tc.items){const s=(it.str||'').trim();if(s)items.push({s,x:it.transform[4],y:h-it.transform[5],w:it.width||s.length*4});}
+    if(items.length)pages.push(pdfTable(items));}
+  if(pages.length>1)pages.push(pages.flat()); // a table that runs down several pages
+  return pages;
+}
+function pdfTable(items){
+  // rows: text at the same height; columns: from where cells start, clustered
+  items.sort((a,b)=>a.y-b.y||a.x-b.x); const rows=[]; for(const it of items){const r=rows[rows.length-1];if(r&&Math.abs(r.y-it.y)<4)r.items.push(it);else rows.push({y:it.y,items:[it]});}
+  const merged=rows.map(r=>{const out=[];for(const it of r.items.sort((a,b)=>a.x-b.x)){const last=out[out.length-1];if(last&&it.x-(last.x+last.w)<3){last.s+=(it.x-(last.x+last.w)>1?' ':'')+it.s;last.w=it.x+it.w-last.x;}else out.push({...it});}return out;});
+  // a row of pay dates gives the columns: amounts are often centred under them
+  const hdr=merged.find(r=>r.filter(i=>cellDate(i.s)).length>=2);
+  if(hdr){const cs=hdr.filter(i=>cellDate(i.s)).map(i=>i.x+i.w/2).sort((a,b)=>a-b);const gap=cs.length>1?(cs[cs.length-1]-cs[0])/(cs.length-1):60;const left=cs[0]-gap/2;
+    return merged.map(r=>{const row=Array(cs.length+1).fill('');for(const it of r){const c=it.x+it.w/2;let k=0;
+      if(c>=left){let d=1e9;cs.forEach((x,i)=>{if(Math.abs(c-x)<d){d=Math.abs(c-x);k=i+1;}});}
+      row[k]=row[k]?row[k]+' '+it.s:it.s;}return row;});}
+  const xs=merged.flat().map(i=>i.x).sort((a,b)=>a-b); const anchors=[]; for(const x of xs){if(!anchors.length||x-anchors[anchors.length-1].max>12)anchors.push({min:x,max:x});else anchors[anchors.length-1].max=x;}
+  const colOf=x=>{let best=0,d=1e9;anchors.forEach((a,i)=>{const dd=x<a.min?a.min-x:x>a.max?x-a.max:0;if(dd<d){d=dd;best=i;}});return best;};
+  return merged.map(r=>{const row=Array(anchors.length).fill('');for(const it of r)row[colOf(it.x)]=row[colOf(it.x)]?row[colOf(it.x)]+' '+it.s:it.s;return row;});
+}
+/* Every document type -> the tables it holds */
+async function gridsOf(buf,name){
+  const b=new Uint8Array(buf), ext=(name.match(/\.([a-z0-9]+)$/i)||[])[1]?.toLowerCase()||'';
+  if(b[0]===0x50&&b[1]===0x4b){ // zip: xlsx, docx, ods, numbers…
+    let z=null; try{z=unzip(buf);}catch(e){}
+    if(z&&z.files['word/document.xml'])return docxGrids(z);
+    if(z&&z.files['xl/workbook.xml']){try{return await xlsxGrids(z);}catch(e){}}
+    return sheetjsGrids(buf);
+  }
+  if(b[0]===0x25&&b[1]===0x50&&b[2]===0x44&&b[3]===0x46)return pdfGrids(buf); // %PDF
+  if(b[0]===0xD0&&b[1]===0xCF)return sheetjsGrids(buf); // old Excel .xls
+  if(b[0]===0x09&&(b[1]===0x08||b[1]===0x04)||ext==='xlsb'||ext==='numbers'||ext==='dbf')return sheetjsGrids(buf);
+  let text; try{text=new TextDecoder('utf-8',{fatal:true}).decode(b);}catch(e){text=new TextDecoder('windows-1252').decode(b);}
+  return textGrids(text,ext);
+}
+function textGrids(text,ext){
+  text=String(text||'').replace(/^﻿/,'').trim(); if(!text)return[];
+  if(/<STMTTRN>/i.test(text))return[ofxGrid(text)].filter(Boolean);
+  if(/^!Type:/im.test(text))return[qifGrid(text)].filter(Boolean);
+  if(text[0]==='{'||text[0]==='['){try{const d=JSON.parse(text);const bp=migrate(d);if(bp)return{budget:bp};return jsonGrids(d);}catch(e){}}
+  if(/<table[\s>]/i.test(text))return htmlGrids(text);
+  if(/^<\?xml[\s\S]*urn:schemas-microsoft-com:office:spreadsheet/i.test(text)&&typeof XLSX!=='undefined')return sheetjsGrids(new TextEncoder().encode(text).buffer);
+  if(/^\{\\rtf/.test(text))text=text.replace(/\\par[d]?/g,'\n').replace(/\\cell/g,'\t').replace(/\\row/g,'\n').replace(/\{\\[^{}]*\}|\\[a-z]+-?\d* ?|[{}]/g,'');
+  return[parseDelimited(text)];
+}
+function pickBudget(grids){
+  if(grids&&grids.budget)return grids.budget;
+  const found=(grids||[]).map(g=>{try{return toBudget(g);}catch(e){return null;}}).filter(Boolean).sort((a,b)=>Object.keys(b.cells).length-Object.keys(a.cells).length);
+  if(!found.length)return null;
+  // pages of a PDF, or one sheet per month: join the parts that cover other pay dates
+  const out=found[0]; const key=c=>c.group+'|'+plain(c.name);
+  for(const part of found.slice(1)){
+    const have=new Set(out.periods.map(p=>p.date)); if(part.periods.some(p=>have.has(p.date)))continue;
+    const names=new Set(out.categories.map(key)); const shared=part.categories.filter(c=>names.has(key(c))).length;
+    if(shared<Math.min(part.categories.length,out.categories.length)*0.5)continue;
+    const idOf={}; for(const c of part.categories){let o=out.categories.find(x=>key(x)===key(c));if(!o){o={...c};out.categories.push(o);}idOf[c.id]=o.id;}
+    out.periods.push(...part.periods);
+    for(const [k,v] of Object.entries(part.cells)){const [c,pid]=k.split('|');out.cells[idOf[c]+'|'+pid]=v;}
+  }
+  return migrate(out);
+}
+function useImported(d,from){
+  if(!d){toast('Je n’ai pas trouvé de montants avec des dates dans '+(from||'ce document'));return false;}
   try{if(S)localStorage.setItem('budgetplus-before-import',JSON.stringify(S));}catch(e){}
   S=d; view='sheet'; save(); render();
   toast(`Budget importé : ${d.periods.length} paies, ${d.categories.length} lignes`); return true;
 }
 function importText(text){
-  text=String(text||'').replace(/^﻿/,'').trim(); if(!text){toast('Rien à importer');return false;}
-  if(text[0]==='{'){try{return useImported(migrate(JSON.parse(text)));}catch(e){toast('Ce texte .json est incomplet');return false;}}
-  return useImported(fromGrid(parseDelimited(text)));
+  if(!String(text||'').trim()){toast('Rien à importer');return false;}
+  try{return useImported(pickBudget(textGrids(text,'')),'ce texte');}catch(e){toast('Ce texte n’a pas pu être lu');return false;}
 }
 function importFile(input){
   const f=input.files&&input.files[0]; if(!f)return;
+  toast('Lecture de '+f.name+'…');
   f.arrayBuffer().then(async buf=>{
-    const b=new Uint8Array(buf);
-    if(b[0]===0x50&&b[1]===0x4b){ if(typeof DecompressionStream==='undefined'){toast('Cet appareil ne lit pas les .xlsx — exporte en .csv');return;}
-      try{useImported(fromGrid(await xlsxGrid(buf)));}catch(e){toast('Ce fichier Excel n’a pas pu être lu');} return; }
-    importText(new TextDecoder().decode(b));
+    try{useImported(pickBudget(await gridsOf(buf,f.name)),f.name);}
+    catch(e){toast(e&&e.message==='lib'?'Connexion requise une première fois pour lire ce type de fichier':'« '+f.name+' » n’a pas pu être lu');}
   }).catch(()=>toast('Fichier illisible'));
 }
-function exportFile(){
-  const blob=new Blob([JSON.stringify(S,null,1)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='budget-'+todayISO()+'.json';
-  document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000); toast('Fichier exporté');
+/* ---------- export: the budget as a sheet, in any format ---------- */
+function budgetRows(){
+  const P=sorted(S), rows=[], kinds=[];
+  const add=(cells,kind)=>{rows.push(cells);kinds.push(kind);};
+  add(['Date de Dépôt',...P.map(p=>lab(p.date))],'date');
+  const groups=[['revenu','Type de revenu'],['fixe','Dépenses fixes'],['variable','Dépenses variables']];
+  for(const [g,title] of groups){
+    add([title,...P.map(()=>'')],g+'-h');
+    for(const c of cats(g))add([c.name+(c.note?' ('+c.note+')':''),...P.map(p=>val(c.id,p.id)||'')],g);
+    if(g==='variable'){const ex=[...new Set(S.extras.filter(x=>x.kind!=='in').map(x=>x.name||'Autre dépense'))];
+      for(const n of ex)add([n,...P.map(p=>extrasOf(p.id).filter(x=>x.kind!=='in'&&(x.name||'Autre dépense')===n).reduce((a,x)=>a+x.amount,0)||'')],g);}
+    if(g==='revenu'){const ex=[...new Set(S.extras.filter(x=>x.kind==='in').map(x=>x.name||'Autre revenu'))];
+      for(const n of ex)add([n,...P.map(p=>extrasOf(p.id).filter(x=>x.kind==='in'&&(x.name||'Autre revenu')===n).reduce((a,x)=>a+x.amount,0)||'')],g);}
+  }
+  const R=running(); add(['Net de la paie',...R.map(r=>Math.round(r.net*100)/100)],'net'); add(['Totaux (solde cumulé)',...R.map(r=>Math.round(r.bal*100)/100)],'tot');
+  return{rows,kinds};
 }
-
+async function download(blob,name){
+  if(!HUB){ // inside Claude the page cannot start a download itself: the viewer confirms the save
+    const dl=window.claude&&window.claude.use?await window.claude.use('downloads'):null;
+    if(!dl){toast('Téléchargement indisponible ici — ouvre Budget ++ depuis le hub');return;}
+    try{try{await dl.save({filename:name,data:blob});}catch(e){if(e&&/type|data/i.test(String(e.message||e)))await dl.save({filename:name,data:new Uint8Array(await blob.arrayBuffer())});else throw e;}toast('Fichier exporté : '+name);}
+    catch(e){toast('Export annulé');}
+    return;
+  }
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name;
+  document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000); toast('Fichier exporté : '+name);
+}
+const xesc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let CRC; const crc32=u=>{if(!CRC){CRC=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;CRC[n]=c>>>0;}}let c=0xFFFFFFFF;for(let i=0;i<u.length;i++)c=CRC[(c^u[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0;};
+function zipStore(files){ // files: [name, text]
+  const enc=new TextEncoder(),parts=[],cen=[];let off=0;
+  for(const [name,txt] of files){const n=enc.encode(name),d=enc.encode(txt),crc=crc32(d);
+    const h=new DataView(new ArrayBuffer(30));h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x800,true);h.setUint32(14,crc,true);h.setUint32(18,d.length,true);h.setUint32(22,d.length,true);h.setUint16(26,n.length,true);
+    parts.push(new Uint8Array(h.buffer),n,d);
+    const c=new DataView(new ArrayBuffer(46));c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x800,true);c.setUint32(16,crc,true);c.setUint32(20,d.length,true);c.setUint32(24,d.length,true);c.setUint16(28,n.length,true);c.setUint32(42,off,true);
+    cen.push(new Uint8Array(c.buffer),n); off+=30+n.length+d.length;}
+  const size=cen.reduce((a,x)=>a+x.length,0),e=new DataView(new ArrayBuffer(22));e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,size,true);e.setUint32(16,off,true);
+  return new Blob([...parts,...cen,new Uint8Array(e.buffer)],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+/* Excel .xlsx in the colours of his sheet, with live formulas and Canadian dollars — opens in In 1 Class, Excel, Sheets. */
+function xlsxBlob(){
+  const {rows,kinds}=budgetRows(); const N=rows[0].length-1, L=i=>{let s='';i++;while(i>0){const m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=(i-m-1)/26;}return s;};
+  const fill={date:'E07B39',revenu:'F2F200','revenu-h':'F2F200',fixe:'00B0F0','fixe-h':'00B0F0',variable:'E6B800','variable-h':'E6B800',net:'A9D08E',tot:'A9D08E'};
+  const order=['date','revenu','fixe','variable','net','tot','black']; const fillId=k=>2+order.indexOf(k);
+  // xf: 0 default, then per kind: label (bold), number, plus black header cells
+  const xf=[],xfOf={}; const addXf=(k,s)=>{xfOf[k]=xf.length+1;xf.push(s);};
+  for(const k of order){const f=fillId(k);addXf(k+'|l',`<xf numFmtId="0" fontId="1" fillId="${f}" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center"/></xf>`);
+    addXf(k+'|n',`<xf numFmtId="164" fontId="${k==='tot'||k==='date'?1:0}" fillId="${f}" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center"/></xf>`);}
+  const firstOf=g=>kinds.indexOf(g), lastOf=g=>kinds.lastIndexOf(g);
+  const inc=[firstOf('revenu'),lastOf('revenu')], out=[kinds.findIndex(k=>k==='fixe'||k==='variable'),Math.max(lastOf('fixe'),lastOf('variable'))];
+  let sheet='';
+  rows.forEach((r,i)=>{const k=kinds[i],base=k.replace('-h','');let x=`<row r="${i+1}">`;
+    r.forEach((v,c)=>{const ref=L(c)+(i+1);
+      if(c===0){x+=`<c r="${ref}" t="inlineStr" s="${xfOf[(base)+'|l']}"><is><t>${xesc(v)}</t></is></c>`;return;}
+      if(k.endsWith('-h')&&k!=='variable-h'){x+=`<c r="${ref}" s="${xfOf['black|n']}"/>`;return;}
+      if(k==='variable-h'||k==='date'){x+=`<c r="${ref}" t="inlineStr" s="${xfOf[base+'|l']}"><is><t>${xesc(rows[0][c])}</t></is></c>`;return;}
+      if(k==='net'){const sumIn=inc[0]>=0?`SUM(${L(c)}${inc[0]+1}:${L(c)}${inc[1]+1})`:'0',sumOut=out[0]>=0?`SUM(${L(c)}${out[0]+1}:${L(c)}${out[1]+1})`:'0';x+=`<c r="${ref}" s="${xfOf['net|n']}"><f>${sumIn}-${sumOut}</f><v>${v}</v></c>`;return;}
+      if(k==='tot'){const f=c===1?`${S.startBalance||0}+${L(c)}${i}`:`${L(c-1)}${i+1}+${L(c)}${i}`;x+=`<c r="${ref}" s="${xfOf['tot|n']}"><f>${f}</f><v>${v}</v></c>`;return;}
+      x+=v===''?`<c r="${ref}" s="${xfOf[base+'|n']}"/>`:`<c r="${ref}" s="${xfOf[base+'|n']}"><v>${v}</v></c>`;});
+    sheet+=x+'</row>';});
+  const fills=order.map(k=>`<fill><patternFill patternType="solid"><fgColor rgb="FF${k==='black'?'000000':fill[k]}"/></patternFill></fill>`).join('');
+  const cols=`<cols><col min="1" max="1" width="40" customWidth="1"/><col min="2" max="${N+1}" width="12" customWidth="1"/></cols>`;
+  return zipStore([
+    ['[Content_Types].xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>'],
+    ['_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+    ['xl/workbook.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Budget" sheetId="1" r:id="rId1"/></sheets><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>'],
+    ['xl/_rels/workbook.xml.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],
+    ['xl/styles.xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0\\ [$$-C0C];[Red]\\-#,##0\\ [$$-C0C]"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="${order.length+2}"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>${fills}</fills><borders count="2"><border/><border><left style="thin"><color rgb="FF7F7F7F"/></left><right style="thin"><color rgb="FF7F7F7F"/></right><top style="thin"><color rgb="FF7F7F7F"/></top><bottom style="thin"><color rgb="FF7F7F7F"/></bottom></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="${xf.length+1}"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>${xf.join('')}</cellXfs></styleSheet>`],
+    ['xl/worksheets/sheet1.xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane xSplit="1" ySplit="1" topLeftCell="B2" activePane="bottomRight" state="frozen"/></sheetView></sheetViews>${cols}<sheetData>${sheet}</sheetData></worksheet>`],
+  ]);
+}
+const moneyCell=v=>v===''||v==null?'':typeof v==='number'?money(v):v;
+function csvText(sep){const {rows}=budgetRows();return '﻿'+rows.map(r=>r.map(v=>{const s=String(v);return /[",;\n\t]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(sep)).join('\r\n');}
+function htmlTable(){
+  const {rows,kinds}=budgetRows(); const bg={date:'#E07B39',revenu:'#F2F200','revenu-h':'#F2F200',fixe:'#00B0F0','fixe-h':'#00B0F0',variable:'#E6B800','variable-h':'#E6B800',net:'#A9D08E',tot:'#A9D08E'};
+  return `<table border="1" cellspacing="0" cellpadding="3" style="border-collapse:collapse;font:10pt Calibri,Arial">${rows.map((r,i)=>`<tr style="background:${bg[kinds[i]]};${/date|-h|tot/.test(kinds[i])?'font-weight:bold':''}">${r.map((v,c)=>`<td style="text-align:center${c===0?';font-weight:bold':''}${typeof v==='number'&&v<0?';color:#C00000':''}">${xesc(c===0||kinds[i]==='date'?v:moneyCell(v))}</td>`).join('')}</tr>`).join('')}</table>`;
+}
+async function pdfBlob(){
+  await lib('jspdf',()=>typeof jspdf!=='undefined'&&jspdf.jsPDF); await lib('jspdf-autotable',()=>jspdf.jsPDF.API&&jspdf.jsPDF.API.autoTable);
+  const {rows,kinds}=budgetRows(); const doc=new jspdf.jsPDF({orientation:'landscape',unit:'pt',format:'letter'});
+  const col={date:[224,123,57],revenu:[242,242,0],'revenu-h':[242,242,0],fixe:[0,176,240],'fixe-h':[0,176,240],variable:[230,184,0],'variable-h':[230,184,0],net:[169,208,142],tot:[169,208,142]};
+  const per=9; // pay columns per page, so it stays readable
+  doc.setFontSize(16); doc.text('Budget ++ — '+longDate(todayISO()),40,36);
+  for(let s=1;s<rows[0].length;s+=per){
+    const slice=r=>[r[0],...r.slice(s,s+per)];
+    doc.autoTable({startY:s===1?50:40,head:[slice(rows[0])],body:rows.slice(1).map((r,i)=>slice(r).map((v,c)=>c===0||kinds[i+1]==='variable-h'?String(v):moneyCell(v))),
+      theme:'grid',styles:{fontSize:7.5,halign:'center',cellPadding:2.5,lineColor:[127,127,127],lineWidth:.4,textColor:[0,0,0]},headStyles:{fillColor:col.date,textColor:[0,0,0]},columnStyles:{0:{halign:'left',fontStyle:'bold',cellWidth:170}},
+      didParseCell:d=>{if(d.section!=='body')return;const k=kinds[d.row.index+1];d.cell.styles.fillColor=col[k];if(/-h|tot/.test(k))d.cell.styles.fontStyle='bold';const raw=rows[d.row.index+1][d.column.index===0?0:s+d.column.index-1];if(d.column.index>0&&typeof raw==='number'&&raw<0)d.cell.styles.textColor=[192,0,0];}});
+    if(s+per<rows[0].length)doc.addPage();
+  }
+  return doc.output('blob');
+}
+async function odsBlob(){await sheetjs();const {rows}=budgetRows();const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Budget');return new Blob([XLSX.write(wb,{type:'array',bookType:'ods'})],{type:'application/vnd.oasis.opendocument.spreadsheet'});}
+const EXPORTS={
+  json:()=>[new Blob([JSON.stringify(S,null,1)],{type:'application/json'}),'json'],
+  xlsx:()=>[xlsxBlob(),'xlsx'],
+  csv:()=>[new Blob([csvText(';')],{type:'text/csv;charset=utf-8'}),'csv'],
+  pdf:async()=>[await pdfBlob(),'pdf'],
+  doc:()=>[new Blob(['﻿<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>Budget</title><style>@page{size:landscape;margin:1.5cm}</style></head><body><h2 style="font-family:Calibri">Budget ++</h2>'+htmlTable()+'</body></html>'],{type:'application/msword'}),'doc'],
+  html:()=>[new Blob(['<!doctype html><meta charset="utf-8"><title>Budget</title><body style="margin:20px">'+htmlTable()+'</body>'],{type:'text/html'}),'html'],
+  ods:async()=>[await odsBlob(),'ods'],
+};
+async function exportAs(kind){
+  if(!S)return; const k=EXPORTS[kind]?kind:'json';
+  try{const [blob,ext]=await EXPORTS[k]();download(blob,'budget-'+todayISO()+'.'+ext);}
+  catch(e){toast(e&&e.message==='lib'?'Connexion requise une première fois pour ce format':'Export impossible dans ce format');}
+}
+function exportFile(){exportAs('json');}
 /* ---------- events ---------- */
 $('#fab').onclick=()=>{if(S&&S.periods.length)openExpense();};
 document.addEventListener('click',e=>{
@@ -873,6 +1184,7 @@ document.addEventListener('click',e=>{
   if(d.new!==undefined){newBudget();return;}
   if(d.unsync!==undefined){SYNC={};try{localStorage.removeItem(SYNC_KEY)}catch(err){}remoteSha=null;setSync('ok','Enregistré sur cet appareil');render();toast('Synchro déconnectée');return;}
   if(d.export!==undefined&&S){exportFile();return;}
+  if(d.exp&&S){exportAs(d.exp);return;}
   if(d.paste!==undefined){const box=$('#pasteBox');if(box&&importText(box.value))box.value='';return;}
   if(!S)return;
   if(d.paid){const k=d.paid;if(S.paid[k])delete S.paid[k];else S.paid[k]=true;save();render();return;}
@@ -927,6 +1239,8 @@ document.addEventListener('submit',e=>{
   if(e.target.id==='fPer'){const v=$('#nPerDate').value;if(!v)return;const p=addPeriod(v,$('#nPerFill').checked);
     if(!p){toast('Une paie existe déjà à cette date');return;} ui.openForm=null;save();render();toast('Paie du '+p.label+' ajoutée');}
 });
+addEventListener('dragover',e=>{if(e.dataTransfer&&[...e.dataTransfer.types].includes('Files'))e.preventDefault();});
+addEventListener('drop',e=>{const f=e.dataTransfer&&e.dataTransfer.files;if(f&&f.length){e.preventDefault();importFile({files:f});}});
 let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{if(!S)return;if(view==='home')drawChart($('#chart'),running());if(view==='insights')updateSim();},150);});
 
 /* ---------- boot ---------- */
