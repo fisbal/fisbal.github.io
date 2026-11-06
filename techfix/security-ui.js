@@ -79,7 +79,7 @@ function secFindingHtml(f, i){
     <div class="finding-sev ${f.severity}"></div>
     <div class="finding-body">
       <div class="finding-title">${esc(T(SEC_TITLE[f.code] || f.detail || f.code))}</div>
-      <div class="finding-meta">${esc(f.detail || "")}</div>
+      <div class="finding-meta">${esc(f.code && NATIVE_DETAIL[f.code] ? nativeDetail(f) : (f.detail || ""))}</div>
       ${fixable ? `<div class="finding-fixes"><button class="btn sm primary fixit-btn" data-sec-fix="${i}">${ICON.wrench}<span>${esc(T("Fix it"))}</span></button></div>` : ""}
     </div>
     ${kb ? `<div class="finding-arrow" data-kb="${kb.id}">${ICON.chevron}</div>` : ""}
@@ -162,9 +162,9 @@ function renderSecurityView(){
     const ports = (res.listening || []).slice(0, 15);
     extra = `<details class="panel sec-details"><summary>${esc(T("Details: startup programs, open ports, hosts file"))}</summary>
       <div class="kb-block"><div class="kb-block-label">${esc(T("Startup programs"))} (${(res.startup || []).length})</div>
-        <ul>${(res.startup || []).slice(0, 25).map(s => `<li>${(s.flags || []).length ? "⚠️ " : ""}<strong>${esc(s.name)}</strong> <code>${esc(s.cmd || "")}</code> <small>${esc(s.where || "")} · ${esc(s.sig || "")}</small></li>`).join("") || `<li>—</li>`}</ul></div>
+        <ul>${(res.startup || []).slice(0, 25).map(s => `<li class="notranslate-tf">${(s.flags || []).length ? "⚠️ " : ""}<strong>${esc(s.name)}</strong> <code>${esc(s.cmd || "")}</code> <small>${esc(s.where || "")} · ${esc(s.sig || "")}</small></li>`).join("") || `<li>—</li>`}</ul></div>
       <div class="kb-block"><div class="kb-block-label">${esc(T("Open network ports"))}</div>
-        <ul>${ports.map(p => `<li><code>${p.port}</code> ${esc(p.proc || "?")}</li>`).join("") || `<li>—</li>`}</ul></div>
+        <ul>${ports.map(p => `<li class="notranslate-tf"><code>${p.port}</code> ${esc(p.proc || "?")}</li>`).join("") || `<li>—</li>`}</ul></div>
       <div class="kb-block"><div class="kb-block-label">${esc(T("Hosts file"))}</div>
         <ul>${(res.hosts || []).map(h => `<li><code>${esc(h)}</code></li>`).join("") || `<li>${esc(T("Default (clean)"))}</li>`}</ul></div>
       ${flagged.length ? `<p class="sheet-note">⚠️ = ${esc(T("flagged: runs from a temporary folder, uses a hidden command, or isn't signed"))}</p>` : ""}

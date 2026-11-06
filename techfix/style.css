@@ -504,3 +504,10 @@ button{ font-family: inherit; }
 .sec-details code{ font-family: var(--font-mono); font-size:11.5px; color: var(--gold-1); overflow-wrap:anywhere; }
 @media (max-width:560px){ .forecast{ flex-wrap:wrap; gap:10px; } .forecast-lamp{ flex-direction:row; width:auto; } .forecast-body{ flex:1 1 100%; order:2; } .forecast > .btn, .forecast > button{ order:3; } }
 
+/* ---------- Language picker ---------- */
+.header-status{ display:flex; align-items:center; gap:10px; }
+.lang-select{ appearance:none; -webkit-appearance:none; background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d4a94a' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 9px center / 12px;
+  color: var(--text); border:1px solid var(--border); border-radius: 999px; padding: 6px 28px 6px 12px; font: 600 12px var(--font-body, inherit); cursor:pointer; }
+.lang-select:hover, .lang-select:focus{ border-color: var(--gold-3); outline:none; box-shadow: 0 0 0 3px var(--gold-glow); }
+.lang-select option{ background: var(--surface); color: var(--text); }
+

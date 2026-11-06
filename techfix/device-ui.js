@@ -21,6 +21,46 @@ const SYS_FC = {
   fc_phone_storage:["Phone storage will run out","Clear app caches, move photos to the cloud or a computer."],
   fc_phone_heat:["The phone may throttle or shut down from heat","Remove the case while charging, avoid gaming while charging."]
 };
+// Detail sentence for each native finding code (params come from diagnostics.js), so details translate cleanly.
+const NATIVE_DETAIL = {
+  disk_low:"Only {pct}% free on {drive}.", disk_health:"Windows rates disk “{name}” as “{status}”. Back up your files now.",
+  disk_wear:"SSD “{name}” has used {wear}% of its rated write endurance.", disk_hot:"Drive “{name}” is at {temp} °C.",
+  disk_uncorrected:"Drive “{name}” reports {count} unreadable data error(s) — a sign of a failing drive.",
+  disk_events:"{count} disk or file-system error(s) in the last 14 days.", mem_high:"{pct}% of the memory is in use right now.",
+  pagefile_high:"The page file is {pct}% used — programs may freeze or close.", cpu_high:"The processor was {pct}% busy during the scan.",
+  cpu_hot:"Thermal sensor at {temp} °C.", driver_errors:"{count} device(s) report a driver problem: {names}.",
+  bsod:"{count} blue-screen crash(es) in the last 30 days.", kernel_power:"{count} sudden power loss(es) or hard reset(s) in 30 days.",
+  whea:"{count} hardware error report(s) in 30 days.", gpu_tdr:"The graphics driver reset {count} time(s) in 30 days.",
+  app_crash:"{app} crashed {count} times in 7 days.", stability_low:"Windows stability index: {index}/10.",
+  services_stopped:"Not running: {names}.", pending_reboot:"Windows needs a restart to finish installing updates.",
+  uptime_long:"The PC hasn't restarted in {days} days.", startup_many:"{count} programs start with Windows.",
+  no_internet:"TechFix can't reach the internet.", dns_fail:"The connection works, but website names don't resolve (DNS).",
+  wifi_weak:"Wi-Fi signal strength: {pct}%.", printer_offline:"{count} printer(s) show offline.",
+  wu_failures:"{count} failed update install(s) in 30 days.", update_stale:"No update installed for {days} days.",
+  gpu_driver_old:"The graphics driver for {name} is {years} years old.", not_activated:"Windows is not activated.",
+  battery_worn:"The battery holds only {health}% of its original capacity.",
+  threat_active:"Microsoft Defender reports: {names}.", no_antivirus:"No antivirus is protecting this PC.",
+  defender_policy:"A system policy is turning Microsoft Defender off.", defender_off:"Microsoft Defender is not running.",
+  rtp_off:"Files aren't checked when they're opened or downloaded.", signatures_old:"Last update {days} days ago.",
+  scan_old:"Last scan {days} days ago.", tamper_off:"Other programs could switch Defender off.",
+  behavior_off:"Defender can't watch for suspicious behaviour.", pua_off:"Adware and bundled junk aren't blocked.",
+  cfa_off:"Your documents folders aren't protected.", defender_exclusions:"{count} exclusion(s): {list}.",
+  recent_detections:"{count} threat(s) caught and handled in 30 days.", firewall_off:"Off for: {profiles}.",
+  uac_off:"Programs can change the system without asking.", uac_silent:"Programs run as administrator are elevated without asking.",
+  smartscreen_off:"Downloaded apps aren't checked.", wdigest_on:"Login passwords could be read from memory.",
+  rdp_on:"This PC can be controlled remotely.", smb1_on:"An outdated file-sharing protocol is enabled.",
+  risky_port:"{service} is open on port {port} ({proc}).", guest_on:"Anyone can sign in without a password.",
+  no_password_users:"{names}", bitlocker_off:"If the PC is stolen, its files can be read.", secureboot_off:"Start-up protection is off.",
+  hosts_hijack:"{count} line(s), for example {sample}.", hosts_custom:"{count} custom line(s) — normal for ad blockers.",
+  proxy_set:"Traffic goes through {server}.", winhttp_proxy:"Windows services use a proxy.",
+  startup_suspicious:"{names}", task_suspicious:"{names}", process_suspicious:"{names}",
+  security_updates_pending:"{count} security update(s) not installed yet."
+};
+function nativeDetail(f){
+  const tpl = f && NATIVE_DETAIL[f.code];
+  return tpl ? T(tpl, f.params || {}) : (f && f.detail) || "";
+}
+
 const FC_LV = { imminent:["Imminent","crit"], likely:["Likely","warn"], watch:["Watch","info"] };
 const FC_RANK = { imminent:0, likely:1, watch:2 };
 
@@ -148,7 +188,7 @@ function renderAndroidPanel(){
       <div class="gauge-card">${gaugeSVG({ pct: bat, tier: bat == null ? "info" : bat <= 0.15 ? "crit" : bat <= 0.3 ? "warn" : "ok", valueLabel: bat == null ? "—" : b.level + "%", unitLabel: typeof b.tempC === "number" ? b.tempC + " °C" : "" })}<div class="gauge-label">${esc(T("Battery"))}</div></div>
       <div class="gauge-card" style="justify-content:center; min-height:98px;">${annunciatorRow(counts)}<div class="gauge-label" style="margin-top:10px;">${esc(T("Status"))}</div></div>
     </div>
-    <div class="stat-note" style="margin-bottom:10px;">${esc([d.manufacturer, d.model].filter(Boolean).join(" "))} · Android ${esc(d.release || "?")}${d.securityPatch ? " · " + esc(T("security patch")) + " " + esc(d.securityPatch) : ""}${st.totalBytes ? " · " + fmtBytes(st.freeBytes) + " " + esc(T("free of")) + " " + fmtBytes(st.totalBytes) : ""}${typeof b.cycles === "number" ? " · " + b.cycles + " " + esc(T("charge cycles")) : ""}</div>
+    <div class="stat-note" style="margin-bottom:10px;"><span class="notranslate-tf">${esc([d.manufacturer, d.model].filter(Boolean).join(" "))} · Android ${esc(d.release || "?")}</span>${d.securityPatch ? ` · <span>${esc(T("security patch"))}</span> <span class="notranslate-tf">${esc(d.securityPatch)}</span>` : ""}${st.totalBytes ? ` · <span class="notranslate-tf">${fmtBytes(st.freeBytes)} / ${fmtBytes(st.totalBytes)}</span> <span>${esc(T("free"))}</span>` : ""}${typeof b.cycles === "number" ? ` · <span>${esc(T("{n} charge cycles", { n: b.cycles }))}</span>` : ""}</div>
     ${findings.length ? `<div class="finding-list">${findings.map((f, i) => `<div class="finding">
         <div class="finding-sev ${f.severity}"></div>
         <div class="finding-body"><div class="finding-title">${esc(f.title)}</div><div class="finding-meta">${esc(f.detail)}</div>

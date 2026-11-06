@@ -101,19 +101,20 @@ const STOPWORDS = new Set(["the","a","an","and","or","to","of","in","on","at","f
   "device","phone","computer","pc","mac","android","ios","windows","error","failed","failure","issue","problem"]);
 
 function tokenize(text){
-  return String(text||"").toLowerCase().replace(/0x[0-9a-f]+/gi,"").split(/[^a-z0-9]+/i)
+  return String(text||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/0x[0-9a-f]+/gi,"").split(/[^a-z0-9]+/i)
     .filter(w => w.length > 2 && !STOPWORDS.has(w));
 }
 
-let _kbTokenIndex = null;
+let _kbTokenIndex = null, _kbTokenLang = null;
 function kbTokenIndex(){
-  if(_kbTokenIndex) return _kbTokenIndex;
-  _kbTokenIndex = KB.map(entry => ({
+  if(_kbTokenIndex && _kbTokenLang === TF_LANG) return _kbTokenIndex;
+  _kbTokenLang = TF_LANG;
+  _kbTokenIndex = KB.map(entry => { const L = kbL(entry); return {
     entry,
-    title: new Set(tokenize(entry.title)),
-    body: new Set(tokenize([entry.title, ...(entry.symptoms||[]), ...(entry.causes||[])].join(" "))),
+    title: new Set(tokenize(entry.title + " " + L.title)),
+    body: new Set(tokenize([entry.title, ...(entry.symptoms||[]), ...(entry.causes||[]), L.title, ...L.symptoms, ...L.causes].join(" "))),
     tags: new Set((entry.tags||[]).map(t=>t.toLowerCase()))
-  }));
+  }; });
   return _kbTokenIndex;
 }
 
@@ -505,13 +506,13 @@ function renderScan(){
     <div class="stat-tile">
       <div class="stat-tile-top"><span class="stat-label">Detected platform</span></div>
       <div class="stat-value" style="font-family:var(--font-body); font-size:19px;">${plat.icon} ${esc(plat.short)}</div>
-      <div class="stat-note">${r.touchPoints>0 ? "Touch input available" : "No touch input detected"} · ${esc(r.tz)}</div>
+      <div class="stat-note"><span>${r.touchPoints>0 ? "Touch input available" : "No touch input detected"}</span> · <span class="notranslate-tf">${esc(r.tz)}</span></div>
     </div>
     <div class="stat-tile has-gauge">
       <div class="stat-tile-top"><span class="stat-label">This tab's storage sandbox</span>
         <span class="stat-chip ${storagePct==null?'info':sevChipClass(storagePct)}">${storagePct==null?'N/A':(storagePct>0.9?'critical':storagePct>0.7?'watch':'fine')}</span></div>
       ${gaugeSVG({ pct: storagePct, tier: gaugeTier(storagePct, 0.9), valueLabel: storagePct==null?'—':(storagePct*100).toFixed(0)+'%', unitLabel:'USED' })}
-      <div class="stat-note">${fmtBytes(r.storageUsage)} of ${fmtBytes(r.storageQuota)} — a browser sandbox limit, NOT your real free disk space</div>
+      <div class="stat-note"><span class="notranslate-tf">${fmtBytes(r.storageUsage)} / ${fmtBytes(r.storageQuota)}</span> <span>— a browser sandbox limit, NOT your real free disk space</span></div>
     </div>
     <div class="stat-tile">
       <div class="stat-tile-top"><span class="stat-label">Memory &amp; CPU</span></div>
@@ -522,7 +523,7 @@ function renderScan(){
       <div class="stat-tile-top"><span class="stat-label">Connection quality (estimate)</span>
         <span class="stat-chip ${r.online===false?'crit':'ok'}">${r.online===false?'offline':'online'}</span></div>
       <div class="stat-value" style="font-size:19px;">${r.connType ? r.connType.toUpperCase()+'-class' : '—'}</div>
-      <div class="stat-note">${r.downlink? '~'+r.downlink+' Mbps · ' : ''}${r.rtt? r.rtt+'ms RTT · ' : ''}Chrome's rough quality bucket — not your literal network type (Wi-Fi/Ethernet/cellular all get labeled this way)</div>
+      <div class="stat-note"><span class="notranslate-tf">${r.downlink? '~'+r.downlink+' Mbps · ' : ''}${r.rtt? r.rtt+'ms RTT · ' : ''}</span><span>Chrome's rough quality bucket — not your literal network type (Wi-Fi/Ethernet/cellular all get labeled this way)</span></div>
     </div>
     <div class="stat-tile has-gauge">
       <div class="stat-tile-top"><span class="stat-label">Battery</span>
@@ -533,7 +534,7 @@ function renderScan(){
     <div class="stat-tile">
       <div class="stat-tile-top"><span class="stat-label">Display</span></div>
       <div class="stat-value" style="font-size:19px;">${r.screenW}×${r.screenH}</div>
-      <div class="stat-note">${r.dpr}× pixel density · ${esc(r.lang)}</div>
+      <div class="stat-note"><span>${r.dpr}× pixel density</span> · <span class="notranslate-tf">${esc(r.lang)}</span></div>
     </div>
   `;
 
@@ -597,7 +598,7 @@ function renderNativeResults(){
 
   const sys = res.system || {};
   const memPct = res.memory && res.memory.totalKB ? Math.round((1 - res.memory.freeKB/res.memory.totalKB)*100) : null;
-  const sysLine = `${esc(sys.caption||"Windows")} (build ${esc(sys.build||"?")}) · ${res.admin ? "Administrator" : "standard user"} · RAM ${memPct==null?'—':memPct+'%'} in use`;
+  const sysLine = `<span class="notranslate-tf">${esc(sys.caption||"Windows")} (build ${esc(sys.build||"?")})</span> · <span>${res.admin ? "Administrator" : "standard user"}</span> · <span>RAM ${memPct==null?'—':memPct+'%'} in use</span>`;
 
   const findings = (res.findings||[]).slice().sort((a,b)=>(SEV_RANK[a.severity]??9)-(SEV_RANK[b.severity]??9));
   const primaryDisk = (res.disks||[])[0];
@@ -608,32 +609,32 @@ function renderNativeResults(){
   };
   const cockpitRow = `<div class="cockpit-row">
     <div class="gauge-card">${gaugeSVG({ pct: memPct==null?null:memPct/100, tier: gaugeTier(memPct==null?null:memPct/100, 0.9), valueLabel: memPct==null?'—':memPct+'%', unitLabel:'MEMORY' })}<div class="gauge-label">Memory</div></div>
-    <div class="gauge-card">${gaugeSVG({ pct: diskPct, tier: gaugeTier(diskPct, 0.9), valueLabel: diskPct==null?'—':Math.round(diskPct*100)+'%', unitLabel: primaryDisk ? primaryDisk.id+' USED' : 'DISK' })}<div class="gauge-label">${esc(primaryDisk ? primaryDisk.id : "Disk")}</div></div>
+    <div class="gauge-card">${gaugeSVG({ pct: diskPct, tier: gaugeTier(diskPct, 0.9), valueLabel: diskPct==null?'—':Math.round(diskPct*100)+'%', unitLabel: primaryDisk ? 'USED' : 'DISK' })}<div class="gauge-label">${esc(primaryDisk ? primaryDisk.id : "Disk")}</div></div>
     <div class="gauge-card" style="justify-content:center; min-height:98px;">${annunciatorRow(sevCounts)}<div class="gauge-label" style="margin-top:10px;">Status</div></div>
   </div>`;
 
   if(findings.length === 0){
-    wrap.innerHTML = `${cockpitRow}<div class="stat-note" style="margin-bottom:10px;">${esc(sysLine)}</div>
+    wrap.innerHTML = `${cockpitRow}<div class="stat-note" style="margin-bottom:10px;">${sysLine}</div>
       <div class="empty-good">${ICON.check}<span><strong>Nothing found</strong> — disk health, driver errors, the event log, pending reboot, and network all checked clean just now.</span></div>`;
     return;
   }
 
-  wrap.innerHTML = `${cockpitRow}<div class="stat-note" style="margin-bottom:10px;">${esc(sysLine)}</div>
+  wrap.innerHTML = `${cockpitRow}<div class="stat-note" style="margin-bottom:10px;">${sysLine}</div>
     <div class="finding-list">${findings.map((f,i)=>{
       const kb = f.kbId ? KB.find(k=>k.id===f.kbId) : null;
       // No exact KB id on this finding (e.g. a generic native-scan detail) — offline
       // token-overlap search against the whole KB for a "closest known issue" instead
       // of just showing bare text with nothing to follow up on.
       const fuzzy = (!kb && f.detail) ? fuzzyKbMatches(f.detail, { max: 1 })[0] : null;
-      const title = kb ? kb.title : f.detail;
+      const title = kb ? kbL(kb).title : nativeDetail(f);
       const linkTarget = kb ? kb.id : (fuzzy ? fuzzy.entry.id : null);
       return `
       <div class="finding" data-idx="${i}">
         <div class="finding-sev ${f.severity}"></div>
         <div class="finding-body">
           <div class="finding-title">${esc(title)}</div>
-          <div class="finding-meta">${esc(f.detail)}</div>
-          ${fuzzy ? `<div class="finding-meta" style="margin-top:4px;">Closest known issue (pattern match, not confirmed): <strong>${esc(fuzzy.entry.title)}</strong></div>` : ""}
+          <div class="finding-meta">${esc(nativeDetail(f))}</div>
+          ${fuzzy ? `<div class="finding-meta" style="margin-top:4px;">Closest known issue (pattern match, not confirmed): <strong>${esc(kbL(fuzzy.entry).title)}</strong></div>` : ""}
           ${f.safeFixId || f.riskyFixId ? `<div class="finding-meta" style="margin-top:6px;" data-fix-row="${i}"></div>` : ""}
         </div>
         ${linkTarget ? `<div class="finding-arrow" data-kb="${linkTarget}">${ICON.chevron}</div>` : ""}
@@ -652,7 +653,7 @@ function renderNativeResults(){
     const btn = document.createElement("button");
     btn.className = "btn sm primary fixit-btn";
     btn.innerHTML = `${ICON.wrench}<span>Fix it</span>`;
-    btn.addEventListener("click", (e)=>{ e.stopPropagation(); fixItForFinding(f, f.detail || (kb && kb.title)); });
+    btn.addEventListener("click", (e)=>{ e.stopPropagation(); fixItForFinding(f, kb ? kbL(kb).title : nativeDetail(f)); });
     row.appendChild(btn);
   });
 }
@@ -815,7 +816,7 @@ function renderWizard(){
     });
   } else if(step === 1){
     body.innerHTML = `
-      <div class="view-eyebrow">Step 2 of 3 · ${esc(PLAT_META[platform].label)}</div>
+      <div class="view-eyebrow"><span>Step 2 of 3</span> · <span>${esc(PLAT_META[platform].label)}</span></div>
       <div class="view-title" style="font-size:22px;">What's happening?</div>
       <div class="option-grid" id="wiz-cat-grid">
         ${CATEGORY_DEFS.map(c=>`
@@ -838,7 +839,7 @@ function renderWizard(){
       matches = matches.filter(k => k.tags.some(t=>cat.tags.includes(t)));
     }
     body.innerHTML = `
-      <div class="view-eyebrow">Step 3 of 3 · ${esc(PLAT_META[platform].label)} · ${esc(cat.label)}</div>
+      <div class="view-eyebrow"><span>Step 3 of 3</span> · <span>${esc(PLAT_META[platform].label)}</span> · <span>${esc(cat.label)}</span></div>
       <div class="view-title" style="font-size:22px;">${matches.length} likely match${matches.length===1?'':'es'}</div>
       <div class="view-sub" style="margin-bottom:18px;">Ranked from most to least common. Expand any entry for causes, step-by-step fixes, and one-click copyable commands.</div>
       <div class="kb-list" id="wiz-results"></div>
@@ -864,8 +865,9 @@ function wizardRestart(){
 function scoreEntry(entry, q){
   if(!q) return 1;
   q = q.toLowerCase();
-  const hay = [entry.title, entry.era, ...(entry.symptoms||[]), ...(entry.causes||[]), ...(entry.tags||[])].join(" ").toLowerCase();
-  if(entry.title.toLowerCase().includes(q)) return 3;
+  const L = kbL(entry);
+  const hay = [entry.title, L.title, entry.era, ...(entry.symptoms||[]), ...(entry.causes||[]), ...L.symptoms, ...L.causes, ...(entry.tags||[])].join(" ").toLowerCase();
+  if(entry.title.toLowerCase().includes(q) || L.title.toLowerCase().includes(q)) return 3;
   if(hay.includes(q)) return 2;
   const words = q.split(/\s+/).filter(Boolean);
   if(words.length && words.every(w=>hay.includes(w))) return 1.5;
@@ -910,14 +912,15 @@ function renderKbList(list, target){
 
 function kbCardHtml(entry){
   const isSaved = state.saved.has(entry.id);
+  const L = kbL(entry);
   const plat = PLAT_META[entry.platform];
   return `
   <div class="kb-card ${state.openCards.has(entry.id)?'open':''}" data-id="${entry.id}">
     <div class="kb-card-head">
       <div class="plat-badge">${plat.icon}</div>
       <div class="kb-card-titles">
-        <div class="kb-card-title">${esc(entry.title)}</div>
-        <div class="kb-card-meta">${esc(entry.era)} · ${esc(plat.short)}</div>
+        <div class="kb-card-title">${esc(L.title)}</div>
+        <div class="kb-card-meta">${esc(eraL(entry.era))} · ${esc(plat.short)}</div>
       </div>
       <span class="sev-tag ${entry.severity}">${entry.severity}</span>
       <button class="btn sm ghost star-btn" title="${isSaved?'Remove from saved':'Save this fix'}" data-star="${entry.id}">${isSaved?ICON.starOn:ICON.starOff}</button>
@@ -926,19 +929,19 @@ function kbCardHtml(entry){
     <div class="kb-card-body">
       <div class="kb-block">
         <div class="kb-block-label">Symptoms</div>
-        <ul>${entry.symptoms.map(s=>`<li>${esc(s)}</li>`).join("")}</ul>
+        <ul>${L.symptoms.map(s=>`<li>${esc(s)}</li>`).join("")}</ul>
       </div>
       <div class="kb-block">
         <div class="kb-block-label">Likely causes</div>
-        <ul>${entry.causes.map(s=>`<li>${esc(s)}</li>`).join("")}</ul>
+        <ul>${L.causes.map(s=>`<li>${esc(s)}</li>`).join("")}</ul>
       </div>
       <div class="kb-block fixes">
         <div class="kb-block-label">Fix — step by step</div>
-        <ol>${entry.fixes.map(s=>`<li>${esc(s)}</li>`).join("")}</ol>
+        <ol>${L.fixes.map(s=>`<li>${esc(s)}</li>`).join("")}</ol>
       </div>
       ${typeof entryHasFix === "function" && entryHasFix(entry) ? `<div class="fixit-row"><button class="btn primary fixit-btn" data-fixit="${entry.id}">${ICON.wrench}<span>Fix it</span></button><span class="fixit-hint">${window.techfixNative ? "TechFix does it on this PC" : window.TechFixAndroid ? "Opens the right phone setting" : "Works in the installed TechFix app"}</span></div>` : ""}
       ${entry.actions && entry.actions.length ? `<div class="action-row">${entry.actions.map((a,i)=>`
-        <button class="btn sm action-btn" data-id="${entry.id}" data-i="${i}">${ICON.copy} ${esc(a.label)}</button>`).join("")}</div>` : ""}
+        <button class="btn sm action-btn" data-id="${entry.id}" data-i="${i}">${ICON.copy} ${esc(L.actionLabels[i])}</button>`).join("")}</div>` : ""}
       <div class="tag-row">${entry.tags.map(t=>`<span class="tag-pill">${esc(t)}</span>`).join("")}</div>
     </div>
   </div>`;
@@ -966,7 +969,7 @@ function wireKbCard(card, list){
   });
 
   const fixBtn = el(".fixit-btn", card);
-  if(fixBtn) fixBtn.addEventListener("click", (e)=>{ e.stopPropagation(); fixItForEntry(entry); });
+  if(fixBtn) fixBtn.addEventListener("click", (e)=>{ e.stopPropagation(); fixItForEntry(entry, kbL(entry)); });
 
   els(".action-btn", card).forEach(btn=>{
     btn.addEventListener("click", (e)=>{
@@ -1100,7 +1103,7 @@ function renderLogResults(){
         <div class="finding" data-kb="${s.id}">
           <div class="finding-sev low"></div>
           <div class="finding-body">
-            <div class="finding-title">${esc(s.title)}</div>
+            <div class="finding-title">${esc(kbL(KB.find(k=>k.id===s.id)).title)}</div>
             <div class="finding-meta">From the repeated line <code>${esc(s.fromLine.slice(0,120))}</code></div>
           </div>
           <div class="finding-arrow">${ICON.chevron}</div>
@@ -1164,9 +1167,9 @@ async function pickAndWatchLogFile(){
         state.log.result = analyzeLogText(text);
         renderLogResults();
       }
-      setLogStatus(`Live — watching ${handle.name} · last checked ${fmtTime(new Date())}`, "live");
+      setLogStatus(t("Live — watching {file} · last checked {time}", { file: handle.name, time: fmtTime(new Date()) }), "live");
     }catch(e){
-      setLogStatus(`Lost access to ${handle.name} — pick the file again to resume watching.`, "warn");
+      setLogStatus(t("Lost access to {file} — pick the file again to resume watching.", { file: handle.name }), "warn");
       stopWatchingLog();
     }
   };
@@ -1375,8 +1378,20 @@ function updateNavCounts(){
 }
 
 /* ---------- Boot ---------- */
+function rerenderAll(){
+  _kbTokenIndex = null;
+  renderKbFilters(); renderKbResults(); renderWizard(); renderSaved(); renderScan();
+  if(window.techfixNative){ renderNativeResults(); renderNativeForecast(); }
+  if(window.TechFixAndroid) renderAndroidPanel();
+  if(state.view === "security" || state.securityResult) renderSecurityView();
+  if(state.log.result) renderLogResults();
+}
+
 function boot(initial){
   loadLocal();
+  const status = el(".header-status");
+  if(status && !el("#lang-select")) status.prepend(tfLanguagePicker());
+  onLanguageChange(rerenderAll);
   hydrateStaticIcons();
   updateNavCounts();
 
@@ -1410,6 +1425,8 @@ function boot(initial){
 
   // Run an initial scan automatically so the dashboard opens in a live, populated state.
   runScan();
+  tfStartTranslator();
+  if(TF_LANG !== "en") loadKbLanguage(TF_LANG).then(ok => { if(ok) rerenderAll(); });
 }
 
 if (window.claude?.hot?.ready) {
