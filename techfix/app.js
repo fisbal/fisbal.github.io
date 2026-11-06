@@ -569,6 +569,8 @@ function renderScan(){
    on Android, and in every other MartinB app it's simply undefined, so
    all of this is inert there — the panel stays hidden and nothing here runs. */
 const SEV_RANK = { critical:0, high:1, medium:2, low:3 };
+// Long (10 min to hours) or PC-restarting repairs: offered per finding, never chained by "Diagnose deeply & resolve".
+const DEEP_RESOLVE_MANUAL = new Set(["sfc-scan","dism-restore","chkdsk-scan","component-cleanup","defender-full","defender-offline","defender-quick","remove-threats"]);
 
 function renderNativeResults(){
   const wrap = el("#native-results");
@@ -714,8 +716,11 @@ async function runDeepResolve(){
   if(!state.native.fixes.length){
     try{ state.native.fixes = await window.techfixNative.listFixes(); }catch(e){}
   }
-  const safeList = state.native.fixes.filter(f=>f.tier==="safe").map(f=>f.label);
-  const riskyList = state.native.fixes.filter(f=>f.tier==="risky").map(f=>`${f.label} — exact command: ${f.cmd}`);
+  // Repairs that take a long time (or restart the PC) are never chained automatically — they stay
+  // available as their own buttons on each finding, where you start them knowingly.
+  const autoOk = (id)=> !!id && !id.startsWith("open-") && !DEEP_RESOLVE_MANUAL.has(id) && !(state.native.fixes.find(x=>x.id===id)||{}).manualOnly;
+  const safeList = state.native.fixes.filter(f=>f.tier==="safe" && autoOk(f.id)).map(f=>f.label);
+  const riskyList = state.native.fixes.filter(f=>f.tier==="risky" && autoOk(f.id)).map(f=>`${f.label} — exact command: ${f.cmd}`);
   const consent = [
     "TechFix will scan this PC for real problems, then keep fixing and re-scanning on its own — up to 5 passes — until either it's clean or nothing more is fixable by the actions below. It will only ever use these, and only when a matching problem is actually found:",
     "",
@@ -743,13 +748,17 @@ async function runDeepResolve(){
     renderNativeResults();
     if(!result.supported || result.error) break;
 
-    const actionable = (result.findings||[]).filter(f=>f.safeFixId || f.riskyFixId);
+    const pick = (f)=> autoOk(f.safeFixId) ? f.safeFixId : (autoOk(f.riskyFixId) ? f.riskyFixId : null);
+    const actionable = (result.findings||[]).filter(f=>pick(f));
     if(actionable.length === 0) break;
     if(pass > 0 && actionable.length === lastActionableCount) break; // no progress since last pass — stop rather than spin
     lastActionableCount = actionable.length;
 
+    const tried = new Set();
     for(const f of actionable){
-      const fixId = f.safeFixId || f.riskyFixId;
+      const fixId = pick(f);
+      if(tried.has(fixId)) continue; // the same repair can answer several findings — run it once per pass
+      tried.add(fixId);
       try{
         const r = await window.techfixNative.fix(fixId);
         log.push(`${r.ok ? "✓" : "✗"} [pass ${pass+1}] ${r.message}`);

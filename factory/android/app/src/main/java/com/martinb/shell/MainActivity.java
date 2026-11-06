@@ -64,6 +64,7 @@ public class MainActivity extends Activity {
     private String appHost;
     private boolean local = true;
     private boolean immersive = false;
+    private boolean diagnostics = false;
     private ValueCallback<Uri[]> fileCallback;
     private Updater updater;
     private LinearLayout updateStrip;
@@ -80,6 +81,7 @@ public class MainActivity extends Activity {
         home = local ? "https://" + ASSET_HOST + "/www/" + cfg.optString("entry", "index.html") : url;
         appHost = Uri.parse(home).getHost();
         immersive = cfg.optBoolean("immersive", false);
+        diagnostics = cfg.optBoolean("diagnostics", false);
         if (cfg.optBoolean("keepScreenOn", false)) getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         LinearLayout root = new LinearLayout(this);
@@ -248,6 +250,8 @@ public class MainActivity extends Activity {
                 .build();
 
         if (local) web.addJavascriptInterface(new Bridge(), "MBNative");
+        // TechFix only (mb-config.json diagnostics:true): real phone readings + open the exact Settings screen for a fix.
+        if (local && diagnostics) web.addJavascriptInterface(new TechFixBridge(this), "TechFixAndroid");
 
         web.setWebViewClient(new WebViewClient() {
             @Override

@@ -68,7 +68,7 @@ function createWindow() {
     webPreferences: {
       contextIsolation: true, sandbox: true, nodeIntegration: false,
       // Only this one app's view gets a preload, and it exposes exactly three
-      // IPC calls (scan / listFixes / fix) — see diagnostics-preload.js.
+      // IPC calls (scan / security / listFixes / fix) — see diagnostics-preload.js.
       ...(diagnostics ? { preload: path.join(__dirname, "diagnostics-preload.js") } : {})
     }
   });
@@ -130,6 +130,10 @@ if (diagnostics) {
   ipcMain.handle("techfix:scan", async (e) => {
     if (!fromOurView(e)) return { supported: false, error: "unauthorized" };
     return diagnostics.scan();
+  });
+  ipcMain.handle("techfix:security", async (e) => {
+    if (!fromOurView(e)) return { supported: false, error: "unauthorized" };
+    return diagnostics.security();
   });
   ipcMain.handle("techfix:fixes", async (e) => {
     if (!fromOurView(e)) return [];
