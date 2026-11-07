@@ -511,3 +511,36 @@ button{ font-family: inherit; }
 .lang-select:hover, .lang-select:focus{ border-color: var(--gold-3); outline:none; box-shadow: 0 0 0 3px var(--gold-glow); }
 .lang-select option{ background: var(--surface); color: var(--text); }
 
+
+/* ---------- Never let one wide child stretch the page sideways ---------- */
+.app-main{ min-width:0; }
+.app-main img, .app-main pre, .app-main table{ max-width:100%; }
+
+/* ---------- Icons: always centred in their box ---------- */
+.ico{ display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; line-height:0; vertical-align:middle; }
+.ico svg{ display:block; }
+
+/* ---------- Phone layout: header on two rows, centred bottom nav ---------- */
+@media (max-width: 860px){
+  .app-nav{ justify-content:space-between; scrollbar-width:none; overflow-x:hidden; }
+  .app-nav::-webkit-scrollbar{ display:none; }
+  .nav-item{ flex:1 1 0; min-width:0; align-items:center; justify-content:flex-start; text-align:center; padding:8px 2px; line-height:1.2; }
+  .nav-item > span:not(.ico):not(.nav-count){ display:block; width:100%; text-align:center; overflow-wrap:break-word; hyphens:auto; -webkit-hyphens:auto; font-size:10px; }
+  .nav-item .nav-count{ display:none; }
+  .nav-item .ico{ width:20px; height:20px; }
+}
+@media (max-width: 560px){
+  .app{ grid-template-rows: auto 1fr; }
+  .app-header{ flex-wrap:wrap; row-gap:10px; padding:10px 14px; height:auto; }
+  .brand{ order:1; }
+  .header-status{ order:2; margin-left:auto; gap:8px; min-width:0; flex:1 1 0; justify-content:flex-end; }
+  .lang-select{ flex-shrink:0; }
+  .global-search{ order:3; flex:1 1 100%; max-width:none; }
+  .status-pill{ min-width:0; flex-shrink:1; display:block; }
+  .status-pill .status-dot{ display:inline-block; margin-right:6px; vertical-align:middle; }
+}
+@media (max-width: 380px){
+  .brand-word{ font-size:19px; }
+  .brand-mark{ width:30px; height:30px; }
+  .lang-select{ padding:6px 24px 6px 10px; }
+}
