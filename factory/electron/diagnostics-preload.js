@@ -10,5 +10,12 @@ contextBridge.exposeInMainWorld("techfixNative", {
   scan: () => ipcRenderer.invoke("techfix:scan"),
   security: () => ipcRenderer.invoke("techfix:security"),
   listFixes: () => ipcRenderer.invoke("techfix:fixes"),
-  fix: (id) => ipcRenderer.invoke("techfix:fix", id)
+  fix: (id) => ipcRenderer.invoke("techfix:fix", id),
+  // Runs several fixes as one session (one UAC prompt) and reports each step as it finishes.
+  fixPlan: (ids) => ipcRenderer.invoke("techfix:fixPlan", ids),
+  onFixProgress: (cb) => {
+    const h = (_e, d) => { try { cb(d); } catch (_) {} };
+    ipcRenderer.on("techfix:fix-progress", h);
+    return () => ipcRenderer.removeListener("techfix:fix-progress", h);
+  }
 });

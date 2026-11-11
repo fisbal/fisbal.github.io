@@ -342,7 +342,7 @@ def cmd_electron(app_id, src, work):
             # diagnostics.js / diagnostics-preload.js are only required at runtime when
             # mb-config.json has diagnostics:true, but they're harmless to package for every
             # app (a few extra KB) — far simpler than making this list conditional per app.
-            "files": ["main.js", "preload.js", "updater.js", "bar.html", "diagnostics.js", "diagnostics-preload.js", "mb-config.json", "icon.png", "package.json"],
+            "files": ["main.js", "preload.js", "updater.js", "bar.html", "diagnostics.js", "repair.js", "diagnostics-preload.js", "mb-config.json", "icon.png", "package.json"],
             "extraResources": [{"from": "www", "to": "www"}],
             "win": {"target": [{"target": "nsis", "arch": ["x64"]}], "icon": "icon.png"},
             # Mac: one app for Apple Silicon and Intel; signed ad hoc and packed into a .dmg by the workflow.

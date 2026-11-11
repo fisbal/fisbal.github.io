@@ -143,6 +143,12 @@ if (diagnostics) {
     if (!fromOurView(e)) return { ok: false, message: "unauthorized" };
     return diagnostics.fix(String(id || ""));
   });
+  // A whole repair session: one UAC prompt, live progress, a real verdict per step.
+  ipcMain.handle("techfix:fixPlan", async (e, ids) => {
+    if (!fromOurView(e)) return [];
+    const list = Array.isArray(ids) ? ids.slice(0, 20).map(String) : [];
+    return diagnostics.fixPlan(list, (ev) => { try { if (!e.sender.isDestroyed()) e.sender.send("techfix:fix-progress", ev); } catch (_) {} });
+  });
 }
 
 // Closing the app installs a downloaded update quietly, so the next start is the new version.

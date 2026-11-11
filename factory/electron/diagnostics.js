@@ -208,7 +208,7 @@ function buildSystemFindings(d) {
   if (num(d.tempC) != null && d.tempC >= 85) add("cpu_hot", d.tempC >= 95 ? "critical" : "high", { temp: d.tempC }, "gen-pow-01", null, null, `System thermal zone at ${d.tempC} °C`);
 
   const devs = arr(d.problemDevices);
-  if (devs.length) add("driver_errors", "high", { count: devs.length, names: devs.slice(0, 3).map((x) => x.name).join(", ") }, "win-vista-04", null, null, `${devs.length} device(s) reporting a driver error in Device Manager`);
+  if (devs.length) add("driver_errors", "high", { count: devs.length, names: devs.slice(0, 3).map((x) => x.name).join(", ") }, "win-vista-04", null, "rescan-devices", `${devs.length} device(s) reporting a driver error in Device Manager`);
   if ((ev.bugcheck || 0) > 0) add("bsod", (ev.bugcheck >= 2 ? "high" : "medium"), { count: ev.bugcheck }, "win-7-03", null, "sfc-scan", `${ev.bugcheck} blue-screen crash(es) in the last 30 days`);
   if ((ev.kernelPower || 0) > 0) add("kernel_power", ev.kernelPower >= 2 ? "high" : "medium", { count: ev.kernelPower }, "gen-pow-04", null, null, `${ev.kernelPower} unexpected power loss / hard reset(s) in the last 30 days`);
   if ((ev.whea || 0) > 0) add("whea", "high", { count: ev.whea }, "gen-pow-04", null, null, `${ev.whea} hardware error report(s) (WHEA) in the last 30 days`);
@@ -226,7 +226,7 @@ function buildSystemFindings(d) {
   if (upDays >= 14) add("uptime_long", "low", { days: upDays }, "win-11-04", null, null, `The PC hasn't restarted in ${upDays} days`);
   if (typeof d.startupCount === "number" && d.startupCount > 15) add("startup_many", "low", { count: d.startupCount }, "win-11-04", "open-startup-apps", null, `${d.startupCount} startup programs configured`);
 
-  if (d.netOnline === false) add("no_internet", "high", {}, "gen-net-01", "flush-dns", "winsock-reset", "No route to the internet (1.1.1.1 unreachable)");
+  if (d.netOnline === false) add("no_internet", "high", {}, "gen-net-01", "flush-dns", "release-renew-ip", "No route to the internet (1.1.1.1 unreachable)");
   else if (d.dnsOk === false) add("dns_fail", "medium", {}, "win-10-04", "flush-dns", "winsock-reset", "DNS resolution is failing even though the network route is up");
   if (typeof d.wifiSignal === "number" && d.wifiSignal < 40) add("wifi_weak", "low", { pct: d.wifiSignal }, "gen-net-05", null, null, `Wi-Fi signal strength is weak (${d.wifiSignal}%)`);
   if (arr(d.offlinePrinters).length) add("printer_offline", "low", { count: arr(d.offlinePrinters).length }, "gen-hw-03", "restart-spooler", null, `${arr(d.offlinePrinters).length} printer(s) showing offline`);
@@ -567,110 +567,9 @@ async function security() {
 }
 
 // ---------------------------------------------------------------------------------------------
-// 3) Fixes — fixed tables only. The page passes an id; nothing else is ever executed.
+// 3) Fixes — see repair.js: every step measures the problem before and after, reads the real
+//    output + exit code, and runs all admin steps under ONE UAC prompt.
 // ---------------------------------------------------------------------------------------------
-// Runs one command elevated (UAC prompt) and waits for it. Exit 1 if the user declines UAC.
-const ELEVATE = (cmd, wait = true) =>
-  `try { Start-Process powershell -Verb RunAs -WindowStyle Hidden -ArgumentList '-NoProfile','-NonInteractive','-Command','${cmd.replace(/'/g, "''")}'${wait ? " -Wait" : ""} -ErrorAction Stop; "done" } catch { "cancelled: " + $_.Exception.Message; exit 1 }`;
-const OPEN = (target) => `Start-Process '${target}'; "done"`;
+const repair = require("./repair");
 
-const HOSTS_DEFAULT = '@("# Copyright (c) 1993-2009 Microsoft Corp.","#","# This is a sample HOSTS file used by Microsoft TCP/IP for Windows.","#","# localhost name resolution is handled within DNS itself.","#       127.0.0.1       localhost","#       ::1             localhost")';
-
-const SAFE_FIXES = {
-  "flush-dns": { label: "Flush DNS resolver cache", ps: `Clear-DnsClientCache; ipconfig /flushdns | Out-Null; "done"` },
-  "restart-explorer": {
-    label: "Restart Windows Explorer",
-    ps: `Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue; Start-Sleep -Milliseconds 800; if (-not (Get-Process explorer -ErrorAction SilentlyContinue)) { Start-Process explorer.exe }; "done"`
-  },
-  "clear-temp": {
-    label: "Clear this user's temp files",
-    ps: `Get-ChildItem $env:TEMP -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue; "done"`
-  },
-  "clear-windows-temp": {
-    label: "Clear this user's and Windows' temp files",
-    ps: `Get-ChildItem $env:TEMP -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue; ` + ELEVATE("Get-ChildItem $env:SystemRoot\\Temp -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue")
-  },
-  "restart-spooler": { label: "Restart the Print Spooler service", ps: ELEVATE("Restart-Service Spooler -Force") },
-  "restart-wuauserv": { label: "Restart the Windows Update service", ps: ELEVATE("Restart-Service wuauserv -Force") },
-  "start-core-services": {
-    label: "Start core Windows services that should be running",
-    ps: ELEVATE("Get-CimInstance Win32_Service | Where-Object { @('Dhcp','Dnscache','EventLog','Winmgmt','BFE','mpssvc','Audiosrv','CryptSvc','LanmanWorkstation','nsi','Schedule','ProfSvc','Power') -contains $_.Name -and $_.StartMode -eq 'Auto' -and $_.State -ne 'Running' } | ForEach-Object { Start-Service $_.Name -ErrorAction SilentlyContinue }")
-  },
-  "defender-update": { label: "Update Microsoft Defender virus definitions", ps: ELEVATE("Update-MpSignature"), timeoutMs: 600000 },
-  "defender-quick": { label: "Run a Microsoft Defender quick scan (5–15 min)", ps: ELEVATE("Start-MpScan -ScanType QuickScan"), timeoutMs: 45 * 60000 },
-  "defender-rtp-on": { label: "Turn Defender real-time protection back on", ps: ELEVATE("Set-MpPreference -DisableRealtimeMonitoring $false") },
-  "firewall-on": { label: "Turn Windows Firewall on for all network types", ps: ELEVATE("Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled True") },
-  "open-windows-security": { label: "Open Windows Security", ps: OPEN("windowsdefender:") },
-  "open-windows-update": { label: "Open Windows Update", ps: OPEN("ms-settings:windowsupdate") },
-  "open-activation": { label: "Open Windows activation settings", ps: OPEN("ms-settings:activation") },
-  "open-device-encryption": { label: "Open device encryption settings", ps: OPEN("ms-settings:deviceencryption") },
-  "open-startup-apps": { label: "Open Startup apps settings", ps: OPEN("ms-settings:startupapps") },
-  "open-task-scheduler": { label: "Open Task Scheduler", ps: OPEN("taskschd.msc") },
-  "open-bluetooth": { label: "Open Bluetooth settings", ps: OPEN("ms-settings:bluetooth") },
-  "open-sound": { label: "Open Sound settings", ps: OPEN("ms-settings:sound") },
-  "open-network": { label: "Open Network settings", ps: OPEN("ms-settings:network-status") },
-  "open-storage": { label: "Open Storage settings", ps: OPEN("ms-settings:storagesense") },
-  "open-power": { label: "Open Power & battery settings", ps: OPEN("ms-settings:powersleep") },
-  "open-apps": { label: "Open Installed apps", ps: OPEN("ms-settings:appsfeatures") },
-  "open-device-manager": { label: "Open Device Manager", ps: OPEN("devmgmt.msc") },
-  "open-troubleshoot": { label: "Open Windows troubleshooters", ps: OPEN("ms-settings:troubleshoot") },
-  "open-memory-test": { label: "Schedule the Windows memory test (runs at next restart)", ps: OPEN("mdsched.exe") },
-  "restart-audio": { label: "Restart the Windows Audio service", ps: ELEVATE("Restart-Service Audiosrv,AudioEndpointBuilder -Force") },
-  "restart-bluetooth": { label: "Restart the Bluetooth service", ps: ELEVATE("Restart-Service bthserv -Force") },
-  "reset-store-cache": { label: "Reset the Microsoft Store cache (wsreset)", ps: `Start-Process wsreset.exe; "done"` }
-};
-
-const RISKY_FIXES = {
-  "sfc-scan": { label: "Repair Windows system files (sfc /scannow)", cmd: "sfc /scannow", ps: ELEVATE("sfc /scannow"), timeoutMs: 60 * 60000 },
-  "dism-restore": { label: "Repair the Windows image (DISM RestoreHealth, 10–30 min)", cmd: "DISM /Online /Cleanup-Image /RestoreHealth", ps: ELEVATE("DISM /Online /Cleanup-Image /RestoreHealth"), timeoutMs: 90 * 60000 },
-  "chkdsk-scan": { label: "Check the system drive for file-system errors (online, no reboot)", cmd: "chkdsk C: /scan", ps: ELEVATE("chkdsk $env:SystemDrive /scan"), timeoutMs: 60 * 60000 },
-  "component-cleanup": { label: "Clean up old Windows update files (DISM StartComponentCleanup)", cmd: "DISM /Online /Cleanup-Image /StartComponentCleanup", ps: ELEVATE("DISM /Online /Cleanup-Image /StartComponentCleanup"), timeoutMs: 60 * 60000 },
-  "reset-windows-update": {
-    label: "Reset Windows Update components",
-    cmd: "net stop wuauserv bits cryptsvc ; ren SoftwareDistribution / catroot2 ; net start …",
-    ps: ELEVATE("Stop-Service wuauserv,bits,cryptsvc -Force -ErrorAction SilentlyContinue; $s=Get-Date -Format yyyyMMddHHmm; Rename-Item $env:SystemRoot\\SoftwareDistribution (\"SoftwareDistribution.old\"+$s) -ErrorAction SilentlyContinue; Rename-Item $env:SystemRoot\\System32\\catroot2 (\"catroot2.old\"+$s) -ErrorAction SilentlyContinue; Start-Service cryptsvc,bits,wuauserv -ErrorAction SilentlyContinue"),
-    timeoutMs: 300000
-  },
-  "winsock-reset": { label: "Reset Winsock + TCP/IP (needs a reboot to finish)", cmd: "netsh winsock reset ; netsh int ip reset", ps: ELEVATE("netsh winsock reset; netsh int ip reset") },
-  "release-renew-ip": { label: "Release and renew the IP address", cmd: "ipconfig /release ; ipconfig /renew", ps: ELEVATE("ipconfig /release; ipconfig /renew") },
-  "empty-recycle-bin": { label: "Empty the Recycle Bin", cmd: "Clear-RecycleBin -Force", ps: `Clear-RecycleBin -Force -ErrorAction SilentlyContinue; "done"` },
-  // Security
-  "remove-threats": { label: "Remove the active threats Defender found", cmd: "Remove-MpThreat", ps: ELEVATE("Remove-MpThreat"), timeoutMs: 600000 },
-  "defender-full": { label: "Start a full Defender scan in the background (can take hours)", cmd: "Start-MpScan -ScanType FullScan", ps: ELEVATE("Start-MpScan -ScanType FullScan", false), timeoutMs: 120000 },
-  "defender-offline": { label: "Defender Offline scan — RESTARTS the PC now (~15 min)", cmd: "Start-MpWDOScan", ps: ELEVATE("Start-MpWDOScan", false), manualOnly: true },
-  "pua-on": { label: "Block potentially unwanted apps (adware, bundled junk)", cmd: "Set-MpPreference -PUAProtection Enabled", ps: ELEVATE("Set-MpPreference -PUAProtection Enabled") },
-  "cfa-on": { label: "Turn on ransomware protection (Controlled Folder Access)", cmd: "Set-MpPreference -EnableControlledFolderAccess Enabled", ps: ELEVATE("Set-MpPreference -EnableControlledFolderAccess Enabled") },
-  "uac-on": { label: "Turn User Account Control back on (needs a reboot)", cmd: "Set-ItemProperty HKLM:\\…\\Policies\\System EnableLUA 1", ps: ELEVATE("Set-ItemProperty 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System' -Name EnableLUA -Value 1 -Type DWord") },
-  "wdigest-off": { label: "Stop WDigest from keeping clear-text passwords", cmd: "Set-ItemProperty HKLM:\\…\\WDigest UseLogonCredential 0", ps: ELEVATE("Set-ItemProperty 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\SecurityProviders\\WDigest' -Name UseLogonCredential -Value 0 -Type DWord") },
-  "rdp-off": { label: "Turn off Remote Desktop", cmd: "Set-ItemProperty 'HKLM:\\…\\Terminal Server' fDenyTSConnections 1", ps: ELEVATE("Set-ItemProperty 'HKLM:\\System\\CurrentControlSet\\Control\\Terminal Server' -Name fDenyTSConnections -Value 1 -Type DWord") },
-  "smb1-off": { label: "Disable the obsolete SMBv1 protocol", cmd: "Set-SmbServerConfiguration -EnableSMB1Protocol $false -Force", ps: ELEVATE("Set-SmbServerConfiguration -EnableSMB1Protocol $false -Force") },
-  "guest-off": { label: "Disable the Guest account", cmd: "Disable-LocalUser -Name Guest", ps: ELEVATE("Disable-LocalUser -Name Guest") },
-  "reset-proxy": {
-    label: "Remove the proxy settings (user + system WinHTTP)",
-    cmd: "ProxyEnable=0, delete AutoConfigURL ; netsh winhttp reset proxy",
-    ps: `Set-ItemProperty 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings' -Name ProxyEnable -Value 0 -ErrorAction SilentlyContinue; Remove-ItemProperty 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings' -Name AutoConfigURL -ErrorAction SilentlyContinue; ` + ELEVATE("netsh winhttp reset proxy")
-  },
-  "reset-hosts": {
-    label: "Back up the hosts file, then restore the Windows default",
-    cmd: "copy hosts hosts.techfix-backup-<date> ; write default hosts",
-    ps: ELEVATE(`$h=Join-Path $env:SystemRoot 'System32\\drivers\\etc\\hosts'; Copy-Item $h ($h+'.techfix-backup-'+(Get-Date -Format yyyyMMddHHmm)) -Force; Set-Content -Path $h -Value ${HOSTS_DEFAULT} -Encoding ASCII -Force; ipconfig /flushdns | Out-Null`)
-  }
-};
-
-function listFixes() {
-  const safe = Object.entries(SAFE_FIXES).map(([id, f]) => ({ id, label: f.label, tier: "safe" }));
-  const risky = Object.entries(RISKY_FIXES).map(([id, f]) => ({ id, label: f.label, cmd: f.cmd, tier: "risky", manualOnly: !!f.manualOnly }));
-  return [...safe, ...risky];
-}
-
-async function fix(id) {
-  if (!WIN) return { ok: false, message: "Native fixes are implemented for Windows only right now." };
-  if (!Object.prototype.hasOwnProperty.call(SAFE_FIXES, id) && !Object.prototype.hasOwnProperty.call(RISKY_FIXES, id)) return { ok: false, message: "Unknown fix id: " + id };
-  const entry = SAFE_FIXES[id] || RISKY_FIXES[id];
-  const { ok, out, err } = await runPS1(entry.ps, entry.timeoutMs || 120000);
-  const raw = String(out || "").trim();
-  if (!ok) return { ok: false, id, message: /cancelled/i.test(raw) ? "cancelled" : (err || "The fix command failed"), raw };
-  return { ok: true, id, message: entry.label, raw };
-}
-
-module.exports = { scan, security, fix, listFixes, WIN, _test: { buildSystemFindings, buildSystemForecast, buildSecurityFindings, buildSecurityForecast, SCAN_PS, SECURITY_PS, SAFE_FIXES, RISKY_FIXES } };
+module.exports = { scan, security, fix: repair.fix, fixPlan: repair.fixPlan, listFixes: repair.listFixes, WIN, _test: { buildSystemFindings, buildSystemForecast, buildSecurityFindings, buildSecurityForecast, SCAN_PS, SECURITY_PS, FIXES: repair.FIXES } };

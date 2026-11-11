@@ -544,3 +544,21 @@ button{ font-family: inherit; }
   .brand-mark{ width:30px; height:30px; }
   .lang-select{ padding:6px 24px 6px 10px; }
 }
+
+/* ---------- Fix results: real verdict per step ---------- */
+.fix-step{ align-items:flex-start; }
+.fix-step-body{ display:flex; flex-direction:column; gap:4px; min-width:0; flex:1; }
+.fix-step-label{ color: var(--text); }
+.fix-verdict{ font-size:12.5px; color: var(--text-dim); line-height:1.45; }
+.fix-badge{ display:inline-block; font-size:10.5px; font-weight:700; letter-spacing:.4px; text-transform:uppercase; padding:1px 7px; border-radius:999px; margin-right:4px; background: var(--surface-3); color: var(--text-dim); }
+.fix-badge.ok{ background: rgba(74,222,128,.12); color: var(--ok); }
+.fix-badge.warn{ background: rgba(212,169,74,.14); color: var(--gold-2); }
+.fix-badge.bad{ background: rgba(248,113,113,.12); color: var(--crit); }
+.fix-badge.info{ background: rgba(96,165,250,.12); color: #93c5fd; }
+.fix-step.warn .mark{ color: var(--gold-2); }
+.fix-step.info .mark{ color: #93c5fd; }
+.fix-raw summary{ cursor:pointer; font-size:11.5px; color: var(--text-faint); }
+.fix-raw pre{ max-height:180px; overflow:auto; white-space:pre-wrap; word-break:break-word; font-size:11px; background: var(--bg); padding:8px; border-radius: var(--radius-s); margin:6px 0 0; }
+.fix-next{ margin-top:14px; padding:12px 14px; border:1px solid rgba(212,169,74,.3); border-radius: var(--radius-s); background: rgba(212,169,74,.06); }
+.fix-next-label{ font-size:11px; letter-spacing:1px; text-transform:uppercase; color: var(--gold-2); margin-bottom:6px; }
+.fix-next ul{ margin:0 0 10px; padding-left:18px; color: var(--text); font-size:13px; }
