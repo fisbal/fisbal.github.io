@@ -1,6 +1,8 @@
 /* TechFix UI translations (fr, es, pt, de). Keys are the English text; numbers become {0}, {1}… */
 window.TF_STRINGS = window.TF_STRINGS || {};
 window.TF_STRINGS.fr = {
+"Freed {size} — {free} now free on the system drive": "{size} libérés — {free} maintenant libres sur le disque système",
+"Delete Windows Update leftovers and the Delivery Optimization cache": "Supprimer les restes de Windows Update et le cache d'optimisation de la distribution",
 "Fixed": "Réparé",
 "Nothing wrong": "Rien d'anormal",
 "Restart needed": "Redémarrage requis",
@@ -589,6 +591,8 @@ window.TF_STRINGS.fr = {
 "Resolution log": "Journal de résolution"
 };
 window.TF_STRINGS.es = {
+"Freed {size} — {free} now free on the system drive": "{size} liberados — ahora hay {free} libres en la unidad del sistema",
+"Delete Windows Update leftovers and the Delivery Optimization cache": "Eliminar los restos de Windows Update y la caché de Optimización de distribución",
 "Fixed": "Reparado",
 "Nothing wrong": "Nada anormal",
 "Restart needed": "Reinicio necesario",
@@ -1181,6 +1185,8 @@ window.TF_STRINGS.es = {
 "Resolution log": "Registro de resolución"
 };
 window.TF_STRINGS.pt = {
+"Freed {size} — {free} now free on the system drive": "{size} liberados — agora há {free} livres na unidade do sistema",
+"Delete Windows Update leftovers and the Delivery Optimization cache": "Excluir as sobras do Windows Update e o cache da Otimização de Entrega",
 "Fixed": "Corrigido",
 "Nothing wrong": "Nada de errado",
 "Restart needed": "Reinício necessário",
@@ -1770,6 +1776,8 @@ window.TF_STRINGS.pt = {
 "Resolution log": "Registro de resolução"
 };
 window.TF_STRINGS.de = {
+"Freed {size} — {free} now free on the system drive": "{size} freigegeben — jetzt {free} frei auf dem Systemlaufwerk",
+"Delete Windows Update leftovers and the Delivery Optimization cache": "Windows-Update-Reste und den Übermittlungsoptimierungs-Cache löschen",
 "Fixed": "Behoben",
 "Nothing wrong": "Kein Problem",
 "Restart needed": "Neustart nötig",

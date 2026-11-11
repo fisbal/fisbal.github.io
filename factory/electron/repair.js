@@ -126,6 +126,10 @@ function judgeSetting(target, rebootAfter) {
     return V("failed", "setting_blocked");
   };
 }
+function judgeFreeSpace(r) {
+  const freed = (g(r.after, "freeMB") || 0) - (g(r.before, "freeMB") || 0);
+  return freed >= 1 ? V("fixed", "freed_space", { size: mb(freed), free: mb(g(r.after, "freeMB") || 0) }) : V("ok", "nothing_to_clean");
+}
 function judgeFreed(r, key) {
   const b = g(r.before, key || "mb") || 0, a = g(r.after, key || "mb") || 0;
   if (b < 1 && a < 1) return V("ok", "nothing_to_clean");
@@ -197,9 +201,21 @@ const FIXES = {
     check: FREE_SYS, run: `DISM /Online /Cleanup-Image /StartComponentCleanup /NoRestart`,
     judge: (r) => {
       if (r.exit !== 0 && r.exit !== 3010) return V("failed", "dism_failed", { code: hex(r.exit) });
-      const freed = (g(r.after, "freeMB") || 0) - (g(r.before, "freeMB") || 0);
-      return freed >= 1 ? V("fixed", "freed", { size: mb(freed), left: mb(g(r.after, "freeMB") || 0) + " free" }) : V("ok", "nothing_to_clean");
+      return judgeFreeSpace(r);
     }
+  },
+  "free-update-space": {
+    label: "Delete Windows Update leftovers and the Delivery Optimization cache", tier: "risky", admin: true, timeoutMs: 20 * 60000,
+    cmd: "del SoftwareDistribution.old* catroot2.old* SoftwareDistribution\\Download\\* ; Delete-DeliveryOptimizationCache",
+    check: FREE_SYS,
+    run: String.raw`Stop-Service wuauserv,bits,dosvc -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 2
+Get-ChildItem -LiteralPath $env:SystemRoot -Directory -Filter 'SoftwareDistribution.old*' -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+Get-ChildItem -LiteralPath "$env:SystemRoot\System32" -Directory -Filter 'catroot2.old*' -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+Get-ChildItem -LiteralPath "$env:SystemRoot\SoftwareDistribution\Download" -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+Start-Service dosvc -ErrorAction SilentlyContinue
+try { Delete-DeliveryOptimizationCache -Force -ErrorAction Stop } catch { }
+Start-Service bits,wuauserv -ErrorAction SilentlyContinue`,
+    judge: (r) => judgeFreeSpace(r)
   },
   // ---------- system file / disk repair ----------
   "sfc-scan": {
@@ -308,6 +324,8 @@ Start-Sleep -Seconds 4`,
     check: svcCheck(["wuauserv", "bits", "cryptsvc"]),
     run: String.raw`Stop-Service wuauserv,bits,cryptsvc -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 2; $s = Get-Date -Format yyyyMMddHHmm
 $a = Join-Path $env:SystemRoot 'SoftwareDistribution'; $b = Join-Path $env:SystemRoot 'System32\catroot2'
+Get-ChildItem -LiteralPath $env:SystemRoot -Directory -Filter 'SoftwareDistribution.old*' -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+Get-ChildItem -LiteralPath (Join-Path $env:SystemRoot 'System32') -Directory -Filter 'catroot2.old*' -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 $ra = $false; $rb = $false
 try { Rename-Item -LiteralPath $a ('SoftwareDistribution.old' + $s) -ErrorAction Stop; $ra = $true } catch { }
 try { Rename-Item -LiteralPath $b ('catroot2.old' + $s) -ErrorAction Stop; $rb = $true } catch { }

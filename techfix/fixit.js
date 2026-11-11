@@ -14,13 +14,13 @@ const T = (s, p) => (typeof t === "function" ? t(s, p) : String(s).replace(/\{(\
 
 // Knowledge-base entry → what TechFix can do about it itself.
 const KB_FIX = {
-  "gen-sto-03": { win:["clear-windows-temp","empty-recycle-bin","component-cleanup","open-storage"], android:["storage","apps"] },
+  "gen-sto-03": { win:["clear-windows-temp","free-update-space","empty-recycle-bin","component-cleanup","open-storage"], android:["storage","apps"] },
   "gen-sto-06": { win:["open-storage","component-cleanup"] },
   "win-10-02": { win:["open-startup-apps","clear-temp","chkdsk-scan"] },
   "win-vista-02": { win:["open-startup-apps","clear-temp"] },
   "win-11-04": { win:["open-startup-apps","clear-temp","open-power"] },
-  "win-7-01": { win:["restart-wuauserv","reset-windows-update","open-windows-update"] },
-  "win-10-01": { win:["clear-windows-temp","reset-windows-update","open-windows-update"] },
+  "win-7-01": { win:["restart-wuauserv","free-update-space","reset-windows-update","open-windows-update"] },
+  "win-10-01": { win:["clear-windows-temp","free-update-space","reset-windows-update","open-windows-update"] },
   "win-10-07": { win:["reset-windows-update","dism-restore","open-windows-update"] },
   "win-10-08": { win:["restart-wuauserv","reset-windows-update"] },
   "win-10-05": { win:["restart-wuauserv","reset-windows-update"] },
@@ -191,7 +191,7 @@ const TF_RESULT = {
   svc_running: "{name} is running", svc_not_running: "Still not running: {name}", svc_started: "Started: {name}",
   already_set: "Already in the safe setting — nothing to change", setting_changed: "Setting changed and confirmed",
   setting_blocked: "Windows refused the change (a policy or another security app is blocking it)",
-  nothing_to_clean: "Nothing to clean", nothing_freed: "Files in use — nothing could be deleted ({left} left)", freed: "Freed {size} ({left} left)",
+  nothing_to_clean: "Nothing to clean", nothing_freed: "Files in use — nothing could be deleted ({left} left)", freed: "Freed {size} ({left} left)", freed_space: "Freed {size} — {free} now free on the system drive",
   dns_ok: "Name lookups (DNS) work", dns_still_failing: "DNS still fails after flushing",
   net_ok: "Connected — internet and DNS work (IP {ip})", net_dns_broken: "Internet works but DNS doesn't",
   net_no_dhcp: "No address from the router (DHCP) — the network adapter or the router is the problem",
@@ -341,5 +341,5 @@ function fixItForEntry(entry, localized){
 // For a native finding: its own safe + risky repair, in one sheet.
 function fixItForFinding(f, title){
   if(f.androidKey) return openAndroidFix([f.androidKey]);
-  return runFixPlan([f.safeFixId, f.riskyFixId].filter(Boolean), title);
+  return runFixPlan([f.safeFixId, f.riskyFixId].flat().filter(Boolean), title);
 }

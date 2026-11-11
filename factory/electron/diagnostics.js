@@ -180,8 +180,8 @@ function buildSystemFindings(d) {
     const freePct = (disk.freeBytes / disk.sizeBytes) * 100;
     const onSys = String(disk.id || "").toUpperCase() === sysDrive;
     const p = { drive: disk.id, pct: +freePct.toFixed(1) };
-    if (freePct < 10) add("disk_low", "high", p, "gen-sto-03", onSys ? "clear-windows-temp" : "clear-temp", "component-cleanup", `${disk.id} has only ${freePct.toFixed(1)}% free space`);
-    else if (freePct < 20) add("disk_low", "medium", p, "gen-sto-03", "clear-temp", null, `${disk.id} has ${freePct.toFixed(1)}% free space`);
+    if (freePct < 10) add("disk_low", "high", p, "gen-sto-03", onSys ? "clear-windows-temp" : "open-storage", onSys ? ["free-update-space", "empty-recycle-bin", "component-cleanup"] : null, `${disk.id} has only ${freePct.toFixed(1)}% free space`);
+    else if (freePct < 20) add("disk_low", "medium", p, "gen-sto-03", onSys ? "clear-temp" : "open-storage", null, `${disk.id} has ${freePct.toFixed(1)}% free space`);
   }
   for (const pd of arr(d.diskHealth)) {
     if (pd.status && pd.status !== "Healthy") add("disk_health", "critical", { name: pd.name, status: pd.status }, "gen-sto-01", null, null, `Physical disk '${pd.name}' health status: ${pd.status} — back up data now`);
@@ -231,7 +231,10 @@ function buildSystemFindings(d) {
   if (typeof d.wifiSignal === "number" && d.wifiSignal < 40) add("wifi_weak", "low", { pct: d.wifiSignal }, "gen-net-05", null, null, `Wi-Fi signal strength is weak (${d.wifiSignal}%)`);
   if (arr(d.offlinePrinters).length) add("printer_offline", "low", { count: arr(d.offlinePrinters).length }, "gen-hw-03", "restart-spooler", null, `${arr(d.offlinePrinters).length} printer(s) showing offline`);
 
-  if ((ev.wuFail || 0) >= 2) add("wu_failures", "medium", { count: ev.wuFail }, "win-7-01", "restart-wuauserv", "reset-windows-update", `${ev.wuFail} failed Windows Update installs in 30 days`);
+  const sysDisk = arr(d.disks).find((x) => String(x.id || "").toUpperCase() === sysDrive);
+  const sysFull = !!(sysDisk && sysDisk.sizeBytes && sysDisk.freeBytes / sysDisk.sizeBytes < 0.1);
+  // Updates can't install on a full system drive — free space first, a reset alone won't help.
+  if ((ev.wuFail || 0) >= 2) add("wu_failures", "medium", { count: ev.wuFail }, "win-7-01", sysFull ? "clear-windows-temp" : "restart-wuauserv", sysFull ? ["free-update-space", "reset-windows-update"] : "reset-windows-update", `${ev.wuFail} failed Windows Update installs in 30 days`);
   if (num(d.daysSinceUpdate) != null && d.daysSinceUpdate > 45) add("update_stale", d.daysSinceUpdate > 90 ? "high" : "medium", { days: d.daysSinceUpdate }, "win-10-12", "open-windows-update", null, `No update installed for ${d.daysSinceUpdate} days`);
   for (const g of arr(d.gpus)) {
     if (num(g.ageDays) != null && g.ageDays > 730 && !/basic display|remote|virtual|hyper-v/i.test(g.name || "")) add("gpu_driver_old", "low", { name: g.name, years: Math.floor(g.ageDays / 365) }, "win-10-11", "open-windows-update", null, `Graphics driver for ${g.name} is ${Math.floor(g.ageDays / 365)} years old`);

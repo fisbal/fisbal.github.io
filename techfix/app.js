@@ -742,23 +742,27 @@ async function runDeepResolve(){
     renderNativeResults();
     if(!result.supported || result.error) break;
 
-    const pick = (f)=> autoOk(f.safeFixId) ? f.safeFixId : (autoOk(f.riskyFixId) ? f.riskyFixId : null);
+    // A finding can carry several repairs (e.g. a full C: drive) — use the first that may run on its own.
+    const pick = (f)=> [f.safeFixId, f.riskyFixId].flat().filter(Boolean).find(autoOk) || null;
     const actionable = (result.findings||[]).filter(f=>pick(f));
     if(actionable.length === 0) break;
     if(pass > 0 && actionable.length === lastActionableCount) break; // no progress since last pass — stop rather than spin
     lastActionableCount = actionable.length;
 
-    const tried = new Set();
-    for(const f of actionable){
-      const fixId = pick(f);
-      if(tried.has(fixId)) continue; // the same repair can answer several findings — run it once per pass
-      tried.add(fixId);
-      try{
-        const r = await window.techfixNative.fix(fixId);
-        log.push(`${r.ok ? "✓" : "✗"} [pass ${pass+1}] ${r.message}`);
-      }catch(e){
-        log.push(`✗ [pass ${pass+1}] ${fixId} failed: ${e && e.message ? e.message : e}`);
+    // The same repair can answer several findings — one session per pass, one UAC prompt.
+    const plan = [...new Set(actionable.map(pick))];
+    const say = (r)=> `${["fixed","ok","reboot","started"].includes(r.state) ? "✓" : "✗"} [pass ${pass+1}] ${T(r.label || r.id)} — ${typeof tfResultText === "function" && r.code ? tfResultText(r) : (r.message || "")}`;
+    try{
+      if(typeof window.techfixNative.fixPlan === "function"){
+        (await window.techfixNative.fixPlan(plan) || []).forEach(r => log.push(say(r)));
+      } else {
+        for(const fixId of plan){
+          const r = await window.techfixNative.fix(fixId);
+          log.push(`${r.ok ? "✓" : "✗"} [pass ${pass+1}] ${r.message}`);
+        }
       }
+    }catch(e){
+      log.push(`✗ [pass ${pass+1}] ${plan.join(", ")} failed: ${e && e.message ? e.message : e}`);
     }
     renderResolveLog();
   }
