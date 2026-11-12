@@ -580,6 +580,51 @@ const SEV_RANK = { critical:0, high:1, medium:2, low:3 };
 // Long (10 min to hours) or PC-restarting repairs: offered per finding, never chained by "Diagnose deeply & resolve".
 const DEEP_RESOLVE_MANUAL = new Set(["sfc-scan","dism-restore","chkdsk-scan","component-cleanup","defender-full","defender-offline","defender-quick","remove-threats"]);
 
+/* ---------- TechFix's own diagnosis: root cause + ordered plan (no outside help needed) ---------- */
+const DX_TEXT = {
+  dx_disk_failing: ["A drive is failing — back up your files first", "The drive reports physical errors. Every hour of use puts your data at risk. Copy what matters to another drive or the cloud before any repair."],
+  dx_disk_full: ["{drive} is almost full ({pct}% free) — this is the main problem", "Windows needs free space to install updates, grow the page file and run smoothly. With {free} GB free, updates fail and the PC slows down. Goal: free at least {need} GB more."],
+  dx_updates_broken: ["Windows Update is broken ({count} failed installs)", "The update components or system files are damaged. Repair them in this order, from the lightest to the deepest."],
+  dx_hardware: ["Hardware errors detected ({count}) — likely memory, processor or power", "Windows logged hardware error reports (WHEA). Software repairs can't fix these."],
+  dx_system_files: ["The crashes point to damaged system files or a driver", "Blue screens and low stability usually come from corrupted Windows files or a faulty driver. Repair the Windows image, then the files, then restart the devices in error."],
+  dx_power: ["Sudden power losses ({count})", "The PC turned off without shutting down. Usual causes: overheating, a weak power supply or charger, or a worn battery."],
+  dx_drivers: ["Devices with driver errors", "One or more devices don't work because of their driver."],
+  dx_network: ["No internet — TechFix finds which link is broken", "It tests from this PC to the router, then to the internet and DNS, and repairs only what is broken."],
+  dx_memory: ["Memory is running out", "Too many programs are open or start with Windows. Biggest users right now: {top}."]
+};
+const DX_AFTER = {
+  dx_after_backup: "Then replace the drive. Don't run disk repairs on it — they stress a failing drive.",
+  dx_after_space: "When at least 20 GB is free, run Windows Update again — TechFix re-checks after each repair. Move big videos and archives to another drive instead of deleting them.",
+  dx_after_updates: "Then open Windows Update and install. If it still fails, the error code it shows tells exactly what is wrong.",
+  dx_after_hardware: "Run the memory test, check temperatures and fans, remove any overclocking and reseat the RAM. If the errors continue, have the hardware tested.",
+  dx_after_restart: "Restart the PC when a repair asks for it, then run a new scan.",
+  dx_after_power: "Clean the fans and vents, try another charger or outlet, and check the battery health. No software repair applies.",
+  dx_after_drivers: "If a device stays in error, install its driver from the manufacturer's website.",
+  dx_after_network: "If your router answers but the internet doesn't, restart the modem or call your provider.",
+  dx_after_memory: "Turn off startup apps you don't need and close heavy programs. If it's constant, the PC needs more RAM."
+};
+const DX_FINDING = {
+  wu_failures: "Windows Update failures", update_stale: "no recent updates", pagefile_high: "page file almost full", mem_high: "memory pressure",
+  stability_low: "low stability", cpu_high: "high CPU use", disk_health: "drive health", disk_uncorrected: "drive read/write errors", disk_events: "disk errors",
+  bsod: "blue screens", app_crash: "app crashes", whea: "hardware errors", kernel_power: "sudden power losses", cpu_hot: "overheating", battery_worn: "worn battery",
+  driver_errors: "device driver errors", gpu_tdr: "display driver resets", gpu_driver_old: "old graphics driver", no_internet: "no internet", dns_fail: "DNS failure",
+  wifi_weak: "weak Wi-Fi", startup_many: "many startup programs"
+};
+function diagnosisCard(res){
+  const dx = (res && res.diagnosis) || [];
+  if(!dx.length) return "";
+  return `<div class="dx-card"><div class="dx-eyebrow">${esc(T("TechFix's diagnosis"))}</div>${dx.map((x, i) => {
+    const [title, why] = DX_TEXT[x.code] || [x.code, ""];
+    const explains = (x.explains || []).map(c => T(DX_FINDING[c] || c));
+    return `<div class="dx-item ${esc(x.level)}">
+      <div class="dx-title">${esc(T(title, x.params))}</div>
+      <div class="dx-why">${esc(T(why, x.params))}</div>
+      ${explains.length ? `<div class="dx-explains">${esc(T("This explains:"))} ${esc(explains.join(" · "))}</div>` : ""}
+      ${(x.plan || []).length ? `<button class="btn primary sm dx-fix" data-dx="${i}">${TF_ICON_WRENCH}<span>${esc(T("Fix in this order"))}</span></button>` : ""}
+      ${x.after ? `<div class="dx-after"><strong>${esc(T("Then:"))}</strong> ${esc(T(DX_AFTER[x.after] || ""))}</div>` : ""}
+    </div>`; }).join("")}</div>`;
+}
+
 function renderNativeResults(){
   const wrap = el("#native-results");
   const res = state.native.result;
@@ -620,6 +665,7 @@ function renderNativeResults(){
   }
 
   wrap.innerHTML = `${cockpitRow}<div class="stat-note" style="margin-bottom:10px;">${sysLine}</div>
+    ${diagnosisCard(res)}
     <div class="finding-list">${findings.map((f,i)=>{
       const kb = f.kbId ? KB.find(k=>k.id===f.kbId) : null;
       // No exact KB id on this finding (e.g. a generic native-scan detail) — offline
@@ -787,7 +833,13 @@ function initNativeDiagnostics(){
   if(!panel) return;
   panel.hidden = false;
   el("#native-scan-btn").addEventListener("click", ()=> runNativeScan(false));
+  if(typeof tfEnsureFixes === "function") tfEnsureFixes(); // repair names for the report and the plans
   el("#native-resolve-btn").addEventListener("click", runDeepResolve);
+  el("#native-results").addEventListener("click", (e)=>{
+    const b = e.target.closest(".dx-fix"); if(!b) return;
+    const x = ((state.native.result && state.native.result.diagnosis) || [])[+b.dataset.dx];
+    if(x) runFixPlan(x.plan, T((DX_TEXT[x.code] || [x.code])[0], x.params));
+  });
   renderNativeResults();
 }
 
@@ -1327,6 +1379,16 @@ function buildDiagnosticReport(){
         lines.push(`  [${f.severity.toUpperCase()}] ${kb ? kb.title : f.detail} — ${f.detail}`);
       });
     }
+    // TechFix's own reading: root cause, what it explains, the order to fix it in.
+    (nr.diagnosis || []).forEach((x, i)=>{
+      if(i === 0){ lines.push(""); lines.push(T("TechFix's diagnosis") + ":"); }
+      const [title, why] = DX_TEXT[x.code] || [x.code, ""];
+      lines.push(`  ${i+1}. ${T(title, x.params)}`);
+      if(why) lines.push(`     ${T(why, x.params)}`);
+      if((x.explains||[]).length) lines.push(`     ${T("This explains:")} ${x.explains.map(c=>T(DX_FINDING[c]||c)).join(", ")}`);
+      if((x.plan||[]).length) lines.push(`     ${T("Fix in this order")}: ${x.plan.map(id=>T((tfFixById(id)||{}).label || id)).join(" → ")}`);
+      if(x.after) lines.push(`     ${T("Then:")} ${T(DX_AFTER[x.after]||"")}`);
+    });
     lines.push("");
   }
 

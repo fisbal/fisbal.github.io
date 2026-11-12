@@ -180,7 +180,7 @@ function buildSystemFindings(d) {
     const freePct = (disk.freeBytes / disk.sizeBytes) * 100;
     const onSys = String(disk.id || "").toUpperCase() === sysDrive;
     const p = { drive: disk.id, pct: +freePct.toFixed(1) };
-    if (freePct < 10) add("disk_low", "high", p, "gen-sto-03", onSys ? "clear-windows-temp" : "open-storage", onSys ? ["free-update-space", "empty-recycle-bin", "component-cleanup"] : null, `${disk.id} has only ${freePct.toFixed(1)}% free space`);
+    if (freePct < 10) add("disk_low", "high", p, "gen-sto-03", onSys ? ["space-report", "clear-windows-temp"] : "open-storage", onSys ? ["free-update-space", "empty-recycle-bin", "component-cleanup", "clear-dev-caches"] : null, `${disk.id} has only ${freePct.toFixed(1)}% free space`);
     else if (freePct < 20) add("disk_low", "medium", p, "gen-sto-03", onSys ? "clear-temp" : "open-storage", null, `${disk.id} has ${freePct.toFixed(1)}% free space`);
   }
   for (const pd of arr(d.diskHealth)) {
@@ -249,6 +249,53 @@ function buildSystemFindings(d) {
   return findings;
 }
 
+// What's REALLY going on: links findings to a root cause and an ordered plan — the reasoning a
+// technician (or an AI) would do, built in, so nobody needs outside help to know where to start.
+// Each item: { code, level, params, explains:[finding codes it accounts for], plan:[fix ids in order], after }
+function buildSystemDiagnosis(d, findings) {
+  const out = [];
+  const has = (c) => findings.some((f) => f.code === c);
+  const codes = (list) => list.filter(has);
+  const ev = d.ev || {};
+  const sysDrive = (d.systemDrive || "C:").toUpperCase();
+  const sys = arr(d.disks).find((x) => String(x.id || "").toUpperCase() === sysDrive);
+  const sysFreePct = sys && sys.sizeBytes ? (sys.freeBytes / sys.sizeBytes) * 100 : null;
+  const sysFreeGB = sys ? Math.round(sys.freeBytes / 1073741824) : null;
+
+  if (has("disk_health") || has("disk_uncorrected")) {
+    out.push({ code: "dx_disk_failing", level: "critical", params: {}, explains: codes(["disk_health", "disk_uncorrected", "disk_events", "bsod", "app_crash", "stability_low"]), plan: [], after: "dx_after_backup" });
+  }
+  if (sysFreePct != null && sysFreePct < 10) {
+    out.push({ code: "dx_disk_full", level: sysFreePct < 5 ? "critical" : "high",
+      params: { drive: sysDrive, pct: +sysFreePct.toFixed(1), free: sysFreeGB, need: Math.max(1, 20 - sysFreeGB) },
+      explains: codes(["wu_failures", "update_stale", "pagefile_high", "mem_high", "stability_low", "cpu_high"]),
+      plan: ["space-report", "clear-windows-temp", "free-update-space", "clear-old-installers", "empty-recycle-bin", "component-cleanup"],
+      after: "dx_after_space" });
+  } else if (has("wu_failures") || has("update_stale")) {
+    out.push({ code: "dx_updates_broken", level: "medium", params: { count: ev.wuFail || 0 }, explains: codes(["wu_failures", "update_stale"]),
+      plan: ["restart-wuauserv", "reset-windows-update", "dism-restore", "sfc-scan"], after: "dx_after_updates" });
+  }
+  if ((ev.whea || 0) > 0) {
+    out.push({ code: "dx_hardware", level: "high", params: { count: ev.whea }, explains: codes(["whea", "bsod", "kernel_power", "cpu_hot"]), plan: ["open-memory-test"], after: "dx_after_hardware" });
+  } else if (has("bsod") || has("stability_low")) {
+    out.push({ code: "dx_system_files", level: "medium", params: {}, explains: codes(["bsod", "stability_low", "app_crash", "driver_errors"]), plan: ["dism-restore", "sfc-scan", "rescan-devices"], after: "dx_after_restart" });
+  }
+  if (has("kernel_power") && !(ev.whea > 0)) {
+    out.push({ code: "dx_power", level: "medium", params: { count: ev.kernelPower }, explains: codes(["kernel_power", "cpu_hot", "battery_worn"]), plan: [], after: "dx_after_power" });
+  }
+  if (has("driver_errors") && !out.some((x) => x.code === "dx_system_files")) {
+    out.push({ code: "dx_drivers", level: "medium", params: {}, explains: codes(["driver_errors", "gpu_tdr", "gpu_driver_old"]), plan: ["rescan-devices", "open-windows-update"], after: "dx_after_drivers" });
+  }
+  if (has("no_internet") || has("dns_fail")) {
+    out.push({ code: "dx_network", level: "high", params: {}, explains: codes(["no_internet", "dns_fail", "wifi_weak"]), plan: ["flush-dns", "release-renew-ip", "winsock-reset"], after: "dx_after_network" });
+  }
+  if ((has("mem_high") || has("pagefile_high")) && !(sysFreePct != null && sysFreePct < 10)) {
+    const top = arr(d.topMem).slice(0, 3).map((x) => `${x.name} (${x.mb} MB)`).join(", ");
+    out.push({ code: "dx_memory", level: "medium", params: { top }, explains: codes(["mem_high", "pagefile_high", "startup_many", "cpu_high"]), plan: ["open-startup-apps"], after: "dx_after_memory" });
+  }
+  return out;
+}
+
 // What's likely to go wrong NEXT, from early-warning signs (not a certainty — a ranked heads-up).
 function buildSystemForecast(d) {
   const out = [];
@@ -287,6 +334,7 @@ async function scan() {
   const { ok, out, err } = await runPS1(SCAN_PS, 120000);
   const data = parseJsonTail(out);
   if (!data) return { supported: true, platform: "win32", error: ok ? "Could not parse scan output" : (err || "PowerShell scan failed") };
+  const findings = buildSystemFindings(data);
   return {
     supported: true,
     platform: "win32",
@@ -302,7 +350,8 @@ async function scan() {
     stability: num(data.stability),
     topMem: arr(data.topMem),
     events: data.ev || {},
-    findings: buildSystemFindings(data),
+    findings,
+    diagnosis: buildSystemDiagnosis(data, findings),
     forecast: buildSystemForecast(data),
     scannedAt: new Date().toISOString()
   };
@@ -575,4 +624,4 @@ async function security() {
 // ---------------------------------------------------------------------------------------------
 const repair = require("./repair");
 
-module.exports = { scan, security, fix: repair.fix, fixPlan: repair.fixPlan, listFixes: repair.listFixes, WIN, _test: { buildSystemFindings, buildSystemForecast, buildSecurityFindings, buildSecurityForecast, SCAN_PS, SECURITY_PS, FIXES: repair.FIXES } };
+module.exports = { scan, security, fix: repair.fix, fixPlan: repair.fixPlan, listFixes: repair.listFixes, WIN, _test: { buildSystemFindings, buildSystemDiagnosis, buildSystemForecast, buildSecurityFindings, buildSecurityForecast, SCAN_PS, SECURITY_PS, FIXES: repair.FIXES } };

@@ -46,9 +46,17 @@ function runPS1(scriptText, timeoutMs) {
     });
   });
 }
-function tmpFile(ext) {
-  return path.join(os.tmpdir(), "techfix-" + Date.now() + "-" + Math.random().toString(36).slice(2) + "." + ext);
+// Working files live in %LOCALAPPDATA%\TechFix\work — NOT in %TEMP%: "Clear temp files" empties
+// TEMP while the session runs, and once deleted the live progress log with it (real bug, 2026-11-12).
+function workDir() {
+  const base = process.env.LOCALAPPDATA || path.join(os.homedir(), "AppData", "Local");
+  const dir = path.join(base, "TechFix", "work");
+  try { fs.mkdirSync(dir, { recursive: true }); return dir; } catch (_) { return os.tmpdir(); }
 }
+function tmpFile(ext) {
+  return path.join(workDir(), "techfix-" + Date.now() + "-" + Math.random().toString(36).slice(2) + "." + ext);
+}
+const arr = (v) => (Array.isArray(v) ? v : v == null ? [] : [v]);
 const psq = (s) => "'" + String(s).replace(/'/g, "''") + "'";
 
 // Shared by both the un-elevated and the elevated script.
@@ -180,13 +188,13 @@ const FIXES = {
   "clear-temp": {
     label: "Clear this user's temp files", tier: "safe", admin: false,
     check: TEMP_MB + `; @{ mb = (TFsz $env:TEMP) }`,
-    run: `Get-ChildItem -LiteralPath $env:TEMP -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue`,
+    run: `Get-ChildItem -LiteralPath $env:TEMP -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -notlike 'techfix-*' } | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue`,
     judge: (r) => judgeFreed(r)
   },
   "clear-windows-temp": {
     label: "Clear this user's and Windows' temp files", tier: "safe", admin: true,
     check: TEMP_MB + `; @{ mb = (TFsz $env:TEMP) + (TFsz "$env:SystemRoot\\Temp") }`,
-    run: `foreach ($p in @($env:TEMP, "$env:SystemRoot\\Temp")) { Get-ChildItem -LiteralPath $p -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue }`,
+    run: `foreach ($p in @($env:TEMP, "$env:SystemRoot\\Temp")) { Get-ChildItem -LiteralPath $p -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -notlike 'techfix-*' } | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue }`,
     judge: (r) => judgeFreed(r)
   },
   "empty-recycle-bin": {
@@ -202,6 +210,53 @@ const FIXES = {
     judge: (r) => {
       if (r.exit !== 0 && r.exit !== 3010) return V("failed", "dism_failed", { code: hex(r.exit) });
       return judgeFreeSpace(r);
+    }
+  },
+  "space-report": {
+    label: "Show what is using the space on the system drive", tier: "safe", kind: "report", admin: false, timeoutMs: 10 * 60000,
+    run: String.raw`$u = $env:USERPROFILE; $l = $env:LOCALAPPDATA; $sys = $env:SystemDrive
+function TFgb($p) { if (-not (Test-Path -LiteralPath $p)) { return 0 }; $s = (Get-ChildItem -LiteralPath $p -Recurse -Force -File -ErrorAction SilentlyContinue | Measure-Object Length -Sum).Sum; return [math]::Round(([double]$s) / 1GB, 1) }
+$c = [ordered]@{
+  'Downloads' = (Join-Path $u 'Downloads'); 'Videos' = (Join-Path $u 'Videos'); 'Desktop' = (Join-Path $u 'Desktop'); 'Documents' = (Join-Path $u 'Documents'); 'Pictures' = (Join-Path $u 'Pictures'); 'Music' = (Join-Path $u 'Music')
+  'Ollama AI models' = (Join-Path $u '.ollama'); 'Android emulators (AVD)' = (Join-Path $u '.android\avd'); 'Android SDK' = (Join-Path $l 'Android\Sdk')
+  'Gradle caches' = (Join-Path $u '.gradle\caches'); 'Maven (.m2)' = (Join-Path $u '.m2'); 'NuGet packages' = (Join-Path $u '.nuget\packages'); 'npm cache' = (Join-Path $l 'npm-cache'); 'pip cache' = (Join-Path $l 'pip\Cache'); 'Flutter/Dart pub cache' = (Join-Path $l 'Pub\Cache')
+  'Temp files' = $env:TEMP; 'Old Windows install (Windows.old)' = (Join-Path $sys 'Windows.old'); 'Docker' = (Join-Path $l 'Docker')
+}
+$items = @(); foreach ($k in $c.Keys) { $p = $c[$k]; if ($p -and $p.StartsWith($sys, [StringComparison]::OrdinalIgnoreCase)) { $g = TFgb $p; if ($g -ge 0.3) { $items += @{ name = $k; gb = $g } } } }
+$big = @(Get-ChildItem -LiteralPath (Join-Path $u 'Downloads') -File -Force -ErrorAction SilentlyContinue | Where-Object { $_.Length -ge 300MB } | Sort-Object Length -Descending | Select-Object -First 6 | ForEach-Object { @{ name = $_.Name; gb = [math]::Round($_.Length / 1GB, 1) } })
+$hib = Join-Path $sys 'hiberfil.sys'; $h = 0; try { $h = [math]::Round((Get-Item -LiteralPath $hib -Force -ErrorAction Stop).Length / 1GB, 1) } catch { }
+"@@TF " + (@{ items = @($items | Sort-Object { $_.gb } -Descending); big = $big; hiber = $h; freeGB = [math]::Round((Get-PSDrive ($sys.TrimEnd(':'))).Free / 1GB, 1) } | ConvertTo-Json -Compress -Depth 4)`,
+    judge: (r) => {
+      const d = r.data || {};
+      const items = arr(d.items).slice(0, 8);
+      if (!items.length) return V("ok", "space_report_none", { free: (d.freeGB || 0) + " GB" });
+      const list = items.map((x) => `${x.name} ${x.gb} GB`).join(" · ");
+      const big = arr(d.big).map((x) => `${x.name} (${x.gb} GB)`).join(" · ");
+      return V("ok", big ? "space_report_big" : "space_report", { list, big, free: (d.freeGB || 0) + " GB", items });
+    }
+  },
+  "clear-dev-caches": {
+    label: "Delete rebuildable developer caches (Gradle, npm, pip, NuGet HTTP cache)", tier: "risky", admin: false, manualOnly: true, manualNote: "redownload", timeoutMs: 20 * 60000,
+    cmd: "del ~\\.gradle\\caches ; npm-cache ; pip\\Cache ; NuGet\\v3-cache  (re-downloaded on the next build)",
+    check: FREE_SYS,
+    run: String.raw`foreach ($p in @((Join-Path $env:USERPROFILE '.gradle\caches'), (Join-Path $env:LOCALAPPDATA 'npm-cache'), (Join-Path $env:LOCALAPPDATA 'pip\Cache'), (Join-Path $env:LOCALAPPDATA 'NuGet\v3-cache'))) {
+  if (Test-Path -LiteralPath $p) { Get-ChildItem -LiteralPath $p -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue }
+}`,
+    judge: (r) => judgeFreeSpace(r)
+  },
+  "clear-old-installers": {
+    label: "Delete old installers and duplicate downloads in Downloads (older than 7 days)", tier: "risky", admin: false, manualOnly: true, manualNote: "delete", timeoutMs: 10 * 60000,
+    cmd: "del Downloads\\*.exe *.msi *.msix *.appx *.apk older than 7 days + duplicate \"name (1).ext\" copies — deleted for good, not to the Recycle Bin",
+    check: String.raw`$dl = Join-Path $env:USERPROFILE 'Downloads'; $cut = (Get-Date).AddDays(-7)
+$f = @(Get-ChildItem -LiteralPath $dl -File -Force -ErrorAction SilentlyContinue | Where-Object { ($_.Extension -in '.exe','.msi','.msix','.appx','.apk' -and $_.LastWriteTime -lt $cut) -or ($_.BaseName -match ' \(\d+\)$' -and (Test-Path -LiteralPath (Join-Path $dl (($_.BaseName -replace ' \(\d+\)$','') + $_.Extension)))) })
+@{ n = $f.Count; mb = [math]::Round(((@($f) | Measure-Object Length -Sum).Sum) / 1MB); freeMB = [math]::Round((Get-PSDrive ($env:SystemDrive.TrimEnd(':'))).Free / 1MB) }`,
+    run: String.raw`$dl = Join-Path $env:USERPROFILE 'Downloads'; $cut = (Get-Date).AddDays(-7)
+Get-ChildItem -LiteralPath $dl -File -Force -ErrorAction SilentlyContinue | Where-Object { ($_.Extension -in '.exe','.msi','.msix','.appx','.apk' -and $_.LastWriteTime -lt $cut) -or ($_.BaseName -match ' \(\d+\)$' -and (Test-Path -LiteralPath (Join-Path $dl (($_.BaseName -replace ' \(\d+\)$','') + $_.Extension)))) } | Remove-Item -Force -ErrorAction SilentlyContinue`,
+    judge: (r) => {
+      const b = g(r.before, "n") || 0;
+      if (!b) return V("ok", "nothing_to_clean");
+      const freed = (g(r.after, "freeMB") || 0) - (g(r.before, "freeMB") || 0);
+      return V(freed >= 1 ? "fixed" : "failed", freed >= 1 ? "installers_deleted" : "nothing_freed", { n: b - (g(r.after, "n") || 0), size: mb(Math.max(freed, 0)), free: mb(g(r.after, "freeMB") || 0), left: mb(g(r.after, "mb") || 0) });
     }
   },
   "free-update-space": {
@@ -376,7 +431,7 @@ Start-Service cryptsvc,bits,wuauserv -ErrorAction SilentlyContinue
     run: `Start-MpScan -ScanType FullScan -AsJob | Out-Null`, judge: () => V("started", "scan_started")
   },
   "defender-offline": {
-    label: "Defender Offline scan — RESTARTS the PC now (~15 min)", tier: "risky", admin: true, cmd: "Start-MpWDOScan", manualOnly: true,
+    label: "Defender Offline scan — RESTARTS the PC now (~15 min)", tier: "risky", admin: true, cmd: "Start-MpWDOScan", manualOnly: true, manualNote: "restart",
     run: `Start-MpWDOScan -ErrorAction Stop`, judge: (r) => (r.err ? V("failed", "cmd_failed", { code: r.err.slice(0, 80) }) : V("reboot", "offline_scan_started"))
   },
   "defender-rtp-on": {
@@ -454,7 +509,7 @@ function sessionScript(ids, progressFile) {
 
 function listFixes() {
   return Object.entries(FIXES).map(([id, f]) => ({
-    id, label: f.label, tier: f.tier, kind: f.kind || "repair", admin: !!f.admin, cmd: f.cmd || null, manualOnly: !!f.manualOnly
+    id, label: f.label, tier: f.tier, kind: f.kind || "repair", admin: !!f.admin, cmd: f.cmd || null, manualOnly: !!f.manualOnly, manualNote: f.manualNote || (f.manualOnly ? "restart" : null)
   }));
 }
 
@@ -479,6 +534,7 @@ async function fixPlan(rawIds, onProgress) {
   const poll = () => {
     let buf;
     try { buf = fs.readFileSync(prog); } catch (_) { return; }
+    if (buf.length < readPos) readPos = 0; // file was recreated — read it again from the start
     if (buf.length <= readPos) return;
     const text = buf.slice(readPos).toString("utf8");
     const lastNl = text.lastIndexOf("\n");

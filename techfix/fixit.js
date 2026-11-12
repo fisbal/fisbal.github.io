@@ -14,7 +14,7 @@ const T = (s, p) => (typeof t === "function" ? t(s, p) : String(s).replace(/\{(\
 
 // Knowledge-base entry → what TechFix can do about it itself.
 const KB_FIX = {
-  "gen-sto-03": { win:["clear-windows-temp","free-update-space","empty-recycle-bin","component-cleanup","open-storage"], android:["storage","apps"] },
+  "gen-sto-03": { win:["space-report","clear-windows-temp","free-update-space","empty-recycle-bin","component-cleanup","open-storage"], android:["storage","apps"] },
   "gen-sto-06": { win:["open-storage","component-cleanup"] },
   "win-10-02": { win:["open-startup-apps","clear-temp","chkdsk-scan"] },
   "win-vista-02": { win:["open-startup-apps","clear-temp"] },
@@ -156,9 +156,10 @@ async function runFixPlan(ids, title){
         <input type="checkbox" data-fix="${tfEsc(f.id)}" ${f.manualOnly || f.kind === "open" ? "" : "checked"} ${f.tier === "safe" && f.kind !== "open" ? "disabled" : ""}>
         <span class="fix-row-text"><span class="fix-row-label">${tfEsc(T(f.label))}</span>
           ${f.kind === "open" ? `<span class="fix-row-tag">${tfEsc(T("opens a Windows screen — you finish the change there"))}</span>`
+            : f.kind === "report" ? `<span class="fix-row-tag ok">${tfEsc(T("only measures — changes nothing"))}</span>`
             : f.tier === "safe" ? `<span class="fix-row-tag ok">${tfEsc(T("safe — runs straight away"))}</span>`
             : `<span class="fix-row-tag warn">${tfEsc(T("changes system settings — exact command:"))}</span><code>${tfEsc(f.cmd)}</code>`}
-          ${f.manualOnly ? `<span class="fix-row-tag crit">${tfEsc(T("restarts the PC — tick only if you're ready"))}</span>` : ""}
+          ${f.manualOnly ? `<span class="fix-row-tag crit">${tfEsc(T({ delete: "deletes files for good — tick only if you're sure", redownload: "they are downloaded again on your next build — tick only if you're sure" }[f.manualNote] || "restarts the PC — tick only if you're ready"))}</span>` : ""}
         </span>
       </label>`).join("")}</div>
     <p class="sheet-note">${tfEsc(T("Each step is measured before and after, so you see what really changed. Windows asks once for administrator permission (UAC) — answer Yes."))}</p>`;
@@ -192,6 +193,9 @@ const TF_RESULT = {
   already_set: "Already in the safe setting — nothing to change", setting_changed: "Setting changed and confirmed",
   setting_blocked: "Windows refused the change (a policy or another security app is blocking it)",
   nothing_to_clean: "Nothing to clean", nothing_freed: "Files in use — nothing could be deleted ({left} left)", freed: "Freed {size} ({left} left)", freed_space: "Freed {size} — {free} now free on the system drive",
+  space_report: "Biggest space users: {list} — {free} free", space_report_big: "Biggest space users: {list}. Largest files in Downloads: {big} — {free} free",
+  installers_deleted: "{n} file(s) deleted — freed {size}, {free} now free",
+  space_report_none: "No large folders in the usual places — {free} free",
   dns_ok: "Name lookups (DNS) work", dns_still_failing: "DNS still fails after flushing",
   net_ok: "Connected — internet and DNS work (IP {ip})", net_dns_broken: "Internet works but DNS doesn't",
   net_no_dhcp: "No address from the router (DHCP) — the network adapter or the router is the problem",
@@ -223,10 +227,15 @@ const TF_RESULT = {
   proxy_removed: "Proxy removed and confirmed", hosts_restored: "{n} suspicious line(s) removed — backup: {backup}",
   cancelled: "Cancelled at the administrator prompt", no_result: "No result came back (timed out or interrupted)", not_windows: "Only available on Windows"
 };
-const tfResultText = (r) => T(TF_RESULT[r.code] || TF_RESULT.no_verdict, r.params || {});
+const tfStateOf = (r) => (r.code && r.code.indexOf("space_report") === 0 ? { label: "Measured", cls: "info", mark: "i" } : (TF_STATE[r.state] || TF_STATE.failed));
+const tfResultText = (r) => {
+  const p = Object.assign({}, r.params || {});
+  if(Array.isArray(p.items) && p.items.length) p.list = p.items.map(x => `${T(x.name)} ${x.gb} GB`).join(" · ");
+  return T(TF_RESULT[r.code] || TF_RESULT.no_verdict, p);
+};
 
 function tfRenderResult(row, r){
-  const st = TF_STATE[r.state] || TF_STATE.failed;
+  const st = tfStateOf(r);
   row.classList.remove("running");
   row.classList.add(st.cls);
   row.querySelector(".mark").textContent = st.mark;

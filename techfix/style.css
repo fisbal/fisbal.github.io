@@ -562,3 +562,15 @@ button{ font-family: inherit; }
 .fix-next{ margin-top:14px; padding:12px 14px; border:1px solid rgba(212,169,74,.3); border-radius: var(--radius-s); background: rgba(212,169,74,.06); }
 .fix-next-label{ font-size:11px; letter-spacing:1px; text-transform:uppercase; color: var(--gold-2); margin-bottom:6px; }
 .fix-next ul{ margin:0 0 10px; padding-left:18px; color: var(--text); font-size:13px; }
+
+/* ---------- TechFix's diagnosis card ---------- */
+.dx-card{ border:1px solid rgba(212,169,74,.35); background: linear-gradient(135deg, rgba(212,169,74,.08), rgba(212,169,74,.02)); border-radius: var(--radius-m); padding:16px 18px; margin:0 0 16px; }
+.dx-eyebrow{ font-size:11px; letter-spacing:1.4px; text-transform:uppercase; color: var(--gold-2); margin-bottom:10px; }
+.dx-item{ padding:12px 0; border-top:1px solid var(--border-soft); display:flex; flex-direction:column; gap:7px; align-items:flex-start; }
+.dx-item:first-of-type{ border-top:none; padding-top:2px; }
+.dx-title{ font-weight:650; font-size:15px; color: var(--text); }
+.dx-item.critical .dx-title{ color: #f3a3a8; }
+.dx-why{ font-size:13px; color: var(--text-dim); line-height:1.55; }
+.dx-explains{ font-size:12px; color: var(--text-faint); }
+.dx-after{ font-size:12.5px; color: var(--text-dim); line-height:1.5; }
+.dx-after strong{ color: var(--gold-2); font-weight:600; }
