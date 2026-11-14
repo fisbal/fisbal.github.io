@@ -1808,6 +1808,9 @@ function pxPerUnit(x, y, z) {
   return Math.hypot((_pb.x - _pa.x) * innerWidth / 2, (_pb.y - _pa.y) * innerHeight / 2) || 1;
 }
 // Upright phones have the least room (the whole board fits ~390 px), so they may grow to 2x; other screens to 1.6x.
+// Real lengths (m). On final approach an aircraft shrinks from its readable flight size to the runway's scale
+// (an A320 is ~0.8x the drawn runway width, like the parked fleet), so it touches down on the runway instead of covering it.
+const REAL_LEN = { narrow: 37.6, wide: 63.7, jumbo: 70.7, regional: 31.7, turboprop: 27.2 }, GROUND_MIN_PX = 14;
 const boostFor = (lenU, ppu) => clamp(AC_MIN_PX / (lenU * ppu), 1, innerHeight > innerWidth * 1.2 && innerWidth < 600 ? 2 : 1.6);
 function spawnPlane(variant, pos, heading) {
   const V = VARIANT[variant], cfg = TYPE[V.type], model = makePlaneModel(variant);
@@ -1815,10 +1818,10 @@ function spawnPlane(variant, pos, heading) {
   const mats = []; model.root.traverse(o => { if (o.material && mats.indexOf(o.material) < 0) mats.push(o.material); });
   const p = Object.assign(model, { variant, type: V.type, cfg, r: V.r, mats, pos: pos.clone(), heading, alt: ALT + 7, speed: V.speed * rand(.94, 1.06), cur: 0, roll: 0, pitch: 0, gearT: V.type === 'heli' ? 1 : 0,
     path: [], target: null, state: 'fly', entered: false, warn: false, viz: makePathViz(V.type), touched: false, taxiT: 0 });
-  p.cruise = p.speed; p.s0 = p.root.scale.x; p.boost = 1;
+  p.cruise = p.speed; p.sc0 = p.root.scale.x; p.boost = 1; p.gLen = REAL_LEN[variant] ? REAL_LEN[variant] / 37.6 * .8 : 0;
   // Type-coloured halo under the aircraft, shown only while it is enlarged (small screens) to make it easy to spot and tap.
   p.halo = new THREE.Mesh(new THREE.RingGeometry(6.2, 7.6, 40).rotateX(-Math.PI / 2), basicMat(cfg.color, { transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }));
-  p.halo.position.y = -p.groundOff / p.s0 - .4; p.halo.renderOrder = 3; p.halo.visible = false; p.root.add(p.halo);
+  p.halo.position.y = -p.groundOff / p.sc0 - .4; p.halo.renderOrder = 3; p.halo.visible = false; p.root.add(p.halo);
   planes.push(p);
   if (state === 'play' && WX && landed >= 2 && V.type !== 'heli' && !planes.some(o => o.emerg && !o.emerg.done) && Math.random() < .13) makeEmergency(p, Math.random() < .55 ? 'fire' : 'fuel');
   return p;
@@ -1997,11 +2000,13 @@ function updatePlane(p, dt) {
     }
   }
   p.gear.forEach(g => { g.visible = p.gearT > .02; g.scale.y = Math.max(.01, p.gearT); });
-  { const air = p.state === 'fly' ? 1 : p.state === 'land' ? clamp(p.alt / ALT, 0, 1) : 0;
-    p.boost = air > 0 ? 1 + (boostFor(11.85 * p.s0, pxPerUnit(p.pos.x, p.alt, p.pos.z)) - 1) * air : 1;
-    p.root.scale.setScalar(p.s0 * p.boost);
+  { const toRw = p.target && p.target.kind === 'rw', t = p.state === 'fly' ? (toRw ? clamp(p.alt / ALT, 0, 1) : 1) : p.state === 'land' ? clamp(p.alt / ALT, 0, 1) : 0, air = t * t * (3 - 2 * t);
+    const Ln = 11.85 * p.sc0, ppu = pxPerUnit(p.pos.x, p.alt, p.pos.z), fly = boostFor(Ln, ppu);
+    const rwW = p.target && p.target.rw ? p.target.rw.w : 5, g = p.gLen ? clamp(Math.max(p.gLen * rwW, GROUND_MIN_PX / ppu) / Ln, .12, 1) : 1;
+    p.boost = g + (fly - g) * air;
+    p.root.scale.setScalar(p.sc0 * p.boost);
     const ho = clamp((p.boost - 1) * 1.6, 0, .55) * air; p.halo.visible = ho > .02; p.halo.material.opacity = ho; }
-  p.root.position.set(p.pos.x, p.alt + p.groundOff, p.pos.z);
+  p.root.position.set(p.pos.x, p.alt + p.groundOff * p.boost, p.pos.z);
   p.root.rotation.y = -p.heading;
   p.body.rotation.x = p.roll;
   p.body.rotation.z = p.pitch;
