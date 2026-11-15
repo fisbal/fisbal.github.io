@@ -298,6 +298,7 @@ function setView(view){
     renderSecurityView();
     if(!state.securityResult && !state.securityBusy && (window.techfixNative || window.TechFixAndroid)) runSecurityScan(false);
   }
+  if(typeof connectViewChanged === "function") connectViewChanged(view);
   snapshotHot();
 }
 
@@ -1451,6 +1452,7 @@ function rerenderAll(){
   if(window.TechFixAndroid) renderAndroidPanel();
   if(state.view === "security" || state.securityResult) renderSecurityView();
   if(state.log.result) renderLogResults();
+  if(typeof cxRerender === "function") cxRerender();
 }
 
 function boot(initial){

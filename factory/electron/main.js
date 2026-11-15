@@ -12,6 +12,9 @@ const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, "mb-config.json"), "
 // has no such key in its mb-config.json, so `diagnostics` is undefined/require never runs
 // and this shell behaves exactly as before for them — same preload-less, sandboxed view.
 const diagnostics = cfg.diagnostics ? require("./diagnostics") : null;
+// Same opt-in: "Connect a device" (phones over ADB, TechFix on a USB key, remote help).
+const connect = cfg.diagnostics ? require("./connect") : null;
+if (connect) connect.init(cfg);
 const BAR = 36;
 const MAC = process.platform === "darwin";
 const LOCAL = !cfg.url;
@@ -149,10 +152,17 @@ if (diagnostics) {
     const list = Array.isArray(ids) ? ids.slice(0, 20).map(String) : [];
     return diagnostics.fixPlan(list, (ev) => { try { if (!e.sender.isDestroyed()) e.sender.send("techfix:fix-progress", ev); } catch (_) {} });
   });
+  // "Connect a device": one channel, a fixed set of operations (see connect.js).
+  ipcMain.handle("techfix:connect", async (e, op, payload) => {
+    if (!fromOurView(e)) return { error: "unauthorized" };
+    const send = (ev) => { try { if (!e.sender.isDestroyed()) e.sender.send("techfix:connect-progress", Object.assign({ op: String(op) }, ev)); } catch (_) {} };
+    return connect.handle(String(op || ""), payload && typeof payload === "object" ? payload : {}, send);
+  });
 }
 
 // Closing the app installs a downloaded update quietly, so the next start is the new version.
 app.on("before-quit", () => {
+  if (connect) connect.shutdown();
   if (updater.ready && !updater.applying) updater.apply(false);
 });
 

@@ -17,5 +17,12 @@ contextBridge.exposeInMainWorld("techfixNative", {
     const h = (_e, d) => { try { cb(d); } catch (_) {} };
     ipcRenderer.on("techfix:fix-progress", h);
     return () => ipcRenderer.removeListener("techfix:fix-progress", h);
+  },
+  // "Connect a device": phones over ADB, TechFix on a USB key, remote help. Fixed operations only.
+  connect: (op, payload) => ipcRenderer.invoke("techfix:connect", op, payload),
+  onConnectProgress: (cb) => {
+    const h = (_e, d) => { try { cb(d); } catch (_) {} };
+    ipcRenderer.on("techfix:connect-progress", h);
+    return () => ipcRenderer.removeListener("techfix:connect-progress", h);
   }
 });
