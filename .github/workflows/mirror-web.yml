@@ -1,0 +1,46 @@
+name: MarbleOS web mirror
+
+# GitHub Pages is switched off on fisbal/MarbleOS, so https://fisbal.github.io/MarbleOS/ answered 404.
+# This copies the game's web build (branch gh-pages of fisbal/MarbleOS, written by its own build) into
+# MarbleOS/ here, so the hub serves it at the same address. Runs every 30 minutes, and on demand.
+# If Pages is switched back on for fisbal/MarbleOS, that site takes over at the same address and this copy is simply unused.
+
+on:
+  schedule:
+    - cron: "19,49 * * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/mirror-web.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mirror-web
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Copy the web build
+        run: |
+          set -e
+          git clone --quiet --depth 1 --branch gh-pages https://github.com/fisbal/MarbleOS /tmp/marbleos-web
+          test -f /tmp/marbleos-web/index.html
+          rm -rf MarbleOS
+          mkdir MarbleOS
+          cp -a /tmp/marbleos-web/. MarbleOS/
+          rm -rf MarbleOS/.git
+          git add -A MarbleOS
+          if git diff --cached --quiet; then
+            echo "MarbleOS web is already up to date"
+            exit 0
+          fi
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -qm "MarbleOS web: copy of the newest build"
+          git pull -q --rebase origin main
+          git push -q origin HEAD:main
