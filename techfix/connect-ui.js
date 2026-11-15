@@ -77,6 +77,18 @@ const CX_RESULT = {
   pc_key_files_done: "{ok} of {n} file(s) copied to the key ({drive}:) — {size}.",
   pc_fat32_line: "Too big for this key (FAT32 holds files up to 4 GB) — format the key as exFAT or NTFS.",
   pc_copy_failed_line: "Not copied.",
+  inst_bundle: "This bundle couldn't be opened (damaged, or an encrypted .apkm).",
+  app_saved: "{app} saved on this PC ({n} file(s)) — Downloads › TechFix APK. The folder is open.",
+  app_save_failed: "Couldn't copy {app} from the phone.",
+  app_copied: "{app} is installed on the other phone.",
+  app_copy_no_target: "The other phone isn't connected any more.",
+  app_uninstalled: "{app} was uninstalled.",
+  app_uninstall_failed: "Android refused to uninstall {app}.",
+  app_disabled: "{app} is turned off. You can turn it back on here any time.",
+  app_enabled: "{app} is turned back on.",
+  app_toggle_failed: "Android refused to change {app}.",
+  app_no_screen: "{app} has no screen to open — it runs in the background.",
+  app_store_opened: "The Play Store opened on the phone — tap Install there.",
   cancelled: "Cancelled."
 };
 const CX_SIZE_PARAMS = ["freed", "free", "size", "copied", "need", "avail"];
@@ -364,7 +376,7 @@ function cxIphoneCard(u){
 
 /* ---------- One connected Android phone ---------- */
 const CX_TOOLS = [
-  { id:"install-apk-files", label:"Install apps (.apk) from this computer", note:"Pick one or more .apk files — they install straight onto the phone." },
+  { id:"install-apk-files", label:"Install apps (.apk) from this computer", note:"Pick .apk files, or split-app bundles (.apks, .xapk, .apkm) — they install straight onto the phone." },
   { id:"push-files", label:"Send files to the phone", note:"Any file (.exe, PDF, video, music…) goes into the phone's Download folder." },
   { id:"trim-caches", label:"Free app caches", note:"Deletes only temporary files apps can rebuild — no photos, messages or settings." },
   { id:"kill-background", label:"Close background apps", note:"Frees memory; the apps reopen normally when you tap them." },
@@ -386,6 +398,15 @@ function cxPhoneCard(d){
     <div class="cx-scan">${scan ? cxScanHtml(scan) : ""}</div>
     <div class="cx-apps"><div class="cx-apps-head"><span class="finding-title">${esc(T("MartinB apps"))}</span><span class="cx-muted">${esc(T("Install or update straight onto this phone"))}</span></div>
       <div class="cx-app-list" data-cx-applist><div class="stat-note">${esc(T("Loading…"))}</div></div></div>
+    <details class="cx-apps cx-allapps" data-cx-allapps>
+      <summary><span class="finding-title">${esc(T("All the apps on this phone"))}</span> <span class="cx-muted">${esc(T("Install any app, save, copy to another phone, remove"))}</span></summary>
+      <div class="cx-row"><input class="cx-select cx-grow" data-cx-store-q placeholder="${esc(T("App name, e.g. WhatsApp"))}">
+        <button class="btn sm primary" data-cx-store>${ICON.search}<span>${esc(T("Find on the Play Store"))}</span></button></div>
+      <p class="stat-note cx-muted" style="margin:6px 0 0;">${esc(T("Opens the Play Store on the phone at that app — tap Install there. Apps from a file: use “Install apps (.apk) from this computer” below."))}</p>
+      <div class="cx-row" style="margin-top:12px;"><input class="cx-select cx-grow" data-cx-app-filter placeholder="${esc(T("Filter the list…"))}">
+        <label class="fmt-check"><input type="checkbox" data-cx-app-system> <span>${esc(T("Show system apps"))}</span></label></div>
+      <div class="cx-applist-all" data-cx-applist-all><div class="stat-note">${esc(T("Loading…"))}</div></div>
+    </details>
     <div class="cx-tools">${CX_TOOLS.map(t => `<button class="cx-tool" data-cx-tool="${t.id}" title="${esc(T(t.note || t.label))}"><span class="cx-tool-label">${esc(T(t.label))}</span>${t.note ? `<span class="cx-tool-note">${esc(T(t.note))}</span>` : ""}</button>`).join("")}</div>
     <div class="stat-note cx-muted" style="margin-top:8px;">${esc(T("When you're done, turn USB debugging off: Settings › Developer options."))}</div>
   </div>`;
@@ -459,6 +480,7 @@ async function cxTool(serial, id){
     }
   });
   if(["trim-caches", "kill-background", "install-techfix"].includes(id) && CX.scans[serial]) cxScan(serial);
+  if(["install-apk-files", "install-techfix"].includes(id)){ if(CX.all){ delete CX.all[serial]; delete CX.all[serial + ":s"]; } const det = el(`[data-cx-dev="${CSS.escape(serial)}"] [data-cx-allapps]`); if(det && det.open) cxLoadAllApps(serial, true); cxLoadApps(serial, true); }
   if(id.startsWith("reboot")){ delete CX.scans[serial]; setTimeout(() => cxRefresh(true), 3000); }
 }
 
@@ -502,10 +524,76 @@ async function cxInstallApp(serial, id, replace){
   cxLoadApps(serial, true);
 }
 
+/* ---------- Every app on the phone (not only MartinB's) ---------- */
+const CX_GENERIC = new Set(["com","org","net","io","co","me","tv","app","apps","android","mobile","free","pro","lite","main","client","launcher","google","samsung","sec","huawei","xiaomi","miui","oneplus","motorola"]);
+// Android doesn't give app names over the cable, so TechFix derives one from the package
+// (the brand part: com.spotify.music → Spotify), with the best-known exceptions spelled out.
+const CX_KNOWN = { "com.zhiliaoapp.musically":"TikTok", "com.ss.android.ugc.trill":"TikTok", "com.facebook.katana":"Facebook", "com.facebook.orca":"Messenger",
+  "com.google.android.youtube":"YouTube", "com.google.android.gm":"Gmail", "com.google.android.apps.maps":"Google Maps", "com.android.chrome":"Chrome",
+  "com.google.android.apps.photos":"Google Photos", "com.snapchat.android":"Snapchat", "com.twitter.android":"X (Twitter)", "com.microsoft.teams":"Teams",
+  "com.netflix.mediaclient":"Netflix", "com.discord":"Discord", "org.telegram.messenger":"Telegram", "com.instagram.android":"Instagram", "com.whatsapp":"WhatsApp" };
+function cxAppName(pkg){
+  if(CX_KNOWN[pkg]) return CX_KNOWN[pkg];
+  const parts = pkg.split(".").filter(p => !CX_GENERIC.has(p.toLowerCase()));
+  const w = (parts[0] || pkg.split(".").pop()).replace(/_/g, " ");
+  return w.charAt(0).toUpperCase() + w.slice(1);
+}
+async function cxLoadAllApps(serial, force){
+  const card = el(`[data-cx-dev="${CSS.escape(serial)}"]`);
+  if(!card) return;
+  const sys = card.querySelector("[data-cx-app-system]").checked;
+  if(!CX.all) CX.all = {};
+  const key = serial + (sys ? ":s" : "");
+  if(force || !CX.all[key]){ card.querySelector("[data-cx-applist-all]").innerHTML = `<div class="stat-note">${esc(T("Loading…"))}</div>`; CX.all[key] = await cxCall("appList", { serial, system: sys }); }
+  cxRenderAllApps(serial);
+}
+function cxRenderAllApps(serial){
+  const card = el(`[data-cx-dev="${CSS.escape(serial)}"]`);
+  if(!card) return;
+  const sys = card.querySelector("[data-cx-app-system]").checked;
+  const r = (CX.all || {})[serial + (sys ? ":s" : "")];
+  const box = card.querySelector("[data-cx-applist-all]");
+  if(!r || r.error || !r.apps){ box.innerHTML = `<div class="stat-note">${esc(T("Couldn't read the app list from the phone."))}</div>`; return; }
+  const f = card.querySelector("[data-cx-app-filter]").value.trim().toLowerCase();
+  const list = r.apps.filter(a => !f || a.pkg.toLowerCase().includes(f) || cxAppName(a.pkg).toLowerCase().includes(f));
+  const others = ((CX.status && CX.status.devices) || []).filter(x => x.state === "device" && x.serial !== serial);
+  box.innerHTML = `<div class="stat-note cx-muted" style="margin:8px 0;">${esc(T("{n} apps", { n: list.length }))}</div>` + list.slice(0, 400).map(a => `<div class="cx-arow" data-pkg="${esc(a.pkg)}">
+      <div class="cx-arow-body"><div class="cx-app-name notranslate-tf">${esc(cxAppName(a.pkg))}</div><div class="cx-muted cx-pkg notranslate-tf">${esc(a.pkg)} · v${a.code}</div>
+        ${a.system ? `<span class="fix-badge info">${esc(T("System"))}</span>` : ""}${a.disabled ? ` <span class="fix-badge warn">${esc(T("Turned off"))}</span>` : ""}</div>
+      <div class="cx-arow-btns">
+        ${a.disabled ? "" : `<button class="btn sm ghost" data-app-act="app-open" title="${esc(T("Open on the phone"))}">${TF_ICON_NEXT}</button>`}
+        <button class="btn sm" data-app-act="app-save" title="${esc(T("Save to this PC"))}">${ICON.upload}<span>${esc(T("Save"))}</span></button>
+        ${others.map(o => `<button class="btn sm" data-app-act="app-copy" data-to="${esc(o.serial)}">${ICON.copy}<span>${esc(T("To {name}", { name: cxDevName(o) }))}</span></button>`).join("")}
+        ${a.system ? (a.disabled ? `<button class="btn sm" data-app-act="app-enable">${esc(T("Turn on"))}</button>` : `<button class="btn sm ghost" data-app-act="app-disable">${esc(T("Turn off"))}</button>`)
+                   : `<button class="btn sm ghost cx-danger" data-app-act="app-uninstall">${esc(T("Uninstall"))}</button>`}
+      </div></div>`).join("");
+  box.querySelectorAll("[data-app-act]").forEach(b => b.addEventListener("click", () => cxAppAct(serial, b.closest("[data-pkg]").dataset.pkg, b.dataset.appAct, b.dataset.to)));
+}
+async function cxAppAct(serial, pkg, act, to){
+  const name = cxAppName(pkg);
+  if(act === "app-uninstall" && !(await cxConfirm(T("Uninstall {app}?", { app: name }), T("{app} and its data on the phone are removed. Save it to this PC first if you may want it back.", { app: pkg }), T("Uninstall")))) return;
+  if(act === "app-disable" && !(await cxConfirm(T("Turn off {app}?", { app: name }), T("It's a system app: it stays on the phone but stops running and disappears from the app list. Some phone features may stop working — you can turn it back on here at any time.", { app: pkg }), T("Turn off")))) return;
+  const titles = { "app-open":"Open on the phone", "app-save":"Save to this PC", "app-copy":"Copy to the other phone", "app-uninstall":"Uninstall", "app-disable":"Turn off", "app-enable":"Turn on" };
+  await cxRun(T(titles[act]) + " — " + name, "phoneAction", { serial, id: act, args: { pkg, to } });
+  if(["app-uninstall", "app-disable", "app-enable"].includes(act)) cxLoadAllApps(serial, true);
+  if(act === "app-copy" && to && CX.all){ delete CX.all[to]; delete CX.all[to + ":s"]; }
+}
+function cxWireAllApps(card, serial){
+  const det = card.querySelector("[data-cx-allapps]");
+  if(!det) return;
+  det.addEventListener("toggle", () => { if(det.open) cxLoadAllApps(serial, false); });
+  card.querySelector("[data-cx-app-system]").addEventListener("change", () => cxLoadAllApps(serial, false));
+  card.querySelector("[data-cx-app-filter]").addEventListener("input", () => cxRenderAllApps(serial));
+  const go = () => { const q = card.querySelector("[data-cx-store-q]").value.trim(); if(q) cxRun(T("Find on the Play Store"), "phoneAction", { serial, id:"play-store", args:{ q } }); };
+  card.querySelector("[data-cx-store]").addEventListener("click", go);
+  card.querySelector("[data-cx-store-q]").addEventListener("keydown", (e) => { if(e.key === "Enter") go(); });
+}
+
 function cxWirePhone(d){
   const card = el(`[data-cx-dev="${CSS.escape(d.serial)}"]`);
   if(!card) return;
   cxLoadApps(d.serial, false);
+  cxWireAllApps(card, d.serial);
   card.querySelector("[data-cx-scan]").addEventListener("click", () => cxScan(d.serial));
   card.querySelectorAll("[data-cx-tool]").forEach(b => b.addEventListener("click", () => cxTool(d.serial, b.dataset.cxTool)));
   if(CX.scans[d.serial]) cxWireScan(card, d.serial);

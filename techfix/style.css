@@ -671,3 +671,15 @@ button{ font-family: inherit; }
   .app-nav{ -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 18px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 18px), transparent); }
   .app-nav.at-end{ -webkit-mask-image:none; mask-image:none; }
 }
+
+.cx-allapps > summary{ cursor:pointer; list-style:none; display:flex; flex-wrap:wrap; gap:4px 12px; align-items:baseline; font-size:12.5px; }
+.cx-allapps > summary::-webkit-details-marker{ display:none; }
+.cx-allapps > summary::before{ content:"▸"; color: var(--gold-2); margin-right:2px; }
+.cx-allapps[open] > summary::before{ content:"▾"; }
+.cx-grow{ flex:1 1 200px; min-width:0; }
+.cx-applist-all{ max-height:520px; overflow:auto; display:flex; flex-direction:column; gap:6px; padding-right:4px; }
+.cx-arow{ display:flex; align-items:center; gap:10px; background: var(--surface-2); border:1px solid var(--border-soft); border-radius: var(--radius-s); padding:8px 10px; flex-wrap:wrap; }
+.cx-arow-body{ flex:1 1 220px; min-width:0; display:flex; flex-direction:column; gap:2px; align-items:flex-start; }
+.cx-pkg{ font: 11px var(--font-mono); overflow:hidden; text-overflow:ellipsis; max-width:100%; white-space:nowrap; }
+.cx-arow-btns{ display:flex; flex-wrap:wrap; gap:6px; }
+.btn.cx-danger{ color:#ffb3b8; border-color: rgba(226,98,106,.45); }

@@ -438,13 +438,13 @@ const PHONE_ACTIONS = {
   },
   "install-apk-files": async (serial, args, ctx, onProgress) => {
     const pick = await dialog.showOpenDialog({ title: "TechFix — APK", defaultPath: app.getPath("downloads"),
-      properties: ["openFile", "multiSelections"], filters: [{ name: "Android app (.apk)", extensions: ["apk"] }] });
+      properties: ["openFile", "multiSelections"], filters: [{ name: "Android app (.apk, .apks, .xapk, .apkm)", extensions: ["apk", "apks", "xapk", "apkm"] }] });
     if (pick.canceled || !pick.filePaths.length) return V("cancelled", "cancelled");
     const lines = [];
     let ok = 0;
     for (const f of pick.filePaths.slice(0, 30)) {
       onProgress && onProgress({ phase: "install", label: path.basename(f) });
-      const r = await adbInstall(serial, f);
+      const r = /\.(apks|xapk|apkm)$/i.test(f) ? await installBundle(serial, f, onProgress) : await adbInstall(serial, f);
       if (r.code === "ok") ok++;
       lines.push({ name: path.basename(f), code: r.code === "ok" ? "ph_app_installed_line" : r.code, detail: r.code === "ok" ? "" : r.raw });
     }
@@ -470,6 +470,74 @@ const PHONE_ACTIONS = {
     // Ask Android to index them, so they show in the Files / Gallery apps right away.
     await shell1(serial, "am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file:///sdcard/Download/ >/dev/null 2>&1; cmd media_provider scan /sdcard/Download >/dev/null 2>&1", 30000);
     return V(ok === files.length ? "fixed" : ok ? "partial" : "failed", "ph_push_done", { ok, n: files.length, size: done }, { lines });
+  },
+  // Saves one app from the phone to this PC (Downloads › TechFix APK). Split apps also get a
+  // single .apks file that TechFix (or any split-APK installer) can put back in one go.
+  "app-save": async (serial, args, ctx, onProgress) => {
+    const pkg = String((args && args.pkg) || "");
+    if (!PKG_RE.test(pkg)) return V("failed", "ph_unknown");
+    const dir = path.join(app.getPath("downloads"), "TechFix APK", safeName(ctx.model) + " " + stamp().slice(0, 10), pkg);
+    onProgress && onProgress({ phase: "copy", label: pkg });
+    const files = await pullApp(serial, pkg, dir);
+    if (!files.length) return V("failed", "app_save_failed", { app: pkg });
+    let bundle = "";
+    if (files.length > 1 && WIN) {
+      const q = (x) => "'" + String(x).replace(/'/g, "''") + "'";
+      const zip = path.join(path.dirname(dir), pkg + ".zip");
+      await ps(`Compress-Archive -LiteralPath ${files.map(q).join(",")} -DestinationPath ${q(zip)} -Force`, 600000);
+      if (fs.existsSync(zip)) { bundle = path.join(path.dirname(dir), pkg + ".apks"); try { fs.unlinkSync(bundle); } catch (_) {} fs.renameSync(zip, bundle); }
+    }
+    shell.showItemInFolder(bundle || files[0]);
+    return V("fixed", "app_saved", { app: pkg, n: files.length });
+  },
+  // Copies one app from this phone to another phone plugged into the same PC.
+  "app-copy": async (serial, args, ctx, onProgress) => {
+    const pkg = String((args && args.pkg) || ""), to = String((args && args.to) || "");
+    if (!PKG_RE.test(pkg) || to === serial) return V("failed", "ph_unknown");
+    if (!(await requireDevice(to, ["device"]))) return V("failed", "app_copy_no_target");
+    const tmp = path.join(baseDir(), "copy-" + Date.now());
+    try {
+      onProgress && onProgress({ phase: "copy", label: pkg });
+      const files = await pullApp(serial, pkg, tmp);
+      if (!files.length) return V("failed", "app_save_failed", { app: pkg });
+      onProgress && onProgress({ phase: "install", label: pkg });
+      const r = await adbInstallMultiple(to, files);
+      if (r.code === "ok") return V("fixed", "app_copied", { app: pkg });
+      return V("failed", r.code, { app: pkg, detail: r.raw });
+    } finally { try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (_) {} }
+  },
+  "app-uninstall": async (serial, args) => {
+    const pkg = String((args && args.pkg) || "");
+    if (!PKG_RE.test(pkg)) return V("failed", "ph_unknown");
+    const r = await run(adbPath(), ["-s", serial, "uninstall", pkg], { timeout: 120000 });
+    return /Success/.test(r.out) ? V("fixed", "app_uninstalled", { app: pkg }) : V("failed", "app_uninstall_failed", { app: pkg, detail: (r.out + r.err).trim().slice(-200) });
+  },
+  // System apps can't be removed safely, but they can be switched off (and back on) for this user.
+  "app-disable": async (serial, args) => {
+    const pkg = String((args && args.pkg) || "");
+    if (!PKG_RE.test(pkg)) return V("failed", "ph_unknown");
+    const r = await shell1(serial, "pm disable-user --user 0 " + pkg, 60000);
+    return /disabled/i.test(r.out) ? V("fixed", "app_disabled", { app: pkg }) : V("failed", "app_toggle_failed", { app: pkg, detail: (r.out + r.err).trim().slice(-200) });
+  },
+  "app-enable": async (serial, args) => {
+    const pkg = String((args && args.pkg) || "");
+    if (!PKG_RE.test(pkg)) return V("failed", "ph_unknown");
+    const r = await shell1(serial, "pm enable --user 0 " + pkg, 60000);
+    return /enabled/i.test(r.out) ? V("fixed", "app_enabled", { app: pkg }) : V("failed", "app_toggle_failed", { app: pkg, detail: (r.out + r.err).trim().slice(-200) });
+  },
+  "app-open": async (serial, args) => {
+    const pkg = String((args && args.pkg) || "");
+    if (!PKG_RE.test(pkg)) return V("failed", "ph_unknown");
+    const r = await shell1(serial, "monkey -p " + pkg + " -c android.intent.category.LAUNCHER 1", 30000);
+    return /No activities found|aborted/i.test(r.out + r.err) ? V("failed", "app_no_screen", { app: pkg }) : V("opened", "ph_opened_on_phone");
+  },
+  // Any app, from the official store: the search (or the app's page) opens on the phone.
+  "play-store": async (serial, args) => {
+    const q = String((args && args.q) || "").trim();
+    if (!q) return V("failed", "ph_unknown");
+    const uri = PKG_RE.test(q) ? "market://details?id=" + q : "market://search?q=" + encodeURIComponent(q.replace(/[^\p{L}\p{N} .+\-]/gu, " ").slice(0, 80)).replace(/'/g, "");
+    await shell1(serial, "am start -a android.intent.action.VIEW -d '" + uri + "'", 30000);
+    return V("opened", "app_store_opened");
   },
   "install-techfix": async (serial, args, ctx, onProgress) => {
     const info = await releaseInfo();
@@ -507,6 +575,93 @@ function installCode(out) {
 async function adbInstall(serial, apk, extraArgs) {
   const r = await run(adbPath(), ["-s", serial, "install", "-r", ...(extraArgs || []), apk], { timeout: 600000 });
   return { code: installCode(r.out + "\n" + r.err), raw: (r.out + r.err).trim().split(/\r?\n/).slice(-2).join(" ").slice(-240) };
+}
+
+// Several APKs that make up one app (split APKs): installed together in one session.
+async function adbInstallMultiple(serial, apks) {
+  if (apks.length === 1) return adbInstall(serial, apks[0]);
+  const r = await run(adbPath(), ["-s", serial, "install-multiple", "-r", ...apks], { timeout: 900000 });
+  return { code: installCode(r.out + "\n" + r.err), raw: (r.out + r.err).trim().split(/\r?\n/).slice(-2).join(" ").slice(-240) };
+}
+
+function listFiles(dir, re, depth) {
+  let out = [];
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory() && (depth || 0) < 6) out = out.concat(listFiles(p, re, (depth || 0) + 1));
+    else if (e.isFile() && re.test(e.name)) out.push(p);
+  }
+  return out;
+}
+
+// .apks / .xapk / .apkm bundles are zip files holding the app's APKs (and sometimes OBB game data).
+async function installBundle(serial, file, onProgress) {
+  const tmp = path.join(baseDir(), "bundle-" + Date.now());
+  fs.mkdirSync(tmp, { recursive: true });
+  try {
+    const zip = path.join(tmp, "bundle.zip");
+    fs.copyFileSync(file, zip);
+    const q = (x) => "'" + String(x).replace(/'/g, "''") + "'";
+    const r = WIN
+      ? await ps(`Expand-Archive -LiteralPath ${q(zip)} -DestinationPath ${q(path.join(tmp, "x"))} -Force; 'OK'`, 600000)
+      : await run("/usr/bin/ditto", ["-x", "-k", zip, path.join(tmp, "x")], { timeout: 600000 });
+    const x = path.join(tmp, "x");
+    if (!fs.existsSync(x)) return { code: "inst_bundle", raw: (r.err || "").slice(-200) };
+    const apks = listFiles(x, /\.apk$/i);
+    if (!apks.length) return { code: "inst_bundle", raw: "" };
+    onProgress && onProgress({ phase: "install", label: path.basename(file) });
+    const res = await adbInstallMultiple(serial, apks);
+    // XAPK game data: Android/obb/<package>/… goes to the same place on the phone.
+    const obbRoot = path.join(x, "Android", "obb");
+    if (res.code === "ok" && fs.existsSync(obbRoot)) {
+      for (const pkgDir of fs.readdirSync(obbRoot)) {
+        if (!PKG_RE.test(pkgDir)) continue;
+        onProgress && onProgress({ phase: "copy", label: "OBB " + pkgDir });
+        await run(adbPath(), ["-s", serial, "push", path.join(obbRoot, pkgDir), "/sdcard/Android/obb/"], { timeout: 4 * 3600000 });
+      }
+    }
+    return res;
+  } finally { try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (_) {} }
+}
+
+const PKG_RE = /^[A-Za-z][\w]*(\.[\w]+)+$/;
+
+// Every app on the phone: package, version, where it lives, system or not, turned off or not.
+async function appList(serial, system) {
+  const d = await requireDevice(serial, ["device"]);
+  if (!d) return { error: "not_connected" };
+  const [all, sys, dis] = await Promise.all([
+    shell1(serial, "pm list packages -f --show-versioncode", 60000),
+    shell1(serial, "pm list packages -s", 60000),
+    shell1(serial, "pm list packages -d", 60000)
+  ]);
+  const sysSet = new Set(String(sys.out).split(/\r?\n/).map((l) => l.replace(/^package:/, "").trim()).filter(Boolean));
+  const disSet = new Set(String(dis.out).split(/\r?\n/).map((l) => l.replace(/^package:/, "").trim()).filter(Boolean));
+  const apps = [];
+  for (const line of String(all.out).split(/\r?\n/)) {
+    const m = /^package:(.+)=([\w.]+)\s+versionCode:(\d+)/.exec(line.trim());
+    if (!m || !PKG_RE.test(m[2])) continue;
+    const isSys = sysSet.has(m[2]);
+    if (isSys && !system) continue;
+    apps.push({ pkg: m[2], code: Number(m[3]), system: isSys, disabled: disSet.has(m[2]), updatedSystem: isSys && m[1].startsWith("/data/") });
+  }
+  apps.sort((a, b) => a.pkg.localeCompare(b.pkg));
+  return { apps };
+}
+
+// Pulls all the APK pieces of one app from the phone into a folder; returns the files.
+async function pullApp(serial, pkg, dir) {
+  const r = await shell1(serial, "pm path " + pkg, 30000);
+  const paths = String(r.out).split(/\r?\n/).map((l) => l.replace(/^package:/, "").trim()).filter((p) => /^\/[\w\/.~=+\-]+\.apk$/.test(p));
+  if (!paths.length) return [];
+  fs.mkdirSync(dir, { recursive: true });
+  const files = [];
+  for (const p of paths) {
+    const dest = path.join(dir, path.basename(p) === "base.apk" ? pkg + ".apk" : path.basename(p));
+    const x = await run(adbPath(), ["-s", serial, "pull", p, dest], { timeout: 1800000 });
+    if (x.code === 0 && fs.existsSync(dest)) files.push(dest);
+  }
+  return files.length === paths.length ? files : [];
 }
 
 // The MartinB apps catalog: apps.json from the hub + each app's update.json (same files the hub uses).
@@ -710,6 +865,7 @@ async function handle(op, payload, onProgress) {
     case "installAdb": return installAdb(onProgress);
     case "phoneScan": return phoneScan(payload.serial);
     case "catalog": return phoneCatalog(payload.serial);
+    case "appList": return appList(payload.serial, !!payload.system);
     case "phoneAction": return phoneAction(payload.serial, payload.id, payload.args, onProgress);
     case "modeAction": return modeAction(payload.serial, payload.id);
     case "wifiPair": return wifiPair(payload);
