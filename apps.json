@@ -94,6 +94,22 @@
       "iconBg": "#060605"
     },
     {
+      "id": "eden-solitaire",
+      "name": "Eden Solitaire",
+      "file": "EdenSolitaire",
+      "pkg": "com.martinb.edensolitaire",
+      "desc": "Solitaire Klondike en 12 récits de la Bible : dons, combos, musique, FR/EN.",
+      "factory": true,
+      "source": {
+        "local": "eden-solitaire"
+      },
+      "web": "/eden-solitaire/",
+      "code": "https://github.com/fisbal/fisbal.github.io/tree/main/eden-solitaire",
+      "icon": "icons/eden-solitaire.png",
+      "bg": "#120a2e",
+      "iconBg": "#060605"
+    },
+    {
       "id": "skycontrol",
       "name": "Sky Control 3D",
       "file": "SkyControl3D",

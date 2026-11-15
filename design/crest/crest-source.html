@@ -73,7 +73,10 @@ const ICONS = {
  downloados: ['#2bb673', `<path d="M256 136v136M196 214l60 60 60-60" ${GS(18)}/><path d="M166 300v40h180v-40" ${GS(14)}/>`],
  budgetplus: ['#2fae6b', `<g ${G}><rect x="170" y="300" width="38" height="52" rx="7"/><rect x="237" y="262" width="38" height="90" rx="7"/><rect x="304" y="214" width="38" height="138" rx="7"/></g>
    <text x="214" y="246" text-anchor="middle" font-family="Georgia,'Times New Roman',serif" font-weight="700" font-size="138" ${G}>$</text>
-   <path d="M150 370h212" ${GS(10)}/>`]
+   <path d="M150 370h212" ${GS(10)}/>`],
+ 'eden-solitaire': ['#8a5cf0', `<path d="M256 132C256 132 146 226 146 292C146 334 178 358 210 358C232 358 247 345 253 330C251 356 240 376 220 390H292C272 376 261 356 259 330C265 345 280 358 302 358C334 358 366 334 366 292C366 226 256 132 256 132Z" ${G}/>
+   <path d="M256 214L266 256L308 266L266 276L256 318L246 276L204 266L246 256Z" fill="#0b0a08"/>
+   <path d="M256 236L262 260L286 266L262 272L256 296L250 272L226 266L250 260Z" fill="#fff4c2"/>`]
 };
 for (const [id,[glow,body]] of Object.entries(ICONS)){
  document.body.insertAdjacentHTML('beforeend',`<svg id="${id}" width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">${DEFS}${frame(glow)}${body}</svg>`);
