@@ -40,6 +40,13 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    // JavaMail's two jars both carry these licence files: keep one copy each, the build refuses duplicates.
+    packaging {
+        resources {
+            pickFirsts += setOf("META-INF/LICENSE.md", "META-INF/NOTICE.md", "META-INF/LICENSE.txt", "META-INF/NOTICE.txt")
+        }
+    }
+
     lint {
         checkReleaseBuilds = false
         abortOnError = false
