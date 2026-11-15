@@ -10,7 +10,23 @@
 "use strict";
 
 const CX = { status: null, sig: "", scans: {}, busy: {}, timer: null, polling: false, active: false };
-const cxHas = () => !!(window.techfixNative && typeof window.techfixNative.connect === "function");
+const cxNative = () => !!(window.techfixNative && typeof window.techfixNative.connect === "function");
+// Web page in Chrome / Edge (Linux, ChromeOS, Windows, Mac, Android): phones over WebUSB instead.
+const cxWebPossible = () => !cxNative() && !window.TechFixAndroid && !!navigator.usb && window.isSecureContext;
+const cxWebReady = () => cxWebPossible() && !!window.TFWebAdb && typeof TFWeb !== "undefined";
+const cxHas = () => cxNative() || cxWebReady();
+let _cxWebLoad = null;
+function cxLoadWeb(){
+  if(window.TFWebAdb) return Promise.resolve(true);
+  if(!_cxWebLoad) _cxWebLoad = new Promise((resolve) => {
+    const sc = document.createElement("script");
+    sc.src = "vendor/webadb.js";
+    sc.onload = () => resolve(!!window.TFWebAdb);
+    sc.onerror = () => resolve(false);
+    document.head.appendChild(sc);
+  });
+  return _cxWebLoad;
+}
 
 // One sentence per result code from connect.js.
 const CX_RESULT = {
@@ -89,6 +105,9 @@ const CX_RESULT = {
   app_toggle_failed: "Android refused to change {app}.",
   app_no_screen: "{app} has no screen to open — it runs in the background.",
   app_store_opened: "The Play Store opened on the phone — tap Install there.",
+  ph_screenshot_web: "Screenshot downloaded — check your Downloads folder.",
+  app_saved_web: "{app} downloaded ({n} file(s)) — check your Downloads folder.",
+  web_not_here: "This one needs the installed TechFix app (Windows or Mac).",
   cancelled: "Cancelled."
 };
 const CX_SIZE_PARAMS = ["freed", "free", "size", "copied", "need", "avail"];
@@ -103,6 +122,7 @@ function cxResultText(r){
 
 /* ---------- Native calls ---------- */
 async function cxCall(op, payload){
+  if(!cxNative() && cxWebReady()) return TFWeb.call(op, payload || {});
   try{ return await window.techfixNative.connect(op, payload || {}); }
   catch(e){ return { state:"failed", code:"ph_failed", params:{ detail: String(e && e.message || e) } }; }
 }
@@ -156,10 +176,11 @@ async function cxRefresh(force){
     if(force || sig !== CX.sig){ CX.sig = sig; cxRenderPhones(); cxRenderDrives(); }
   } finally { CX.polling = false; }
 }
-function connectViewChanged(view){
+async function connectViewChanged(view){
   CX.active = view === "connect";
   clearInterval(CX.timer); CX.timer = null;
   if(!CX.active) return;
+  if(cxWebPossible() && !window.TFWebAdb){ renderConnectView(); await cxLoadWeb(); const b = el("#connect-body"); if(b) b.innerHTML = ""; if(state.view !== "connect") return; }
   renderConnectView();
   if(cxHas()){ cxRefresh(true); CX.timer = setInterval(() => { if(!document.hidden) cxRefresh(false); }, 4000); }
 }
@@ -168,6 +189,7 @@ function connectViewChanged(view){
 function renderConnectView(){
   const body = el("#connect-body");
   if(!body) return;
+  if(cxWebPossible() && !window.TFWebAdb){ body.innerHTML = `<div class="stat-note">${esc(T("Loading…"))}</div>`; return; }
   if(!cxHas()){
     const phone = !!window.TechFixAndroid;
     body.innerHTML = `<div class="panel"><div class="panel-title">${ICON.smartphone}${esc(T("Works in the TechFix app for Windows and Mac"))}</div>
@@ -179,6 +201,7 @@ function renderConnectView(){
     return;
   }
   if(el("#cx-phones")) return; // already built — polling refreshes the parts
+  if(!cxNative()){ cxRenderWebLayout(body); return; }
   const win = /Windows/i.test(navigator.userAgent);
   body.innerHTML = `
     <div class="panel cx-card">
@@ -237,6 +260,43 @@ function renderConnectView(){
   }));
 }
 
+/* ---------- Web page (Chrome / Edge): phone over WebUSB ---------- */
+function cxRenderWebLayout(body){
+  const linux = /Linux/i.test(navigator.userAgent) && !/Android/i.test(navigator.userAgent);
+  const cros = /CrOS/i.test(navigator.userAgent);
+  const winUA = /Windows/i.test(navigator.userAgent);
+  body.innerHTML = `
+    <div class="panel cx-card">
+      <div class="panel-head"><div class="panel-title">${ICON.smartphone}${esc(T("Phone or tablet"))}</div>
+        <button class="btn sm ghost" id="cx-refresh">${ICON.refresh}<span>${esc(T("Look again"))}</span></button></div>
+      <p class="stat-note" style="margin:0 0 12px;">${esc(T("Right here in Chrome or Edge — on Linux, ChromeOS, Windows, Mac, or an Android phone with an OTG cable: plug the phone in with a USB cable and TechFix checks and repairs it. Nothing to install."))}</p>
+      <div id="cx-phones"></div>
+      <details class="cx-how"><summary>${esc(T("If Chrome can't open the phone"))}</summary><ol class="cx-steps">
+        <li>${esc(T("Turn on USB debugging on the phone (steps below) and use a cable that carries data."))}</li>
+        <li>${esc(T("Close anything else using the phone's connection: the TechFix desktop app, Android Studio, scrcpy, or adb (adb kill-server)."))}</li>
+        ${linux || cros ? `<li>${esc(T("Linux: give Chrome USB access to phones once — Debian/Ubuntu: sudo apt install android-sdk-platform-tools-common (Fedora/Arch: android-udev-rules) — then unplug and plug the phone back in."))}</li>` : ""}
+        ${cros ? `<li>${esc(T("Chromebook: when ChromeOS asks where to connect the phone, choose Chrome (not Linux)."))}</li>` : ""}
+        ${winUA ? `<li>${esc(T("Windows: the phone needs its USB driver (Samsung USB driver, or Google USB driver for most others)."))}</li>` : ""}
+      </ol>${cxDebugSteps()}</details>
+      <div class="cx-row" id="cx-install-row" hidden><button class="btn" id="cx-install-pwa">${ICON.upload}<span>${esc(T("Install TechFix as an app"))}</span></button>
+        <span class="stat-note cx-muted">${esc(T("Its own window and icon, works offline, updates itself."))}</span></div>
+    </div>`;
+  el("#cx-refresh").addEventListener("click", () => cxRefresh(true));
+  const showInstall = () => { const r = el("#cx-install-row"); if(r && window.__tfInstall) r.hidden = false; };
+  showInstall(); document.addEventListener("tf-installable", showInstall);
+  el("#cx-install-pwa").addEventListener("click", async () => { const p = window.__tfInstall; if(!p) return; p.prompt(); try{ await p.userChoice; }catch(e){} window.__tfInstall = null; el("#cx-install-row").hidden = true; });
+}
+async function cxWebConnect(){
+  CX.webError = "";
+  const p = TFWebAdb.pick().then(() => cxRefresh(true)).catch((e) => {
+    const st = TFWebAdb.state || {};
+    CX.webError = st.error === "busy" ? "busy" : (/NotFound|No device selected/i.test(String(e && (e.name + e.message))) ? "" : String((e && e.message) || e));
+    cxRefresh(true);
+  });
+  setTimeout(() => cxRefresh(true), 1200); // shows "waiting for your OK" while the phone asks
+  return p;
+}
+
 /* ---------- Removable drives (USB key) ---------- */
 function cxRenderDrives(){
   const box = el("#cx-drives");
@@ -271,6 +331,14 @@ function cxRenderPhones(){
   const ready = (s.devices || []).filter(d => d.state === "device");
   const others = (s.devices || []).filter(d => d.state !== "device");
 
+  if(s.web && !ready.length && !others.length){
+    if(CX.webError === "busy") parts.push(`<div class="cx-callout warn"><div class="finding-title">${esc(T("Another program is using the phone's connection"))}</div>
+      <div class="finding-meta">${esc(T("Close the TechFix desktop app, Android Studio, scrcpy or adb (run: adb kill-server), then try again."))}</div></div>`);
+    else if(CX.webError) parts.push(`<div class="cx-callout warn"><div class="finding-title">${esc(T("Chrome couldn't open the phone"))}</div><div class="finding-meta notranslate-tf">${esc(CX.webError)}</div></div>`);
+    parts.push(`<div class="cx-callout"><div class="finding-title">${esc(T("Plug the phone in, then connect it"))}</div>
+      <div class="finding-meta">${esc(T("Chrome lists the phones it sees: pick yours and click Connect. The phone then asks “Allow USB debugging?” — tap Allow."))}</div>
+      <div class="cx-row"><button class="btn primary" id="cx-web-connect">${ICON.smartphone}<span>${esc(T("Connect a phone (USB)"))}</span></button></div></div>`);
+  }
   if(!s.adb){
     parts.push(`<div class="cx-callout">
       <div class="finding-title">${esc(T("One-time setup: Google's Android tools"))}</div>
@@ -309,10 +377,11 @@ function cxRenderPhones(){
       <button class="btn sm ghost" data-cx-link="https://developer.android.com/studio/run/oem-usb">${esc(T("Other brands"))}</button></div></div>`);
     if(noDebug.length && !driver.length) parts.push(`<div class="cx-callout"><div class="finding-title">${esc(T("Android phone plugged in — turn on USB debugging"))}</div>
       <div class="finding-meta"><span class="notranslate-tf">${esc(noDebug[0].name)}</span> — ${esc(T("Windows sees its files, but TechFix needs USB debugging to check and repair it."))}</div>
+      <div class="finding-meta">${esc(T("Android's safety lock: a computer can't ask the phone for access until USB debugging is on. Turn it on once (steps below) — TechFix then sends the yes/no question by itself."))}</div>
       ${cxDebugSteps()}</div>`);
     if(otherProblem.length) parts.push(`<div class="cx-callout warn"><div class="finding-title">${esc(T("A USB device has a driver problem"))}</div>
       <div class="finding-meta"><span class="notranslate-tf">${esc(otherProblem.map(u => u.name || u.cls).join(", "))}</span></div></div>`);
-    if(!apple.length && !driver.length && !noDebug.length && s.adb) parts.push(`<div class="cx-callout"><div class="finding-title">${esc(T("No phone found yet"))}</div>
+    if(!apple.length && !driver.length && !noDebug.length && s.adb && !s.web) parts.push(`<div class="cx-callout"><div class="finding-title">${esc(T("No phone found yet"))}</div>
       <ol class="cx-steps"><li>${esc(T("Plug the phone in and unlock it."))}</li>
       <li>${esc(T("Use a cable that carries data — some cheap cables only charge. Try another USB port."))}</li>
       <li>${esc(T("If the phone asks what the USB connection is for, choose “File transfer”."))}</li></ol>
@@ -320,6 +389,8 @@ function cxRenderPhones(){
   }
   box.innerHTML = parts.join("");
 
+  const wc = el("#cx-web-connect");
+  if(wc) wc.addEventListener("click", () => cxWebConnect());
   const ia = el("#cx-install-adb");
   if(ia) ia.addEventListener("click", async () => { await cxRun(T("Install the Android tools"), "installAdb"); cxRefresh(true); });
   box.querySelectorAll("[data-cx-mode]").forEach(b => b.addEventListener("click", async () => { await cxRun(T("Restart normally"), "modeAction", { serial: b.dataset.serial, id: b.dataset.cxMode }); cxRefresh(true); }));
@@ -334,7 +405,8 @@ function cxRenderPhones(){
 function cxUnauthorizedCard(d){
   return `<div class="cx-device"><div class="cx-dev-head"><span class="lamp warn cx-pulse"></span><strong class="notranslate-tf">${esc(cxDevName(d))}</strong>
       <span class="cx-dev-state">${esc(T("Waiting for your OK on the phone"))}</span></div>
-    <div class="cx-callout" style="margin:6px 0 10px;"><div class="finding-title">${esc(T("One step left — on the phone"))}</div>
+    <div class="cx-callout" style="margin:6px 0 10px;"><div class="finding-title">${esc(T("TechFix sent the phone a yes/no question: “Allow USB debugging?”"))}</div>
+      <div class="finding-meta">${esc(T("Answer Allow (yes) on the phone and TechFix gets access right away. Deny (no) keeps the phone closed."))}</div>
       <ol class="cx-steps">
         <li>${esc(T("Unlock the phone and look at its screen."))}</li>
         <li>${esc(T("A window asks “Allow USB debugging?”. Tick “Always allow from this computer”, then tap Allow."))}</li>
@@ -380,10 +452,10 @@ const CX_TOOLS = [
   { id:"push-files", label:"Send files to the phone", note:"Any file (.exe, PDF, video, music…) goes into the phone's Download folder." },
   { id:"trim-caches", label:"Free app caches", note:"Deletes only temporary files apps can rebuild — no photos, messages or settings." },
   { id:"kill-background", label:"Close background apps", note:"Frees memory; the apps reopen normally when you tap them." },
-  { id:"copy-photos", label:"Copy photos to this computer", note:"Copies the camera and Pictures folders. Nothing is deleted from the phone." },
+  { id:"copy-photos", noWeb:true, label:"Copy photos to this computer", note:"Copies the camera and Pictures folders. Nothing is deleted from the phone." },
   { id:"crash-log", label:"Read the crash log", note:"Pulls the phone's error log into Analyze Log and matches it against the knowledge base." },
   { id:"screenshot", label:"Take a screenshot", note:"Saves what the phone shows right now — handy to show a problem." },
-  { id:"install-techfix", label:"Install TechFix on the phone", note:"Puts the TechFix app on the phone; it then updates itself." },
+  { id:"install-techfix", noWeb:true, label:"Install TechFix on the phone", note:"Puts the TechFix app on the phone; it then updates itself." },
   { id:"reboot", label:"Restart the phone", note:"" },
   { id:"reboot-recovery", label:"Restart into Recovery", note:"Advanced: the phone's repair menu (wipe cache, factory reset, apply update).", confirm:"The phone restarts into its Recovery menu. Use the volume buttons to move and power to choose. “Reboot system now” brings it back. Don't pick “Wipe data/factory reset” unless you mean it — it erases the phone." },
   { id:"reboot-bootloader", label:"Restart into the bootloader (Fastboot)", note:"Advanced: for flashing firmware.", confirm:"The phone restarts into its bootloader (Fastboot). TechFix shows it here and can restart it normally. Nothing is erased by this step." }
@@ -407,7 +479,7 @@ function cxPhoneCard(d){
         <label class="fmt-check"><input type="checkbox" data-cx-app-system> <span>${esc(T("Show system apps"))}</span></label></div>
       <div class="cx-applist-all" data-cx-applist-all><div class="stat-note">${esc(T("Loading…"))}</div></div>
     </details>
-    <div class="cx-tools">${CX_TOOLS.map(t => `<button class="cx-tool" data-cx-tool="${t.id}" title="${esc(T(t.note || t.label))}"><span class="cx-tool-label">${esc(T(t.label))}</span>${t.note ? `<span class="cx-tool-note">${esc(T(t.note))}</span>` : ""}</button>`).join("")}</div>
+    <div class="cx-tools">${CX_TOOLS.filter(t => cxNative() || !t.noWeb).map(t => `<button class="cx-tool" data-cx-tool="${t.id}" title="${esc(T(t.note || t.label))}"><span class="cx-tool-label">${esc(T(t.label))}</span>${t.note ? `<span class="cx-tool-note">${esc(T(t.note))}</span>` : ""}</button>`).join("")}</div>
     <div class="stat-note cx-muted" style="margin-top:8px;">${esc(T("When you're done, turn USB debugging off: Settings › Developer options."))}</div>
   </div>`;
 }
@@ -442,7 +514,7 @@ function cxScanHtml(d){
         <div class="finding-sev ${f.severity}"></div>
         <div class="finding-body"><div class="finding-title">${esc(f.title)}</div><div class="finding-meta">${esc(f.detail || "")}</div>
           ${f.androidKey || f.cxTool || f.code === "and_storage_low" ? `<div class="finding-fixes">
-            ${f.code === "and_storage_low" ? `<button class="btn sm primary" data-cx-ftool="trim-caches">${ICON.wrench}<span>${esc(T("Free app caches"))}</span></button><button class="btn sm" data-cx-ftool="copy-photos"><span>${esc(T("Copy photos to this computer"))}</span></button>` : ""}
+            ${f.code === "and_storage_low" ? `<button class="btn sm primary" data-cx-ftool="trim-caches">${ICON.wrench}<span>${esc(T("Free app caches"))}</span></button>${cxNative() ? `<button class="btn sm" data-cx-ftool="copy-photos"><span>${esc(T("Copy photos to this computer"))}</span></button>` : ""}` : ""}
             ${f.code === "and_mem_low" ? `<button class="btn sm primary" data-cx-ftool="kill-background">${ICON.wrench}<span>${esc(T("Close background apps"))}</span></button>` : ""}
             ${f.cxTool ? `<button class="btn sm primary" data-cx-ftool="${f.cxTool}">${ICON.wrench}<span>${esc(T("Read the crash log"))}</span></button>` : ""}
             ${f.androidKey ? `<button class="btn sm" data-cx-open="${esc(f.androidKey)}">${TF_ICON_NEXT}<span>${esc(T("Open the setting on the phone"))}</span></button>` : ""}
@@ -469,6 +541,11 @@ async function cxScan(serial){
 async function cxTool(serial, id){
   const t = CX_TOOLS.find(x => x.id === id);
   if(!t) return;
+  // In a browser the file picker must open straight from the click.
+  if(!cxNative() && (id === "install-apk-files" || id === "push-files")){
+    const n = await TFWeb.pick(id === "install-apk-files" ? ".apk,application/vnd.android.package-archive" : "", true);
+    if(!n) return;
+  }
   if(t.confirm && !(await cxConfirm(T(t.label), T(t.confirm)))) return;
   await cxRun(T(t.label), "phoneAction", { serial, id }, (r, closeSheet) => {
     if(id === "crash-log" && r.text){
@@ -500,6 +577,8 @@ async function cxLoadApps(serial, force){
   const r = CX.apps[serial];
   const live = el(`[data-cx-dev="${CSS.escape(serial)}"] [data-cx-applist]`);
   if(!live) return;
+  if(r && r.error === "web"){ live.innerHTML = `<div class="stat-note">${esc(T("Download an app from the MartinB OS Hub, then use “Install apps (.apk) from this computer” below."))}</div>
+    <div class="cx-row"><button class="btn sm" onclick="window.open('https://fisbal.github.io/','_blank')">${ICON.upload}<span>${esc(T("Open the MartinB OS Hub"))}</span></button></div>`; return; }
   if(!r || r.error || !r.apps){ live.innerHTML = `<div class="stat-note">${esc(T("Couldn't load the app list — check the internet connection."))}</div>`; return; }
   live.innerHTML = r.apps.map(a => {
     const st = CX_APP_STATUS[a.status] || CX_APP_STATUS.unknown;
