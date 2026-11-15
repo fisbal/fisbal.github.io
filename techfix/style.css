@@ -618,3 +618,7 @@ button{ font-family: inherit; }
 .cx-bar{ height:6px; border-radius:99px; background: var(--surface-3); overflow:hidden; margin-bottom:4px; }
 .cx-bar span{ display:block; height:100%; background: linear-gradient(90deg, var(--gold-3), var(--gold-1)); transition: width .3s; }
 @media (max-width:560px){ .cx-tools{ grid-template-columns: 1fr; } .cx-dev-head .btn{ width:100%; justify-content:center; } }
+
+.cx-locked .cx-tool{ opacity:.45; cursor:default; }
+.cx-locked .cx-tool:hover{ border-color: var(--border); background: var(--surface); }
+.cx-pulse{ animation: lamp-pulse 1.3s ease-in-out infinite; }

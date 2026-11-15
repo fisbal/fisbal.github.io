@@ -470,6 +470,17 @@ async function modeAction(serial, id) {
     await run(adbPath(), ["-s", serial, "reboot"], { timeout: 20000 });
     return V("started", "ph_rebooting");
   }
+  if (id === "retry-auth") {
+    // Restarting the ADB server makes the phone show "Allow USB debugging?" again.
+    const adb = adbPath();
+    if (!adb) return V("failed", "adb_missing");
+    await run(adb, ["kill-server"], { timeout: 15000 });
+    await run(adb, ["start-server"], { timeout: 20000 });
+    await new Promise((r) => setTimeout(r, 2500));
+    const d = ((await adbDevices()) || []).find((x) => x.serial === serial);
+    if (d && d.state === "device") return V("fixed", "ph_authorized");
+    return V("started", "ph_prompt_again");
+  }
   return V("failed", "ph_unknown");
 }
 

@@ -1,6 +1,18 @@
 /* TechFix UI translations (fr, es, pt, de). Keys are the English text; numbers become {0}, {1}… */
 window.TF_STRINGS = window.TF_STRINGS || {};
 window.TF_STRINGS.fr = {
+"Allowed — TechFix can now check this phone.": "Autorisé — TechFix peut maintenant vérifier ce téléphone.",
+"The question was sent to the phone again. Unlock it and look for “Allow USB debugging?”.": "La question a été renvoyée au téléphone. Déverrouille-le et cherche « Autoriser le débogage USB ? ».",
+"One step left — on the phone": "Plus qu'une étape — sur le téléphone",
+"Unlock the phone and look at its screen.": "Déverrouille le téléphone et regarde son écran.",
+"A window asks “Allow USB debugging?”. Tick “Always allow from this computer”, then tap Allow.": "Une fenêtre demande « Autoriser le débogage USB ? ». Coche « Toujours autoriser cet ordinateur », puis touche Autoriser.",
+"That's it — TechFix notices within a few seconds and checks the phone by itself.": "C'est tout — TechFix le voit en quelques secondes et vérifie le téléphone tout seul.",
+"No window on the phone?": "Aucune fenêtre sur le téléphone ?",
+"Press “Ask the phone again” below, with the phone unlocked.": "Appuie sur « Redemander au téléphone » ci-dessous, téléphone déverrouillé.",
+"Pull down the notification shade: the question can hide there.": "Descends le volet des notifications : la question peut s'y cacher.",
+"Still nothing: Settings › Developer options › Revoke USB debugging authorizations, then unplug and plug back in.": "Toujours rien : Paramètres › Options pour les développeurs › Révoquer les autorisations de débogage USB, puis débranche et rebranche.",
+"Ask the phone again": "Redemander au téléphone",
+"Unlocked once you allow it:": "Disponible dès que tu autorises :",
 "Unpacking…": "Décompression…",
 "Installing on the phone — watch its screen in case it asks for permission…": "Installation sur le téléphone — surveille son écran au cas où il demande une autorisation…",
 "Continue": "Continuer",
@@ -840,6 +852,18 @@ window.TF_STRINGS.fr = {
 "Resolution log": "Journal de résolution"
 };
 window.TF_STRINGS.es = {
+"Allowed — TechFix can now check this phone.": "Permitido — TechFix ya puede revisar este teléfono.",
+"The question was sent to the phone again. Unlock it and look for “Allow USB debugging?”.": "La pregunta se envió de nuevo al teléfono. Desbloquéalo y busca «¿Permitir depuración USB?».",
+"One step left — on the phone": "Falta un paso — en el teléfono",
+"Unlock the phone and look at its screen.": "Desbloquea el teléfono y mira su pantalla.",
+"A window asks “Allow USB debugging?”. Tick “Always allow from this computer”, then tap Allow.": "Una ventana pregunta «¿Permitir depuración USB?». Marca «Permitir siempre desde esta computadora» y toca Permitir.",
+"That's it — TechFix notices within a few seconds and checks the phone by itself.": "Eso es todo — TechFix lo detecta en unos segundos y revisa el teléfono solo.",
+"No window on the phone?": "¿No aparece ninguna ventana en el teléfono?",
+"Press “Ask the phone again” below, with the phone unlocked.": "Pulsa «Volver a preguntar al teléfono» abajo, con el teléfono desbloqueado.",
+"Pull down the notification shade: the question can hide there.": "Baja el panel de notificaciones: la pregunta puede estar ahí.",
+"Still nothing: Settings › Developer options › Revoke USB debugging authorizations, then unplug and plug back in.": "Sigue sin aparecer: Ajustes › Opciones de desarrollador › Revocar autorizaciones de depuración USB, luego desconecta y vuelve a conectar.",
+"Ask the phone again": "Volver a preguntar al teléfono",
+"Unlocked once you allow it:": "Disponible en cuanto lo permitas:",
 "Unpacking…": "Descomprimiendo…",
 "Installing on the phone — watch its screen in case it asks for permission…": "Instalando en el teléfono — mira su pantalla por si pide permiso…",
 "Continue": "Continuar",
@@ -1683,6 +1707,18 @@ window.TF_STRINGS.es = {
 "Resolution log": "Registro de resolución"
 };
 window.TF_STRINGS.pt = {
+"Allowed — TechFix can now check this phone.": "Permitido — o TechFix já pode verificar este celular.",
+"The question was sent to the phone again. Unlock it and look for “Allow USB debugging?”.": "A pergunta foi enviada de novo ao celular. Desbloqueie-o e procure “Permitir depuração USB?”.",
+"One step left — on the phone": "Falta um passo — no celular",
+"Unlock the phone and look at its screen.": "Desbloqueie o celular e olhe a tela.",
+"A window asks “Allow USB debugging?”. Tick “Always allow from this computer”, then tap Allow.": "Uma janela pergunta “Permitir depuração USB?”. Marque “Sempre permitir neste computador” e toque em Permitir.",
+"That's it — TechFix notices within a few seconds and checks the phone by itself.": "Pronto — o TechFix percebe em poucos segundos e verifica o celular sozinho.",
+"No window on the phone?": "Nenhuma janela no celular?",
+"Press “Ask the phone again” below, with the phone unlocked.": "Clique em “Perguntar de novo ao celular” abaixo, com o celular desbloqueado.",
+"Pull down the notification shade: the question can hide there.": "Puxe a barra de notificações: a pergunta pode estar escondida lá.",
+"Still nothing: Settings › Developer options › Revoke USB debugging authorizations, then unplug and plug back in.": "Ainda nada: Configurações › Opções do desenvolvedor › Revogar autorizações de depuração USB, depois desconecte e conecte de novo.",
+"Ask the phone again": "Perguntar de novo ao celular",
+"Unlocked once you allow it:": "Disponível assim que você permitir:",
 "Unpacking…": "Descompactando…",
 "Installing on the phone — watch its screen in case it asks for permission…": "Instalando no celular — fique de olho na tela caso ele peça permissão…",
 "Continue": "Continuar",
@@ -2523,6 +2559,18 @@ window.TF_STRINGS.pt = {
 "Resolution log": "Registro de resolução"
 };
 window.TF_STRINGS.de = {
+"Allowed — TechFix can now check this phone.": "Erlaubt — TechFix kann dieses Handy jetzt prüfen.",
+"The question was sent to the phone again. Unlock it and look for “Allow USB debugging?”.": "Die Frage wurde erneut ans Handy gesendet. Entsperre es und suche nach „USB-Debugging zulassen?“.",
+"One step left — on the phone": "Noch ein Schritt — am Handy",
+"Unlock the phone and look at its screen.": "Entsperre das Handy und schau auf den Bildschirm.",
+"A window asks “Allow USB debugging?”. Tick “Always allow from this computer”, then tap Allow.": "Ein Fenster fragt „USB-Debugging zulassen?“. Hake „Von diesem Computer immer zulassen“ an und tippe auf Zulassen.",
+"That's it — TechFix notices within a few seconds and checks the phone by itself.": "Das war's — TechFix merkt es in wenigen Sekunden und prüft das Handy von selbst.",
+"No window on the phone?": "Kein Fenster auf dem Handy?",
+"Press “Ask the phone again” below, with the phone unlocked.": "Drücke unten „Handy erneut fragen“, während das Handy entsperrt ist.",
+"Pull down the notification shade: the question can hide there.": "Zieh die Benachrichtigungsleiste herunter: Die Frage kann sich dort verstecken.",
+"Still nothing: Settings › Developer options › Revoke USB debugging authorizations, then unplug and plug back in.": "Immer noch nichts: Einstellungen › Entwickleroptionen › USB-Debugging-Autorisierungen aufheben, dann ab- und wieder anstecken.",
+"Ask the phone again": "Handy erneut fragen",
+"Unlocked once you allow it:": "Verfügbar, sobald du es erlaubst:",
 "Unpacking…": "Entpacken…",
 "Installing on the phone — watch its screen in case it asks for permission…": "Wird auf dem Handy installiert — achte auf den Bildschirm, falls es um Erlaubnis bittet…",
 "Continue": "Weiter",

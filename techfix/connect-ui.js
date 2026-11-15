@@ -58,6 +58,8 @@ const CX_RESULT = {
   pc_unsupported: "Not available on this system.",
   pc_failed: "That didn't open.",
   pc_unknown: "Unknown action.",
+  ph_authorized: "Allowed — TechFix can now check this phone.",
+  ph_prompt_again: "The question was sent to the phone again. Unlock it and look for “Allow USB debugging?”.",
   cancelled: "Cancelled."
 };
 const CX_SIZE_PARAMS = ["freed", "free", "size", "copied", "need", "avail"];
@@ -244,7 +246,8 @@ function cxRenderPhones(){
   }
 
   for(const d of ready) parts.push(cxPhoneCard(d));
-  for(const d of others){
+  for(const d of others.filter(x => x.state === "unauthorized")) parts.push(cxUnauthorizedCard(d));
+  for(const d of others.filter(x => x.state !== "unauthorized")){
     const t = CX_STATE_TEXT[d.state] || [d.state, ""];
     const canRestart = ["recovery", "sideload", "rescue"].includes(d.state);
     parts.push(`<div class="cx-device"><div class="cx-dev-head"><span class="lamp warn"></span><strong class="notranslate-tf">${esc(cxDevName(d))}</strong><span class="cx-dev-state">${esc(T(t[0]))}</span></div>
@@ -287,9 +290,33 @@ function cxRenderPhones(){
   const ia = el("#cx-install-adb");
   if(ia) ia.addEventListener("click", async () => { await cxRun(T("Install the Android tools"), "installAdb"); cxRefresh(true); });
   box.querySelectorAll("[data-cx-mode]").forEach(b => b.addEventListener("click", async () => { await cxRun(T("Restart normally"), "modeAction", { serial: b.dataset.serial, id: b.dataset.cxMode }); cxRefresh(true); }));
+  box.querySelectorAll("[data-cx-auth]").forEach(b => b.addEventListener("click", async () => { await cxRun(T("Ask the phone again"), "modeAction", { serial: b.dataset.serial, id: "retry-auth" }); cxRefresh(true); }));
   box.querySelectorAll("[data-cx-link]").forEach(b => b.addEventListener("click", () => window.open(b.dataset.cxLink, "_blank")));
   box.querySelectorAll("[data-cx-kb]").forEach(b => b.addEventListener("click", () => openKbEntry(b.dataset.cxKb)));
   for(const d of ready) cxWirePhone(d);
+}
+
+// Plugged in and seen, but Android hasn't been told "Allow" yet: say exactly what to do,
+// offer to show the question again, and show (greyed) what unlocks once it's allowed.
+function cxUnauthorizedCard(d){
+  return `<div class="cx-device"><div class="cx-dev-head"><span class="lamp warn cx-pulse"></span><strong class="notranslate-tf">${esc(cxDevName(d))}</strong>
+      <span class="cx-dev-state">${esc(T("Waiting for your OK on the phone"))}</span></div>
+    <div class="cx-callout" style="margin:6px 0 10px;"><div class="finding-title">${esc(T("One step left — on the phone"))}</div>
+      <ol class="cx-steps">
+        <li>${esc(T("Unlock the phone and look at its screen."))}</li>
+        <li>${esc(T("A window asks “Allow USB debugging?”. Tick “Always allow from this computer”, then tap Allow."))}</li>
+        <li>${esc(T("That's it — TechFix notices within a few seconds and checks the phone by itself."))}</li>
+      </ol>
+      <details class="cx-how"><summary>${esc(T("No window on the phone?"))}</summary><ol class="cx-steps">
+        <li>${esc(T("Press “Ask the phone again” below, with the phone unlocked."))}</li>
+        <li>${esc(T("Pull down the notification shade: the question can hide there."))}</li>
+        <li>${esc(T("Still nothing: Settings › Developer options › Revoke USB debugging authorizations, then unplug and plug back in."))}</li>
+        <li>${esc(T("If the phone asks what the USB connection is for, choose “File transfer”."))}</li>
+      </ol></details>
+      <div class="cx-row"><button class="btn primary" data-cx-auth data-serial="${esc(d.serial)}">${ICON.refresh}<span>${esc(T("Ask the phone again"))}</span></button></div></div>
+    <div class="stat-note cx-muted">${esc(T("Unlocked once you allow it:"))}</div>
+    <div class="cx-tools cx-locked">${CX_TOOLS.map(t => `<div class="cx-tool" aria-disabled="true"><span class="cx-tool-label">${esc(T(t.label))}</span></div>`).join("")}</div>
+  </div>`;
 }
 
 function cxDebugSteps(){
