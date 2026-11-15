@@ -274,7 +274,7 @@ function cxRenderWebLayout(body){
       <details class="cx-how"><summary>${esc(T("If Chrome can't open the phone"))}</summary><ol class="cx-steps">
         <li>${esc(T("Turn on USB debugging on the phone (steps below) and use a cable that carries data."))}</li>
         <li>${esc(T("Close anything else using the phone's connection: the TechFix desktop app, Android Studio, scrcpy, or adb (adb kill-server)."))}</li>
-        ${linux || cros ? `<li>${esc(T("Linux: give Chrome USB access to phones once — Debian/Ubuntu: sudo apt install android-sdk-platform-tools-common (Fedora/Arch: android-udev-rules) — then unplug and plug the phone back in."))}</li>` : ""}
+        ${linux && !cros ? `<li>${esc(T("Linux: give Chrome USB access to phones once — Debian/Ubuntu: sudo apt install android-sdk-platform-tools-common (Fedora/Arch: android-udev-rules) — then unplug and plug the phone back in."))}</li>` : ""}
         ${cros ? `<li>${esc(T("Chromebook: when ChromeOS asks where to connect the phone, choose Chrome (not Linux)."))}</li>` : ""}
         ${winUA ? `<li>${esc(T("Windows: the phone needs its USB driver (Samsung USB driver, or Google USB driver for most others)."))}</li>` : ""}
       </ol>${cxDebugSteps()}</details>
