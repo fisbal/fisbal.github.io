@@ -421,6 +421,56 @@ const PHONE_ACTIONS = {
     if (/Error|Exception/i.test(r.out + r.err)) r = await shell1(serial, `am start -a ${SETTINGS_INTENT.settings}`);
     return V("opened", "ph_opened_on_phone");
   },
+  "install-app": async (serial, args, ctx, onProgress) => {
+    const list = await loadCatalog();
+    const item = list.find((x) => x.id === String((args && args.app) || ""));
+    if (!item) return V("failed", "ph_no_apk");
+    const file = path.join(baseDir(), "apks", item.id.replace(/[^\w.-]/g, "") + ".apk");
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    const dl = await download(item.apk, file, onProgress, item.name + ".apk");
+    if (!dl.ok) return V("failed", "ph_download_failed", { detail: dl.error });
+    onProgress && onProgress({ phase: "install" });
+    if (args && args.replace && item.pkg) await run(adbPath(), ["-s", serial, "uninstall", item.pkg], { timeout: 120000 });
+    const r = await adbInstall(serial, file);
+    try { fs.unlinkSync(file); } catch (_) {}
+    if (r.code === "ok") return V("fixed", "ph_app_installed", { app: item.name, version: item.version || "" });
+    return V("failed", r.code, { app: item.name, detail: r.raw }, { canReplace: r.code === "inst_signature" && !!item.pkg });
+  },
+  "install-apk-files": async (serial, args, ctx, onProgress) => {
+    const pick = await dialog.showOpenDialog({ title: "TechFix — APK", defaultPath: app.getPath("downloads"),
+      properties: ["openFile", "multiSelections"], filters: [{ name: "Android app (.apk)", extensions: ["apk"] }] });
+    if (pick.canceled || !pick.filePaths.length) return V("cancelled", "cancelled");
+    const lines = [];
+    let ok = 0;
+    for (const f of pick.filePaths.slice(0, 30)) {
+      onProgress && onProgress({ phase: "install", label: path.basename(f) });
+      const r = await adbInstall(serial, f);
+      if (r.code === "ok") ok++;
+      lines.push({ name: path.basename(f), code: r.code === "ok" ? "ph_app_installed_line" : r.code, detail: r.code === "ok" ? "" : r.raw });
+    }
+    const n = lines.length;
+    return V(ok === n ? "fixed" : ok ? "partial" : "failed", "ph_apks_done", { ok, n }, { lines });
+  },
+  "push-files": async (serial, args, ctx, onProgress) => {
+    const pick = await dialog.showOpenDialog({ title: "TechFix", defaultPath: app.getPath("downloads"), properties: ["openFile", "multiSelections"] });
+    if (pick.canceled || !pick.filePaths.length) return V("cancelled", "cancelled");
+    const files = pick.filePaths.slice(0, 200);
+    const total = files.reduce((a, f) => { try { return a + fs.statSync(f).size; } catch (_) { return a; } }, 0);
+    const before = await dataFree(serial);
+    if (before != null && before < total + 200 * 1048576) return V("failed", "ph_push_nospace", { size: total, free: before });
+    let done = 0, ok = 0;
+    const lines = [];
+    for (const f of files) {
+      onProgress && onProgress({ phase: "copy", label: path.basename(f), done, total });
+      const r = await run(adbPath(), ["-s", serial, "push", f, "/sdcard/Download/"], { timeout: 4 * 3600000 });
+      let sz = 0; try { sz = fs.statSync(f).size; } catch (_) {}
+      done += sz;
+      if (r.code === 0) ok++; else lines.push({ name: path.basename(f), code: "ph_push_failed_line", detail: r.err.trim().slice(-200) });
+    }
+    // Ask Android to index them, so they show in the Files / Gallery apps right away.
+    await shell1(serial, "am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file:///sdcard/Download/ >/dev/null 2>&1; cmd media_provider scan /sdcard/Download >/dev/null 2>&1", 30000);
+    return V(ok === files.length ? "fixed" : ok ? "partial" : "failed", "ph_push_done", { ok, n: files.length, size: done }, { lines });
+  },
   "install-techfix": async (serial, args, ctx, onProgress) => {
     const info = await releaseInfo();
     if (!info || !info.apk) return V("failed", "ph_no_apk");
@@ -436,6 +486,69 @@ const PHONE_ACTIONS = {
   "reboot-recovery": async (serial) => { await run(adbPath(), ["-s", serial, "reboot", "recovery"], { timeout: 20000 }); return V("started", "ph_to_recovery"); },
   "reboot-bootloader": async (serial) => { await run(adbPath(), ["-s", serial, "reboot", "bootloader"], { timeout: 20000 }); return V("started", "ph_to_bootloader"); }
 };
+
+
+// Android's install answers, turned into codes the page explains in plain words.
+function installCode(out) {
+  const t = String(out || "");
+  if (/Success/.test(t)) return "ok";
+  const m = /(INSTALL_[A-Z_]+)/.exec(t);
+  const k = m ? m[1] : "";
+  if (/UPDATE_INCOMPATIBLE|SIGNATURES|INCONSISTENT_CERTIFICATES/.test(k)) return "inst_signature";
+  if (/VERSION_DOWNGRADE/.test(k)) return "inst_downgrade";
+  if (/INSUFFICIENT_STORAGE/.test(k)) return "inst_storage";
+  if (/USER_RESTRICTED|ABORTED/.test(k)) return "inst_restricted";
+  if (/OLDER_SDK/.test(k)) return "inst_older_sdk";
+  if (/NO_MATCHING_ABIS/.test(k)) return "inst_abi";
+  if (/PARSE|INVALID_APK|NO_CERTIFICATES/.test(k)) return "inst_invalid";
+  return "inst_failed";
+}
+
+async function adbInstall(serial, apk, extraArgs) {
+  const r = await run(adbPath(), ["-s", serial, "install", "-r", ...(extraArgs || []), apk], { timeout: 600000 });
+  return { code: installCode(r.out + "\n" + r.err), raw: (r.out + r.err).trim().split(/\r?\n/).slice(-2).join(" ").slice(-240) };
+}
+
+// The MartinB apps catalog: apps.json from the hub + each app's update.json (same files the hub uses).
+const HUB = "https://fisbal.github.io/";
+const REL = "https://github.com/fisbal/fisbal.github.io/releases/download/";
+let CATALOG = { t: 0, list: [] };
+async function fetchJson(url) {
+  try { const r = await net.fetch(url + (url.includes("?") ? "&" : "?") + "t=" + Date.now(), { cache: "no-store" }); return r.ok ? await r.json() : null; } catch (_) { return null; }
+}
+async function loadCatalog() {
+  if (Date.now() - CATALOG.t < 10 * 60000 && CATALOG.list.length) return CATALOG.list;
+  const a = await fetchJson(HUB + "apps.json");
+  const apps = (a && (Array.isArray(a) ? a : a.apps)) || [];
+  const list = await Promise.all(apps.map(async (x) => {
+    const item = { id: String(x.id || ""), name: x.name || x.id, desc: x.desc || "", icon: x.icon ? HUB + String(x.icon).replace(/^\//, "") : "", pkg: x.pkg || "" };
+    if (x.factory) {
+      const u = await fetchJson(REL + encodeURIComponent(item.id) + "-latest/update.json");
+      if (u && u.apk) { item.apk = u.apk; item.version = u.version || ""; item.build = Number(u.build) || 0; item.size = u.apkSize || 0; }
+    } else if (typeof x.apk === "string") item.apk = x.apk;
+    return item;
+  }));
+  // Only links into Martin's own GitHub releases are ever downloaded.
+  CATALOG = { t: Date.now(), list: list.filter((x) => x.apk && /^https:\/\/github\.com\/fisbal\//.test(x.apk)) };
+  return CATALOG.list;
+}
+
+async function phoneCatalog(serial) {
+  const d = await requireDevice(serial, ["device"]);
+  if (!d) return { error: "not_connected" };
+  const list = await loadCatalog();
+  if (!list.length) return { error: "offline" };
+  const r = await shell1(serial, "pm list packages --show-versioncode", 30000);
+  const have = {};
+  for (const m of String(r.out).matchAll(/package:(\S+)\s+versionCode:(\d+)/g)) have[m[1]] = Number(m[2]);
+  return { apps: list.map((x) => {
+    const code = x.pkg ? have[x.pkg] : undefined;
+    let status = "missing";
+    if (code != null) status = x.build && code < 1000 + x.build ? "update" : "installed";
+    else if (!x.pkg) status = "unknown";
+    return Object.assign({}, x, { installedCode: code == null ? null : code, status });
+  }) };
+}
 
 function dirSize(dir) {
   let n = 0;
@@ -524,6 +637,31 @@ async function pcAction(id, args, onProgress) {
     await shell.openExternal(WIN ? "https://www.microsoft.com/software-download/windows11" : "https://support.apple.com/102662");
     return V("opened", "pc_media_tool");
   }
+  if (id === "key-files") {
+    const drives = await removableDrives();
+    const drive = drives.find((d) => d.id === String((args && args.drive) || ""));
+    if (!drive) return V("failed", "pc_no_drive");
+    const pick = await dialog.showOpenDialog({ title: "TechFix", defaultPath: app.getPath("downloads"), properties: ["openFile", "multiSelections"] });
+    if (pick.canceled || !pick.filePaths.length) return V("cancelled", "cancelled");
+    const files = pick.filePaths.slice(0, 200);
+    const total = files.reduce((a, f) => { try { return a + fs.statSync(f).size; } catch (_) { return a; } }, 0);
+    const free = freeBytes(drive.root);
+    if (free != null && free < total + 1048576) return V("failed", "pc_key_full", { need: total, free });
+    let done = 0, ok = 0;
+    const lines = [];
+    for (const f of files) {
+      onProgress && onProgress({ phase: "copy", label: path.basename(f), done, total });
+      try {
+        // FAT32 keys can't hold a file of 4 GB or more.
+        const sz = fs.statSync(f).size;
+        if (sz >= 4294967296 && /FAT/i.test(drive.fs || "") && !/exFAT/i.test(drive.fs || "")) { lines.push({ name: path.basename(f), code: "pc_fat32_line" }); continue; }
+        await fs.promises.copyFile(f, path.join(drive.root, path.basename(f)));
+        done += sz; ok++;
+      } catch (e) { lines.push({ name: path.basename(f), code: "pc_copy_failed_line", detail: String(e.message || e).slice(-200) }); }
+    }
+    shell.openPath(drive.root);
+    return V(ok === files.length ? "fixed" : ok ? "partial" : "failed", "pc_key_files_done", { ok, n: files.length, size: done, drive: drive.id }, { lines });
+  }
   if (id === "usb-key") {
     const drives = await removableDrives();
     const drive = drives.find((d) => d.id === String((args && args.drive) || ""));
@@ -571,6 +709,7 @@ async function handle(op, payload, onProgress) {
     case "status": return status();
     case "installAdb": return installAdb(onProgress);
     case "phoneScan": return phoneScan(payload.serial);
+    case "catalog": return phoneCatalog(payload.serial);
     case "phoneAction": return phoneAction(payload.serial, payload.id, payload.args, onProgress);
     case "modeAction": return modeAction(payload.serial, payload.id);
     case "wifiPair": return wifiPair(payload);

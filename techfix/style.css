@@ -622,3 +622,13 @@ button{ font-family: inherit; }
 .cx-locked .cx-tool{ opacity:.45; cursor:default; }
 .cx-locked .cx-tool:hover{ border-color: var(--border); background: var(--surface); }
 .cx-pulse{ animation: lamp-pulse 1.3s ease-in-out infinite; }
+
+.cx-apps{ background: var(--surface); border:1px solid var(--border-soft); border-radius: var(--radius-s); padding:12px; margin-top:10px; }
+.cx-apps-head{ display:flex; flex-wrap:wrap; gap:4px 12px; align-items:baseline; margin-bottom:8px; font-size:12.5px; }
+.cx-app-list{ display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap:8px; }
+.cx-app{ display:flex; align-items:center; gap:10px; background: var(--surface-2); border:1px solid var(--border-soft); border-radius: var(--radius-s); padding:8px 10px; min-width:0; }
+.cx-app-icon{ width:34px; height:34px; border-radius:9px; flex-shrink:0; background: var(--surface-3); object-fit:cover; }
+.cx-app-body{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:3px; align-items:flex-start; }
+.cx-app-name{ font-size:13.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+.cx-app .fix-badge{ font-size:10.5px; }
+.cx-lines{ margin:8px 0 0 18px; padding:0; font-size:12.5px; color: var(--text-dim); }

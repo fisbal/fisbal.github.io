@@ -60,6 +60,23 @@ const CX_RESULT = {
   pc_unknown: "Unknown action.",
   ph_authorized: "Allowed — TechFix can now check this phone.",
   ph_prompt_again: "The question was sent to the phone again. Unlock it and look for “Allow USB debugging?”.",
+  ph_app_installed: "{app} {version} is installed on the phone.",
+  ph_app_installed_line: "Installed.",
+  ph_apks_done: "{ok} of {n} app(s) installed.",
+  ph_push_done: "{ok} of {n} file(s) sent ({size}) — on the phone: Files › Download.",
+  ph_push_failed_line: "Not sent.",
+  ph_push_nospace: "Not enough room on the phone: {size} to send, {free} free.",
+  inst_signature: "Another version of this app, signed differently, is already on the phone. Replace it (its data on the phone is erased) or uninstall it first.",
+  inst_downgrade: "The phone already has a newer version of this app.",
+  inst_storage: "Not enough room on the phone to install it — free some space first.",
+  inst_restricted: "The phone blocked the install. Xiaomi/Redmi/POCO: Developer options › turn on “Install via USB”. Others: watch the phone's screen and tap Allow/Install.",
+  inst_older_sdk: "This app needs a newer Android version than the phone has.",
+  inst_abi: "This app isn't made for this phone's processor.",
+  inst_invalid: "This file isn't a valid Android app (damaged or incomplete download).",
+  inst_failed: "Android refused the install.",
+  pc_key_files_done: "{ok} of {n} file(s) copied to the key ({drive}:) — {size}.",
+  pc_fat32_line: "Too big for this key (FAT32 holds files up to 4 GB) — format the key as exFAT or NTFS.",
+  pc_copy_failed_line: "Not copied.",
   cancelled: "Cancelled."
 };
 const CX_SIZE_PARAMS = ["freed", "free", "size", "copied", "need", "avail"];
@@ -91,7 +108,7 @@ async function cxRun(title, op, payload, after){
       box.innerHTML = `<div class="cx-bar"><span style="width:${pct == null ? 30 : pct}%"></span></div>
         <div class="stat-note">${esc(T(ev.phase === "copy" ? "Copying…" : "Downloading…"))} <span class="notranslate-tf">${esc(ev.label || "")} · ${fmtBytes(ev.done || 0)}${ev.total ? " / " + fmtBytes(ev.total) : ""}</span></div>`;
     } else if(ev.phase === "extract") box.innerHTML = `<div class="stat-note">${esc(T("Unpacking…"))}</div>`;
-    else if(ev.phase === "install") box.innerHTML = `<div class="stat-note">${esc(T("Installing on the phone — watch its screen in case it asks for permission…"))}</div>`;
+    else if(ev.phase === "install") box.innerHTML = `<div class="stat-note">${esc(T("Installing on the phone — watch its screen in case it asks for permission…"))}${ev.label ? ` <span class="notranslate-tf">${esc(ev.label)}</span>` : ""}</div>`;
   }) : null;
   const r = await cxCall(op, payload);
   if(off) off();
@@ -102,7 +119,8 @@ async function cxRun(title, op, payload, after){
     row.querySelector(".mark").textContent = st.mark;
     const prog = row.querySelector("#cx-prog"); if(prog) prog.innerHTML = "";
     row.querySelector(".fix-step-body").insertAdjacentHTML("beforeend",
-      `<div class="fix-verdict"><span class="fix-badge ${st.cls}">${esc(T(st.label))}</span> <span>${esc(cxResultText(r))}</span></div>`);
+      `<div class="fix-verdict"><span class="fix-badge ${st.cls}">${esc(T(st.label))}</span> <span>${esc(cxResultText(r))}</span></div>` +
+      (r.lines && r.lines.length ? `<ul class="cx-lines">${r.lines.map(l => `<li><span class="notranslate-tf">${esc(l.name)}</span> — ${esc(T(CX_RESULT[l.code] || l.code))}${l.detail ? ` <span class="cx-muted">(${esc(l.detail)})</span>` : ""}</li>`).join("")}</ul>` : ""));
   }
   if(after) after(r, () => { if(closeFn) closeFn(null); });
   return r;
@@ -213,8 +231,10 @@ function cxRenderDrives(){
   const drives = (CX.status && CX.status.drives) || [];
   if(!drives.length){ box.innerHTML = `<div class="stat-note cx-muted">${esc(T("Plug in a USB key — it shows up here."))}</div>`; return; }
   box.innerHTML = `<div class="cx-row"><select id="cx-drive" class="cx-select">${drives.map(d => `<option value="${esc(d.id)}">${esc((d.root || d.id) + (d.label ? " — " + d.label : ""))} · ${fmtBytes(d.free)} ${esc(T("free"))}</option>`).join("")}</select>
-    <button class="btn primary" id="cx-key">${ICON.upload}<span>${esc(T("Put TechFix on this key"))}</span></button></div>`;
+    <button class="btn primary" id="cx-key">${ICON.upload}<span>${esc(T("Put TechFix on this key"))}</span></button>
+    <button class="btn" id="cx-key-files">${ICON.copy}<span>${esc(T("Copy files to this key"))}</span></button></div>`;
   el("#cx-key").addEventListener("click", () => cxRun(T("TechFix on a USB key"), "pcAction", { id:"usb-key", args:{ drive: el("#cx-drive").value } }));
+  el("#cx-key-files").addEventListener("click", () => cxRun(T("Copy files to this key"), "pcAction", { id:"key-files", args:{ drive: el("#cx-drive").value } }));
 }
 
 /* ---------- Phones ---------- */
@@ -343,6 +363,8 @@ function cxIphoneCard(u){
 
 /* ---------- One connected Android phone ---------- */
 const CX_TOOLS = [
+  { id:"install-apk-files", label:"Install apps (.apk) from this computer", note:"Pick one or more .apk files — they install straight onto the phone." },
+  { id:"push-files", label:"Send files to the phone", note:"Any file (.exe, PDF, video, music…) goes into the phone's Download folder." },
   { id:"trim-caches", label:"Free app caches", note:"Deletes only temporary files apps can rebuild — no photos, messages or settings." },
   { id:"kill-background", label:"Close background apps", note:"Frees memory; the apps reopen normally when you tap them." },
   { id:"copy-photos", label:"Copy photos to this computer", note:"Copies the camera and Pictures folders. Nothing is deleted from the phone." },
@@ -361,6 +383,8 @@ function cxPhoneCard(d){
       <span class="cx-dev-state">${esc(d.wireless ? T("Connected over Wi-Fi") : T("Connected by USB"))}</span>
       <button class="btn sm primary" data-cx-scan>${ICON.scan}<span>${esc(scan ? T("Check again") : T("Check this phone"))}</span></button></div>
     <div class="cx-scan">${scan ? cxScanHtml(scan) : ""}</div>
+    <div class="cx-apps"><div class="cx-apps-head"><span class="finding-title">${esc(T("MartinB apps"))}</span><span class="cx-muted">${esc(T("Install or update straight onto this phone"))}</span></div>
+      <div class="cx-app-list" data-cx-applist><div class="stat-note">${esc(T("Loading…"))}</div></div></div>
     <div class="cx-tools">${CX_TOOLS.map(t => `<button class="cx-tool" data-cx-tool="${t.id}" title="${esc(T(t.note || t.label))}"><span class="cx-tool-label">${esc(T(t.label))}</span>${t.note ? `<span class="cx-tool-note">${esc(T(t.note))}</span>` : ""}</button>`).join("")}</div>
     <div class="stat-note cx-muted" style="margin-top:8px;">${esc(T("When you're done, turn USB debugging off: Settings › Developer options."))}</div>
   </div>`;
@@ -444,9 +468,43 @@ function cxWireScan(card, serial){
   card.querySelectorAll("[data-cxf-kb]").forEach(n => n.addEventListener("click", () => openKbEntry(n.getAttribute("data-cxf-kb"))));
 }
 
+const CX_APP_STATUS = { installed:["Installed","ok"], update:["Update available","warn"], missing:["Not installed","info"], unknown:["",""] };
+async function cxLoadApps(serial, force){
+  const box = el(`[data-cx-dev="${CSS.escape(serial)}"] [data-cx-applist]`);
+  if(!box) return;
+  if(!CX.apps) CX.apps = {};
+  if(force || !CX.apps[serial]) CX.apps[serial] = await cxCall("catalog", { serial });
+  const r = CX.apps[serial];
+  const live = el(`[data-cx-dev="${CSS.escape(serial)}"] [data-cx-applist]`);
+  if(!live) return;
+  if(!r || r.error || !r.apps){ live.innerHTML = `<div class="stat-note">${esc(T("Couldn't load the app list — check the internet connection."))}</div>`; return; }
+  live.innerHTML = r.apps.map(a => {
+    const st = CX_APP_STATUS[a.status] || CX_APP_STATUS.unknown;
+    const btn = a.status === "installed" ? "Reinstall" : a.status === "update" ? "Update" : "Install";
+    return `<div class="cx-app">
+      ${a.icon ? `<img class="cx-app-icon" src="${esc(a.icon)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">` : `<span class="cx-app-icon"></span>`}
+      <div class="cx-app-body"><div class="cx-app-name notranslate-tf">${esc(a.name)}${a.version ? ` <span class="cx-muted">${esc(a.version)}</span>` : ""}</div>
+        ${st[0] ? `<span class="fix-badge ${st[1]}">${esc(T(st[0]))}</span>` : ""}</div>
+      <button class="btn sm ${a.status === "installed" ? "ghost" : "primary"}" data-cx-app="${esc(a.id)}">${ICON.upload}<span>${esc(T(btn))}</span></button>
+    </div>`; }).join("");
+  live.querySelectorAll("[data-cx-app]").forEach(b => b.addEventListener("click", () => cxInstallApp(serial, b.dataset.cxApp, false)));
+}
+async function cxInstallApp(serial, id, replace){
+  const a = ((CX.apps && CX.apps[serial] && CX.apps[serial].apps) || []).find(x => x.id === id) || { name: id };
+  await cxRun(T("Install {app}", { app: a.name }), "phoneAction", { serial, id:"install-app", args:{ app:id, replace } }, async (r, closeSheet) => {
+    if(r.canReplace){
+      closeSheet();
+      if(await cxConfirm(T("Replace {app}?", { app: a.name }), T("The version on the phone was signed differently, so Android won't update it in place. Replacing it uninstalls it first: that app's data on the phone (settings, saved items) is erased."), T("Replace it")))
+        cxInstallApp(serial, id, true);
+    }
+  });
+  cxLoadApps(serial, true);
+}
+
 function cxWirePhone(d){
   const card = el(`[data-cx-dev="${CSS.escape(d.serial)}"]`);
   if(!card) return;
+  cxLoadApps(d.serial, false);
   card.querySelector("[data-cx-scan]").addEventListener("click", () => cxScan(d.serial));
   card.querySelectorAll("[data-cx-tool]").forEach(b => b.addEventListener("click", () => cxTool(d.serial, b.dataset.cxTool)));
   if(CX.scans[d.serial]) cxWireScan(card, d.serial);
