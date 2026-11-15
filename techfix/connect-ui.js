@@ -107,7 +107,8 @@ async function cxRun(title, op, payload, after){
       const pct = ev.total ? Math.min(100, Math.round(ev.done / ev.total * 100)) : null;
       box.innerHTML = `<div class="cx-bar"><span style="width:${pct == null ? 30 : pct}%"></span></div>
         <div class="stat-note">${esc(T(ev.phase === "copy" ? "Copying…" : "Downloading…"))} <span class="notranslate-tf">${esc(ev.label || "")} · ${fmtBytes(ev.done || 0)}${ev.total ? " / " + fmtBytes(ev.total) : ""}</span></div>`;
-    } else if(ev.phase === "extract") box.innerHTML = `<div class="stat-note">${esc(T("Unpacking…"))}</div>`;
+    } else if(ev.phase === "step") box.innerHTML = `<div class="stat-note">${esc(T((typeof FMT_STEPS !== "undefined" && FMT_STEPS[ev.step]) || ev.step))}</div>`;
+    else if(ev.phase === "extract") box.innerHTML = `<div class="stat-note">${esc(T("Unpacking…"))}</div>`;
     else if(ev.phase === "install") box.innerHTML = `<div class="stat-note">${esc(T("Installing on the phone — watch its screen in case it asks for permission…"))}${ev.label ? ` <span class="notranslate-tf">${esc(ev.label)}</span>` : ""}</div>`;
   }) : null;
   const r = await cxCall(op, payload);

@@ -714,6 +714,9 @@ async function handle(op, payload, onProgress) {
     case "modeAction": return modeAction(payload.serial, payload.id);
     case "wifiPair": return wifiPair(payload);
     case "pcAction": return pcAction(String(payload.id || ""), payload.args, onProgress);
+    case "fmtDisks": return require("./format").listDisks();
+    case "fmtRun": return require("./format").format(payload, onProgress);
+    case "fmtRescue": return require("./format").rescueKey(payload, onProgress, CFG);
     default: return { error: "unknown" };
   }
 }

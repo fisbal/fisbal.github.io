@@ -299,6 +299,7 @@ function setView(view){
     if(!state.securityResult && !state.securityBusy && (window.techfixNative || window.TechFixAndroid)) runSecurityScan(false);
   }
   if(typeof connectViewChanged === "function") connectViewChanged(view);
+  if(typeof formatViewChanged === "function") formatViewChanged(view);
   snapshotHot();
 }
 
@@ -1453,6 +1454,7 @@ function rerenderAll(){
   if(state.view === "security" || state.securityResult) renderSecurityView();
   if(state.log.result) renderLogResults();
   if(typeof cxRerender === "function") cxRerender();
+  if(typeof fmtRerender === "function") fmtRerender();
 }
 
 function boot(initial){

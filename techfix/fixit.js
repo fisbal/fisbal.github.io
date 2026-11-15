@@ -178,6 +178,7 @@ async function runFixPlan(ids, title){
 /* ---------- Results: what really happened ---------- */
 const TF_STATE = {
   fixed:    { label: "Fixed",          cls: "ok",   mark: "✓" },
+  done:     { label: "Done",           cls: "ok",   mark: "✓" },
   ok:       { label: "Nothing wrong",  cls: "ok",   mark: "✓" },
   reboot:   { label: "Restart needed", cls: "warn", mark: "↻" },
   partial:  { label: "Partly fixed",   cls: "warn", mark: "!" },

@@ -2,7 +2,7 @@
 <!-- Rule 15: app and brand names never change in any language; stops Edge/Chrome page auto-translate. --><meta name="google" content="notranslate"><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>TechFix</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="style.css?v=20261115c">
+<link rel="stylesheet" href="style.css?v=20261115d">
 
 <div class="app">
   <header class="app-header">
@@ -40,6 +40,7 @@
     <button class="nav-item" data-view="log"><span class="ico" data-icon="log"></span><span>Analyze Log</span></button>
     <button class="nav-item" data-view="security"><span class="ico" data-icon="shield"></span><span>Security</span></button>
     <button class="nav-item" data-view="connect"><span class="ico" data-icon="smartphone"></span><span>Connect a device</span></button>
+    <button class="nav-item" data-view="format"><span class="ico" data-icon="disk"></span><span>Format a drive</span></button>
     <div class="nav-section-label">Reference</div>
     <button class="nav-item" data-view="kb"><span class="ico" data-icon="book"></span><span>Knowledge Base</span><span class="nav-count" id="nav-kb-count"></span></button>
     <button class="nav-item" data-view="saved"><span class="ico" data-icon="bookmark"></span><span>Saved Fixes</span><span class="nav-count" id="nav-saved-count"></span></button>
@@ -116,6 +117,15 @@
         <p class="view-sub">Check and repair a phone plugged into this computer, or reach another computer — remote help, TechFix on a USB key, a rescue key for a PC that won't start.</p>
       </div>
       <div id="connect-body"></div>
+    </section>
+
+    <section class="view" id="view-format">
+      <div class="view-head">
+        <div class="view-eyebrow">Drives</div>
+        <h1 class="view-title">Format a drive</h1>
+        <p class="view-sub">Format a USB key, SD card or external drive the right way for what it's for — PC, Mac, camera, PlayStation, Nintendo, Xbox, retro handheld — in FAT32 (any size), exFAT or NTFS. Or turn it into a bootable TechFix rescue USB.</p>
+      </div>
+      <div id="format-body"></div>
     </section>
 
     <section class="view" id="view-wizard">
@@ -209,6 +219,7 @@
 <script src="security-ui.js"></script>
 <script src="device-ui.js"></script>
 <script src="connect-ui.js"></script>
+<script src="format-ui.js"></script>
 <script src="app.js"></script>
 
 </body></html>
