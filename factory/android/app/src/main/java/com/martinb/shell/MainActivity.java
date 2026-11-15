@@ -66,6 +66,8 @@ public class MainActivity extends Activity {
     private boolean immersive = false;
     private boolean diagnostics = false;
     private boolean mail = false;
+    private boolean voice = false;
+    private VoiceBridge voiceBridge;
     private ValueCallback<Uri[]> fileCallback;
     private Updater updater;
     private LinearLayout updateStrip;
@@ -84,6 +86,7 @@ public class MainActivity extends Activity {
         immersive = cfg.optBoolean("immersive", false);
         diagnostics = cfg.optBoolean("diagnostics", false);
         mail = cfg.optBoolean("mail", false);
+        voice = cfg.optBoolean("voice", false);
         if (cfg.optBoolean("keepScreenOn", false)) getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         LinearLayout root = new LinearLayout(this);
@@ -256,6 +259,11 @@ public class MainActivity extends Activity {
         if (local && diagnostics) web.addJavascriptInterface(new TechFixBridge(this), "TechFixAndroid");
         // Office In 1 only (mb-config.json mail:true): In 1 Mail reads and sends real mail by IMAP/SMTP (app password).
         if (local && mail) web.addJavascriptInterface(new MailBridge(web), "MBMail");
+        // Apps with a narrator only (mb-config.json voice:true): reads text aloud with the phone's text-to-speech.
+        if (local && voice) {
+            voiceBridge = new VoiceBridge(this, web);
+            web.addJavascriptInterface(voiceBridge, "MBVoice");
+        }
 
         web.setWebViewClient(new WebViewClient() {
             @Override
@@ -415,6 +423,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
+        if (voiceBridge != null) voiceBridge.stop();
         if (web != null) { web.onPause(); web.pauseTimers(); }
     }
 
@@ -434,6 +443,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (voiceBridge != null) { voiceBridge.shutdown(); voiceBridge = null; }
         if (web != null) { web.destroy(); web = null; }
         super.onDestroy();
     }

@@ -6,6 +6,13 @@
     <!-- Android 12+: lets the app's own later updates install without asking again (granted automatically). -->
     <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
 
+    <!-- Android 11+: lets apps with a narrator (VoiceBridge.java) reach the phone's text-to-speech engine. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+    </queries>
+
     <application
         android:allowBackup="true"
         android:hardwareAccelerated="true"

@@ -103,6 +103,9 @@
       "source": {
         "local": "eden-solitaire"
       },
+      "android": {
+        "voice": true
+      },
       "web": "/eden-solitaire/",
       "code": "https://github.com/fisbal/fisbal.github.io/tree/main/eden-solitaire",
       "icon": "icons/eden-solitaire.png",

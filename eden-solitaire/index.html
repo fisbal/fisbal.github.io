@@ -250,7 +250,7 @@ const EPI_EN=[['N','From the first light to Easter morning, you have walked thro
 const STR={sub:['Voyage à travers la Bible','A Journey through the Bible'],tap:['✦ Touchez pour entrer ✦','✦ Tap to enter ✦'],cont:['Continuer le voyage','Continue the journey'],map:['Chapitres','Chapters'],book:['Livre des Paroles','Book of Verses'],free:['Partie libre','Free play'],opt:['Musique & sons','Music & sound'],lang:['English','Français'],maph:['Les rouleaux du Livre','The Scrolls of the Book'],back:['← Retour','← Back'],pass:['PASSAGES','PASSES'],moves:['COUPS','MOVES'],time:['TEMPS','TIME'],undo:['Annuler','Undo'],hint:['Indice','Hint'],manna:['MANNE','MANNA'],vision:['Vision · 3','Vision · 3'],vortex:['Tourbillon · 5','Whirlwind · 5'],staff:['Bâton · 8','Staff · 8'],next:['TOUCHER ▸','TAP ▸']};
 
 /* ---------- Sauvegarde ---------- */
-let save={done:{},mv:.5,sv:.8,track:'auto'};
+let save={done:{},mv:.5,sv:.8,track:'auto',voice:'f',vv:1};
 try{const s=JSON.parse(localStorage.getItem('magicsol1'));if(s)save=Object.assign(save,s)}catch(e){}
 function persist(){try{localStorage.setItem('magicsol1',JSON.stringify(save))}catch(e){}}
 if(!save.lang)save.lang=(navigator.language||'fr').toLowerCase().startsWith('fr')?'fr':'en';
@@ -371,6 +371,29 @@ function devStop(){dev.a.pause();dev.on=false;autoMusic();devUI()}
 function devUI(){const e=$('#oDev');if(!e)return;e.textContent=dev.on?'♪ '+devName()+' ('+(dev.i+1)+'/'+dev.list.length+')':L('Aucun morceau choisi — la musique du jeu joue.','No track selected — game music is playing.');$('#oCtl').style.display=dev.list.length?'flex':'none'}
 function autoMusic(){if(!ctx||dev.on)return;playMusic(save.track!=='auto'?save.track:(scr==='game'?'t'+(G.ch+1):'menu'))}
 
+/* ---------- Voix du récit ---------- */
+const NV=window.MBVoice||null,SS=!NV&&('speechSynthesis' in window)?window.speechSynthesis:null;
+let vList=[];function loadV(){try{vList=SS.getVoices()||[]}catch(e){vList=[]}}if(SS){loadV();try{SS.onvoiceschanged=loadV}catch(e){}}
+const FEMN=/am[ée]lie|audrey|aur[ée]lie|marie|hortense|julie|denise|sylvie|c[ée]line|virginie|[ée]lo[iï]se|brigitte|charline|ariane|samantha|zira|aria|jenny|susan|hazel|karen|moira|tessa|victoria|allison|ava|emma|sonia|libby|clara|michelle|femme|google fran|google us english/i,
+ MALN=/thomas|paul|claude|henri|antoine|nicolas|daniel|david|guy|mark|george|ryan|alex|fred|james|oliver|liam|william|eric|brian|christopher|roger|homme/i;
+function pickV(g){let best=null,bs=-1,bm=false;for(const v of vList){if(!(v.lang||'').toLowerCase().replace('_','-').startsWith(save.lang))continue;const n=v.name||'',nm=n.replace(/female/ig,''),male=/male/i.test(nm)||MALN.test(nm),fem=/female/i.test(n)||(FEMN.test(n)&&!/male/i.test(nm)),m=g==='f'?fem&&!male:male&&!fem;
+  const sc=(m?10:0)+(/natural|neural|online|premium|enhanced|google/i.test(n)?3:0)+(/-ca$/i.test(v.lang)?1:0);if(sc>bs){bs=sc;best=v;bm=m}}return{v:best,match:bm}}
+const voice={on:false,pri:0,u:null,wd:0};let haloN=null;
+function halo(on){if(!ctx)return;const t=ctx.currentTime;mGain.gain.setTargetAtTime(save.mv*.55*(on?.3:1),t,.25);if(dev.on)dev.a.volume=save.mv*(on?.3:1);
+ if(on&&!haloN){const g=ctx.createGain();g.gain.setValueAtTime(0,t);g.gain.setTargetAtTime(.045*save.vv,t,.6);g.connect(master);const sd=ctx.createGain();sd.gain.value=.6;g.connect(sd);sd.connect(dly);
+  const os=[72,76,79,84].map((m,i)=>{const o=ctx.createOscillator(),l=ctx.createOscillator(),lg=ctx.createGain();o.type='sine';o.frequency.value=mtof(m);o.detune.value=i*4-6;l.frequency.value=4+i*.7;lg.gain.value=4;l.connect(lg);lg.connect(o.frequency);o.connect(g);o.start();l.start();return[o,l]});haloN={g,os}}
+ else if(!on&&haloN){const h=haloN;haloN=null;h.g.gain.setTargetAtTime(0,t,.4);setTimeout(()=>{h.os.forEach(q=>q.forEach(o=>{try{o.stop()}catch(e){}}));try{h.g.disconnect()}catch(e){}},2500)}}
+function vEnd(){voice.on=false;voice.pri=0;voice.u=null;clearTimeout(voice.wd);halo(false)}
+function shut(){if(!voice.on)return;try{if(NV)NV.stop();else if(SS)SS.cancel()}catch(e){}vEnd()}
+window.__mbVoice=w=>{if(w==='done')vEnd()};
+const vClean=t=>String(t).replace(/(\d+)[.:](\d+)/g,(m,a,b)=>L('chapitre '+a+', verset '+b,'chapter '+a+', verse '+b)).replace(/\p{Extended_Pictographic}/gu,' ').replace(/[✦◉♪★▸«»“”()·—]/g,' ').replace(/\s+/g,' ').trim();
+function say(text,pri=1){if(save.voice==='off'||(!NV&&!SS))return;if(voice.on&&voice.pri>pri)return;const g=save.voice,t=vClean(text);if(!t)return;
+ try{if(!NV&&SS)SS.cancel()}catch(e){}voice.u=null;voice.on=true;voice.pri=pri;halo(true);clearTimeout(voice.wd);voice.wd=setTimeout(vEnd,4000+t.length*110);
+ const lang=save.lang==='en'?'en-US':'fr-CA';
+ if(NV){try{NV.speak(t,lang,g,g==='f'?1.12:.72,.92,save.vv)}catch(e){vEnd()}return}
+ const pk=pickV(g),u=new SpeechSynthesisUtterance(t);if(pk.v){u.voice=pk.v;u.lang=pk.v.lang}else u.lang=lang;u.pitch=pk.match?(g==='f'?1.1:.9):(g==='f'?1.35:.6);u.rate=.9;u.volume=save.vv;
+ u.onend=u.onerror=()=>{if(voice.u===u)vEnd()};voice.u=u;setTimeout(()=>{if(voice.u===u)try{SS.speak(u)}catch(e){vEnd()}},60)}
+
 /* ---------- Effets visuels ---------- */
 const fxc=$('#fx'),fc=fxc.getContext('2d'),bgc=$('#bg'),bc=bgc.getContext('2d');let VW=0,VH=0,stars=[];
 function resize(){const d=Math.min(2,devicePixelRatio||1);VW=innerWidth;VH=innerHeight;[fxc,bgc].forEach(c=>{c.width=VW*d;c.height=VH*d});fc.setTransform(d,0,0,d,0,0);bc.setTransform(d,0,0,d,0,0);
@@ -407,9 +430,9 @@ function modal(html,h={}){const m=$('#modal');m.innerHTML='<div class="box">'+ht
 function closeModal(){$('#modal').classList.remove('on')}
 const dlg={q:[],i:0,ty:null,full:'',cb:null};
 function dialog(lines,cb){dlg.q=lines;dlg.i=0;dlg.cb=cb;$('#dlg').classList.add('on');dline()}
-function dline(){const[w,t]=dlg.q[dlg.i],W=WHO[w],p=$('#dport');p.textContent=w==='N'&&scr==='game'&&G.lv?G.lv.ico:W.b;p.className=W.c;$('#dname').textContent=L(...W.n);const el=$('#dtext');el.textContent='';dlg.full=t;let n=0;clearInterval(dlg.ty);
+function dline(){const[w,t]=dlg.q[dlg.i],W=WHO[w],p=$('#dport');p.textContent=w==='N'&&scr==='game'&&G.lv?G.lv.ico:W.b;p.className=W.c;$('#dname').textContent=L(...W.n);const el=$('#dtext');el.textContent='';dlg.full=t;let n=0;clearInterval(dlg.ty);say(t,2);
  dlg.ty=setInterval(()=>{n++;el.textContent=t.slice(0,n);if(n%3===0)S.blip();if(n>=t.length){clearInterval(dlg.ty);dlg.ty=null}},22)}
-$('#dlg').onclick=()=>{if(dlg.ty){clearInterval(dlg.ty);dlg.ty=null;$('#dtext').textContent=dlg.full;return}S.click();dlg.i++;if(dlg.i>=dlg.q.length){$('#dlg').classList.remove('on');dlg.cb&&dlg.cb()}else dline()};
+$('#dlg').onclick=()=>{if(dlg.ty){clearInterval(dlg.ty);dlg.ty=null;$('#dtext').textContent=dlg.full;return}S.click();shut();dlg.i++;if(dlg.i>=dlg.q.length){$('#dlg').classList.remove('on');dlg.cb&&dlg.cb()}else dline()};
 function buildMap(){const c=$('#chaps');c.innerHTML='';CH.forEach((n,ci)=>{const d=document.createElement('div');d.className='chap';d.innerHTML=`<h3>${L('Chapitre','Chapter')} ${L(...n)}</h3><div class="lvls"></div>`;const g=d.lastChild;
  LV.forEach((l,i)=>{if(l.ch!==ci)return;const open=i===0||save.done[i-1],st=save.done[i]||0,b=document.createElement('div');b.className='lv'+(open?'':' lock');
   b.innerHTML=`<div class="n">${open?l.ico:'🔒'}</div><div>${i+1}. ${lt(l).name}</div><div class="st">${'★'.repeat(st)}${'☆'.repeat(st?3-st:0)}</div>`;if(open)b.onclick=()=>{S.click();startLevel(i)};g.appendChild(b)});c.appendChild(d)})}
@@ -421,7 +444,13 @@ function options(back){modal(`<h2>${L('Musique &amp; sons','Music &amp; sound')}
  <label class="btn ghost sm" style="display:inline-block">${L('Choisir des morceaux…','Choose tracks…')}<input type="file" id="oF" accept="audio/*" multiple style="display:none"></label>
  <p id="oDev" style="font-size:13px;margin:8px 0"></p>
  <div class="row" id="oCtl" style="margin-top:4px"><button class="btn ghost sm" id="oPrev">⏮</button><button class="btn ghost sm" id="oPP">⏯</button><button class="btn ghost sm" id="oNext">⏭</button><button class="btn ghost sm" id="oGame">${L('Musique du jeu','Game music')}</button></div>
+ <label class="sl">${L('Voix du récit','Narrator voice')}</label><select id="oV"><option value="off">${L('Aucune','Off')}</option><option value="f">${L('Féminine','Female')}</option><option value="m">${L('Masculine','Male')}</option></select>
+ <input type="range" id="oVV" min="0" max="1" step=".05" value="${save.vv}" style="margin-top:10px" aria-label="${L('Volume de la voix','Voice volume')}">
+ <div class="row" style="margin-top:6px"><button class="btn ghost sm" id="oVT">▶ ${L('Écouter la voix','Hear the voice')}</button></div>
+ ${NV||SS?'':`<p style="font-size:12px;opacity:.7">${L('La voix n’est pas disponible sur cet appareil.','Voice is not available on this device.')}</p>`}
  <div class="row"><button class="btn" data-a="ok">${L('Fermer','Close')}</button></div>`,{ok:()=>{persist();back&&back()}});
+ const vt=()=>say(L('Que la lumière soit. Je lirai chaque récit pour toi.','Let there be light. I will read each story to you.'),3);
+ $('#oV').value=save.voice;$('#oV').onchange=e=>{shut();save.voice=e.target.value;persist();vt()};$('#oVV').oninput=e=>{save.vv=+e.target.value};$('#oVV').onchange=()=>{persist();vt()};$('#oVT').onclick=vt;
  $('#oM').oninput=e=>{save.mv=+e.target.value;setVol();dev.a.volume=save.mv};$('#oS').oninput=e=>{save.sv=+e.target.value;setVol();S.found(5)};$('#oT').onchange=e=>{save.track=e.target.value;autoMusic()};
  $('#oF').onchange=e=>{const f=[...e.target.files].filter(x=>x.type.startsWith('audio')||/\.(mp3|m4a|aac|ogg|oga|wav|flac|opus|wma)$/i.test(x.name));if(f.length){dev.list=f;devPlay(0)}else toast(L('Aucun fichier audio reconnu.','No audio file recognised.'))};
  $('#oPrev').onclick=()=>devPlay(dev.i-1);$('#oNext').onclick=()=>devPlay(dev.i+1);$('#oGame').onclick=devStop;
@@ -471,27 +500,27 @@ function act(m){if(G.over)return;snap();let pts=0;const wasW=m.f==='w',r=apply(G
  if(m.t==='draw')S.draw();else if(m.t==='rec'){S.shuffle(6);G.score=Math.max(0,G.score-20)}
  else if(m.to==='f'){const nw=performance.now();G.combo=nw-G.lastF<4500?G.combo+1:1;G.lastF=nw;pts=10*Math.min(G.combo,8);G.score+=pts;G.mana=Math.min(15,G.mana+1);S.found(rank(r.moved[0]))}else{S.place();if(wasW)G.score+=5;if(m.f==='f')G.score=Math.max(0,G.score-15)}
  if(r.flip!=null){G.score+=5;setTimeout(S.flip,150)}
- layout(new Set(r.moved));if(m.to==='f'){const cb=G.combo;setTimeout(()=>{const p=spos(r.moved[0]);burst(p.x,p.y,12+Math.min(cb,8)*5,3+Math.min(cb,8)*.35);ring(p.x,p.y,'#e8c35a');floatTxt(p.x,p.y-24,'+'+pts);if(cb===3||cb===5||cb===8){floatTxt(VW/2,VH*.42,'Combo ×'+cb+' !',1);S.star(cb>>1)}},240)}
+ layout(new Set(r.moved));if(m.to==='f'){const cb=G.combo;setTimeout(()=>{const p=spos(r.moved[0]);burst(p.x,p.y,12+Math.min(cb,8)*5,3+Math.min(cb,8)*.35);ring(p.x,p.y,'#e8c35a');floatTxt(p.x,p.y-24,'+'+pts);if(cb===3||cb===5||cb===8){floatTxt(VW/2,VH*.42,'Combo ×'+cb+' !',1);S.star(cb>>1);say(cb===3?L('Bien joué !','Well done!'):cb===5?L('Magnifique !','Wonderful!'):L('Gloire !','Glory!'),0)}},240)}
  hud();after()}
 function after(){if(G.over)return;if(fcount()>=G.goal)return win();const st=G.st;
  if(!G.auto&&!st.stock.length&&!st.waste.length&&st.tab.every(c=>c.every(id=>st.up[id]))){G.auto=setInterval(()=>{const m=bestMove(G.st,G.draw,G.pl);if(G.over||!m||m.to!=='f'){clearInterval(G.auto);G.auto=null;return}act(m)},95);return}
- if(!G.auto&&!st.stock.length&&!canRec(st,G.pl)&&!hasMove(st)){if(G.mana>=5)toast(L('Plus aucun coup… utilise un don !','No moves left… use a gift!'));else setTimeout(()=>!G.over&&lose(L('Plus aucun coup possible.','No moves left.')),700)}}
+ if(!G.auto&&!st.stock.length&&!canRec(st,G.pl)&&!hasMove(st)){if(G.mana>=5){toast(L('Plus aucun coup… utilise un don !','No moves left… use a gift!'));say(L('Plus aucun coup. Utilise un don.','No moves left. Use a gift.'),1)}else setTimeout(()=>!G.over&&lose(L('Plus aucun coup possible.','No moves left.')),700)}}
 function undo(){if(G.over||G.auto||!G.undo.length)return S.err();const s=JSON.parse(G.undo.pop());G.st=s.st;G.score=Math.max(0,s.score-2);G.mana=s.mana;S.undo();layout();hud()}
-function hint(){if(G.over||G.auto)return;const m=bestMove(G.st,G.draw,G.pl);$$('.hint').forEach(e=>e.classList.remove('hint'));if(!m){S.err();return toast(L('Aucun coup évident — essaie un don.','No obvious move — try a gift.'))}
+function hint(){if(G.over||G.auto)return;const m=bestMove(G.st,G.draw,G.pl);$$('.hint').forEach(e=>e.classList.remove('hint'));if(!m){S.err();say(L('Aucun coup évident. Essaie un don.','No obvious move. Try a gift.'),1);return toast(L('Aucun coup évident — essaie un don.','No obvious move — try a gift.'))}
  S.hint();let a=[];if(m.t==='draw'||m.t==='rec')a=[G.st.stock.length?els[G.st.stock[G.st.stock.length-1]]:slots.stock];
  else{const src=m.f==='w'?G.st.waste:G.st.tab[m.i],id=m.f==='w'?src[src.length-1]:src[m.k];a=[els[id]];if(m.to==='f')a.push(G.st.found[suit(id)].length?els[G.st.found[suit(id)].slice(-1)[0]]:slots.f[suit(id)]);else{const c=G.st.tab[m.j];a.push(c.length?els[c[c.length-1]]:slots.t[m.j])}}
  a.forEach(e=>e.classList.add('hint'));setTimeout(()=>a.forEach(e=>e.classList.remove('hint')),1500)}
 /* dons */
 function cast(k,btn){if(G.over||G.auto||G.busy)return;if(G.mana<COST[k]){S.err();return toast(L('Pas assez de manne ✦ — monte des cartes sur les cercles.','Not enough manna ✦ — move cards up to the circles.'))}
  const st=G.st,br=btn.getBoundingClientRect(),bx=br.left+br.width/2,by=br.top;
- if(k==='vision'){if(!st.tab.some(c=>c.some(id=>!st.up[id])))return toast(L('Rien à révéler.','Nothing to reveal.'));snap();G.mana-=3;S.spell();flash('#b58cff');ring(bx,by);burst(bx,by,24,4,-.02);board.classList.add('peek');toast(L('◉ Vision du prophète — ce qui est caché se dévoile','◉ Prophet’s Vision — what is hidden is revealed'));setTimeout(()=>board.classList.remove('peek'),5000)}
+ if(k==='vision'){if(!st.tab.some(c=>c.some(id=>!st.up[id])))return toast(L('Rien à révéler.','Nothing to reveal.'));snap();G.mana-=3;S.spell();flash('#b58cff');ring(bx,by);burst(bx,by,24,4,-.02);board.classList.add('peek');say(L('Vision du prophète.','Prophet’s vision.'),1);toast(L('◉ Vision du prophète — ce qui est caché se dévoile','◉ Prophet’s Vision — what is hidden is revealed'));setTimeout(()=>board.classList.remove('peek'),5000)}
  else if(k==='vortex'){if(st.stock.length+st.waste.length<2)return toast(L('La pioche est vide.','The stock is empty.'));snap();G.mana-=5;S.spell();flash('#7fc4ff');quake();S.shuffle(12);const a=st.stock.concat(st.waste);st.waste=[];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}a.forEach(id=>st.up[id]=false);st.stock=a;
-  layout();const p=spos(a[a.length-1]);for(let i=0;i<5;i++)setTimeout(()=>{ring(p.x,p.y,COL[i]);burst(p.x,p.y,12,5,0)},i*90);toast(L('🌀 Tourbillon d’Élie — la pioche est remélangée','🌀 Elijah’s Whirlwind — the stock is reshuffled'))}
+  layout();const p=spos(a[a.length-1]);say(L('Tourbillon d’Élie.','Elijah’s whirlwind.'),1);for(let i=0;i<5;i++)setTimeout(()=>{ring(p.x,p.y,COL[i]);burst(p.x,p.y,12,5,0)},i*90);toast(L('🌀 Tourbillon d’Élie — la pioche est remélangée','🌀 Elijah’s Whirlwind — the stock is reshuffled'))}
  else{let best=null,bs=-1;for(let s=0;s<4;s++){const n=st.found[s].length;if(n>=13)continue;const id=s*13+n,L=locate(id);let sc=L.p==='t'?(st.up[id]?(L.k===st.tab[L.i].length-1?0:2):3+L.k):(L.p==='w'&&L.k===st.waste.length-1?0:1);if(sc>bs){bs=sc;best={id,L}}}
   if(!best)return;snap();G.mana-=8;S.spell();const{id,L:Q}=best,from=spos(id);const src=Q.p==='s'?st.stock:Q.p==='w'?st.waste:st.tab[Q.i];src.splice(Q.k,1);st.up[id]=true;st.found[suit(id)].push(id);
   if(Q.p==='t'&&src.length&&!st.up[src[src.length-1]])st.up[src[src.length-1]]=true;G.score+=10;
   for(let i=0;i<12;i++)setTimeout(()=>burst(bx+(from.x-bx)*i/12,by+(from.y-by)*i/12,4,1.5,0,['#fff','#7fc4ff','#b58cff']),i*18);
-  setTimeout(()=>{S.zap();flash('#fff1b8');quake();ring(from.x,from.y,'#7fc4ff');burst(from.x,from.y,30,5);layout(new Set([id]));setTimeout(()=>{const p=spos(id);burst(p.x,p.y,26,4);S.found(rank(id))},330);hud();after()},230);toast(L('⚡ Bâton de Moïse — ','⚡ Staff of Moses — ')+RK[rank(id)]+SU[suit(id)]+L(' rejoint son cercle',' goes to its circle'));hud();return}
+  setTimeout(()=>{S.zap();flash('#fff1b8');quake();say(L('Bâton de Moïse.','Staff of Moses.'),1);ring(from.x,from.y,'#7fc4ff');burst(from.x,from.y,30,5);layout(new Set([id]));setTimeout(()=>{const p=spos(id);burst(p.x,p.y,26,4);S.found(rank(id))},330);hud();after()},230);toast(L('⚡ Bâton de Moïse — ','⚡ Staff of Moses — ')+RK[rank(id)]+SU[suit(id)]+L(' rejoint son cercle',' goes to its circle'));hud();return}
  hud()}
 /* fin de partie */
 function win(){G.over=true;clearInterval(G.auto);G.auto=null;S.win();const full=G.goal===52,bonus=Math.max(0,(G.lv?G.lv.par[1]*2:900)-G.time)*2;G.score+=bonus;hud();
@@ -505,11 +534,12 @@ function victory(){for(let i=0;i<7;i++)setTimeout(firework,i*420);const l=G.lv,s
   ${l?`<div class="clue"><small>✦ ${L('PAROLE DÉCOUVERTE','VERSE UNLOCKED')} — ${x.ref.toUpperCase()}</small><p style="margin:0;font-style:italic">${x.clue}</p><p style="margin:6px 0 0;font-size:11px;opacity:.6">${BIB()}</p></div>`:''}
   <div class="row">${l&&!last?`<button class="btn" data-a="next">${L('Niveau suivant ▸','Next level ▸')}</button>`:''}<button class="btn ghost" data-a="again">${L('Rejouer','Play again')}</button><button class="btn ghost" data-a="map">${l?L('Chapitres','Chapters'):'Menu'}</button></div>`,
   {next:()=>startLevel(G.idx+1),again:()=>l?startLevel(G.idx):startFree(G.draw),map:()=>{if(l){buildMap();show('map')}else show('menu')}});
+  say((last?L('Voyage accompli !','Journey complete!'):L('Victoire !','Victory!'))+(l?' '+x.ref+'. '+x.clue:''),2);
   $$('.stars i').forEach((e,i)=>{if(i<st)setTimeout(()=>{e.classList.add('on');S.star(i)},500+i*380)})};
  if(last&&first){els[0].classList.add('gold');dialog(L(EPI,EPI_EN),showM)}else showM()}
-function lose(why){if(G.over)return;G.over=true;clearInterval(G.auto);G.auto=null;S.lose();modal(`<h2>${L('Le chemin est rude…','The road is hard…')}</h2><p>${why}</p><p style="opacity:.75">${L('Les cartes peuvent être redistribuées, et les dons sont là pour t’aider.','The cards can be dealt again, and the gifts are there to help.')}</p>
+function lose(why){if(G.over)return;G.over=true;clearInterval(G.auto);G.auto=null;S.lose();say(why,2);modal(`<h2>${L('Le chemin est rude…','The road is hard…')}</h2><p>${why}</p><p style="opacity:.75">${L('Les cartes peuvent être redistribuées, et les dons sont là pour t’aider.','The cards can be dealt again, and the gifts are there to help.')}</p>
  <div class="row"><button class="btn" data-a="re">${L('Nouvelle donne','New deal')}</button><button class="btn ghost" data-a="same">${L('Même donne','Same deal')}</button><button class="btn ghost" data-a="q">${L('Quitter','Quit')}</button></div>`,
- {re:()=>{newGame();dealAnim()},same:()=>{newGame(G.seed);dealAnim()},q:()=>show('menu')})}
+ {re:()=>{newGame();dealAnim()},same:()=>{newGame(G.seed);dealAnim()},q:()=>{shut();show('menu')}})}
 
 /* ---------- Entrées ---------- */
 let D=null,lastSp=0;
@@ -531,16 +561,16 @@ function endDrag(e,cancel){if(!D)return;const d=D;D=null;d.ids.forEach(id=>els[i
 board.addEventListener('pointerup',e=>endDrag(e,false));board.addEventListener('pointercancel',e=>endDrag(e,true));
 $('#bUndo').onclick=undo;$('#bHint').onclick=hint;$$('.tb.sp').forEach(b=>b.onclick=()=>cast(b.dataset.sp,b));
 function pause(){S.click();modal(`<h2>Pause</h2><div class="row" style="flex-direction:column;align-items:stretch"><button class="btn" data-a="r">${L('Reprendre','Resume')}</button><button class="btn ghost" data-a="same">${L('Recommencer cette donne','Restart this deal')}</button><button class="btn ghost" data-a="new">${L('Nouvelle donne','New deal')}</button><button class="btn ghost" data-a="opt">${L('Musique &amp; sons','Music &amp; sound')}</button><button class="btn ghost" data-a="q">${L('Quitter','Quit')}</button></div>`,
- {same:()=>{newGame(G.seed);dealAnim()},new:()=>{newGame();dealAnim()},opt:()=>options(),q:()=>show('menu')})}
+ {same:()=>{newGame(G.seed);dealAnim()},new:()=>{newGame();dealAnim()},opt:()=>options(),q:()=>{shut();show('menu')}})}
 $('#bPause').onclick=pause;
-$('#splash').onclick=()=>{initAudio();if(ctx&&ctx.state==='suspended')ctx.resume();S.spell();burst(VW/2,VH/2,60,7,0);ring(VW/2,VH/2);show('menu')};
+$('#splash').onclick=()=>{initAudio();if(ctx&&ctx.state==='suspended')ctx.resume();S.spell();burst(VW/2,VH/2,60,7,0);ring(VW/2,VH/2);show('menu');say(L('Bienvenue dans Eden Solitaire.','Welcome to Eden Solitaire.'),1)};
 $('#bCont').onclick=()=>{S.click();startLevel(nextLevel())};$('#bMap').onclick=()=>{S.click();buildMap();show('map')};$('#bBook').onclick=()=>{S.click();modal('<h2>'+L('Livre des Paroles','Book of Verses')+'</h2>'+LV.map((l,i)=>{const x=lt(l);return save.done[i]?`<div class="verse"><div class="i">${l.ico}</div><div><small>${x.name} — ${x.ref}</small><i>${x.clue}</i></div></div>`:`<div class="verse" style="opacity:.45"><div class="i">🔒</div><div><small>${L('Récit','Story')} ${i+1}</small>${L('À découvrir…','Yet to be discovered…')}</div></div>`}).join('')+`<p style="font-size:11px;opacity:.6">${BIB()}</p><div class="row"><button class="btn" data-a="ok">${L('Fermer','Close')}</button></div>`)};
 $('#bLang').onclick=()=>{S.click();save.lang=save.lang==='en'?'fr':'en';persist();applyLang();mus.key=null;show('menu')};
 $('#bBack').onclick=()=>{S.click();show('menu')};$('#bOpt').onclick=()=>{S.click();options()};
 $('#bFree').onclick=()=>{S.click();modal(`<h2>${L('Partie libre','Free play')}</h2><p>${L('Klondike classique, donne gagnable, dons inclus.','Classic Klondike, winnable deal, gifts included.')}</p><div class="row"><button class="btn" data-a="d1">${L('Tirage 1 carte','Draw 1 card')}</button><button class="btn ghost" data-a="d3">${L('Tirage 3 cartes','Draw 3 cards')}</button></div><div class="row"><button class="btn ghost sm" data-a="x">${L('Annuler','Cancel')}</button></div>`,{d1:()=>startFree(1),d3:()=>startFree(3)})};
-addEventListener('resize',resize);document.addEventListener('visibilitychange',()=>{if(ctx){document.hidden?ctx.suspend():ctx.resume()}if(dev.on){document.hidden?dev.a.pause():dev.a.play().catch(()=>{})}});
+addEventListener('resize',resize);document.addEventListener('visibilitychange',()=>{if(ctx){document.hidden?ctx.suspend():ctx.resume()}if(dev.on){document.hidden?dev.a.pause():dev.a.play().catch(()=>{})}if(document.hidden)shut()});
 applyLang();resize();
-window.MS={dev,mus,G,bestMove,act,botRun,LV,cast,win};
+window.MS={voice,say,dev,mus,G,bestMove,act,botRun,LV,cast,win};
 </script>
 </body>
 </html>
