@@ -48,4 +48,8 @@ android {
 
 dependencies {
     implementation("androidx.webkit:webkit:1.11.0")
+    // In 1 Mail's IMAP/SMTP engine (MailEngine.java): JavaMail for Android (Oracle/Eclipse, EPL/GPL+CPE).
+    // Only used by apps whose mb-config.json has mail:true; the classes just sit unused in the others.
+    implementation("com.sun.mail:android-mail:1.6.7")
+    implementation("com.sun.mail:android-activation:1.6.7")
 }

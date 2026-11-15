@@ -65,6 +65,7 @@ public class MainActivity extends Activity {
     private boolean local = true;
     private boolean immersive = false;
     private boolean diagnostics = false;
+    private boolean mail = false;
     private ValueCallback<Uri[]> fileCallback;
     private Updater updater;
     private LinearLayout updateStrip;
@@ -82,6 +83,7 @@ public class MainActivity extends Activity {
         appHost = Uri.parse(home).getHost();
         immersive = cfg.optBoolean("immersive", false);
         diagnostics = cfg.optBoolean("diagnostics", false);
+        mail = cfg.optBoolean("mail", false);
         if (cfg.optBoolean("keepScreenOn", false)) getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         LinearLayout root = new LinearLayout(this);
@@ -252,6 +254,8 @@ public class MainActivity extends Activity {
         if (local) web.addJavascriptInterface(new Bridge(), "MBNative");
         // TechFix only (mb-config.json diagnostics:true): real phone readings + open the exact Settings screen for a fix.
         if (local && diagnostics) web.addJavascriptInterface(new TechFixBridge(this), "TechFixAndroid");
+        // Office In 1 only (mb-config.json mail:true): In 1 Mail reads and sends real mail by IMAP/SMTP (app password).
+        if (local && mail) web.addJavascriptInterface(new MailBridge(web), "MBMail");
 
         web.setWebViewClient(new WebViewClient() {
             @Override
