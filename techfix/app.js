@@ -38,6 +38,7 @@ const PLAT_META = {
   android:  { label:"Android",      short:"Android", icon: ICON.smartphone },
   mac:      { label:"macOS",        short:"macOS",   icon: ICON.laptop },
   ios:      { label:"iPhone / iPad",short:"iOS",     icon: ICON.smartphone },
+  cros:     { label:"ChromeOS / Chromebook", short:"ChromeOS", icon: ICON.laptop },
   gen:      { label:"Hardware & Network", short:"Hardware", icon: ICON.wrench }
 };
 
@@ -61,6 +62,14 @@ const CATEGORY_DEFS = [
    something. Generic severity counting (below) covers everything a
    signature doesn't recognize by name. */
 const LOG_SIGNATURES = [
+  { id:"cros-21-01", label:"ChromeOS \"missing or damaged\" — needs recovery", pattern:/chrome ?os is missing or damaged|insert a recovery usb/i },
+  { id:"cros-11-01", label:"ChromeOS developer mode — OS verification off", pattern:/os verification is off/i },
+  { id:"cros-17-03", label:"ChromeOS Linux container failed to start", pattern:/error starting penguin container|failed to start (termina|penguin)|vm_concierge.{0,80}(fail|error)/i },
+  { id:"cros-21-04", label:"ChromeOS update_engine error", pattern:/update_engine.{0,160}(error|fail)|ErrorCode::k\w+/i },
+  { id:"cros-17-01", label:"ChromeOS end of automatic updates", pattern:/no longer receive (security and software )?updates|auto ?update expiration/i },
+  { id:"cros-17-02", label:"Android apps (ARC) crash on ChromeOS", pattern:/\barcvm?\b.{0,80}(crash|fail|died)|google play store has stopped/i },
+  { id:"cros-21-05", label:"ChromeOS network (shill) failure", pattern:/shill.{0,120}(dhcp.{0,20}(fail|timeout)|portal|connect.{0,20}fail)/i },
+  { id:"cros-21-11", label:"Chromebook enterprise enrollment / forced re-enrollment", pattern:/forced re-?enrollment|this device is managed by|enterprise enrollment/i },
   { id:"win-dos-01", label:"MS-DOS \"Bad command or file name\"", pattern:/bad command or file name/i },
   { id:"win-dos-02", label:"DOS out-of-memory / packed file corrupt", pattern:/packed file is corrupt/i },
   { id:"win-dos-03", label:"DOS \"Invalid drive specification\"", pattern:/invalid drive specification/i },
@@ -310,8 +319,10 @@ function setView(view){
 function detectPlatformGroup(){
   const ua = navigator.userAgent || "";
   const uaData = navigator.userAgentData;
+  if(/CrOS/.test(ua)) return "cros";
   if(uaData && uaData.platform){
     const p = uaData.platform.toLowerCase();
+    if(p.includes("chrome os") || p.includes("chromeos")) return "cros";
     if(p.includes("android")) return "android";
     if(p.includes("windows")) return "win";
     if(p.includes("mac")) return "mac";
@@ -378,16 +389,19 @@ async function runScan(){
 function buildFindings(r){
   const f = [];
   const pg = r.platformGroup;
+  if(pg === "cros"){
+    f.push({ severity:"low", title:"Chromebook detected", detail:"TechFix has ChromeOS fixes for this device — open the Diagnose Wizard › ChromeOS, or copy chrome://system into Analyze Log for a deeper check.", kbId:"cros-21-22" });
+  }
 
   if(r.online === false){
-    f.push({ severity:"critical", title:"This device reports no active network connection", detail:"Browsing, sync, and updates will fail until connectivity returns.", kbId:"gen-net-01" });
+    f.push({ severity:"critical", title:"This device reports no active network connection", detail:"Browsing, sync, and updates will fail until connectivity returns.", kbId: pg==="cros" ? "cros-21-05" : "gen-net-01" });
   }
   if(r.storageQuota && r.storageUsage){
     const pct = r.storageUsage / r.storageQuota;
     if(pct > 0.9){
-      f.push({ severity:"high", title:"Storage is nearly exhausted", detail:`This browser profile is using ${(pct*100).toFixed(0)}% of its available quota — the full device is very likely just as tight, which slows everything down and can block updates.`, kbId: pg==="android" ? "and-kk-01" : (pg==="ios" ? "ios-8-02" : "gen-sto-03") });
+      f.push({ severity:"high", title:"Storage is nearly exhausted", detail:`This browser profile is using ${(pct*100).toFixed(0)}% of its available quota — the full device is very likely just as tight, which slows everything down and can block updates.`, kbId: pg==="android" ? "and-kk-01" : (pg==="ios" ? "ios-8-02" : (pg==="cros" ? "cros-21-08" : "gen-sto-03")) });
     } else if(pct > 0.75){
-      f.push({ severity:"medium", title:"Storage is getting tight", detail:`Around ${(pct*100).toFixed(0)}% of available storage quota is in use. Worth clearing caches and large files soon.`, kbId:"gen-sto-03" });
+      f.push({ severity:"medium", title:"Storage is getting tight", detail:`Around ${(pct*100).toFixed(0)}% of available storage quota is in use. Worth clearing caches and large files soon.`, kbId: pg==="cros" ? "cros-21-08" : "gen-sto-03" });
     }
   }
   if(r.connType && ["slow-2g","2g"].includes(r.connType)){

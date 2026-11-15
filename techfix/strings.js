@@ -1,6 +1,16 @@
 /* TechFix UI translations (fr, es, pt, de). Keys are the English text; numbers become {0}, {1}… */
 window.TF_STRINGS = window.TF_STRINGS || {};
 window.TF_STRINGS.fr = {
+"Chromebook detected": "Chromebook détecté",
+"TechFix has ChromeOS fixes for this device — open the Diagnose Wizard › ChromeOS, or copy chrome://system into Analyze Log for a deeper check.": "TechFix a des solutions ChromeOS pour cet appareil — ouvre l'Assistant de diagnostic › ChromeOS, ou copie chrome://system dans Analyser un journal pour un examen plus poussé.",
+"ChromeOS \"missing or damaged\" — needs recovery": "ChromeOS « manquant ou endommagé » — récupération nécessaire",
+"ChromeOS developer mode — OS verification off": "ChromeOS en mode développeur — validation du système désactivée",
+"ChromeOS Linux container failed to start": "Le conteneur Linux de ChromeOS n'a pas démarré",
+"ChromeOS update_engine error": "Erreur update_engine de ChromeOS",
+"ChromeOS end of automatic updates": "Fin des mises à jour automatiques de ChromeOS",
+"Android apps (ARC) crash on ChromeOS": "Plantage des apps Android (ARC) sur ChromeOS",
+"ChromeOS network (shill) failure": "Panne réseau de ChromeOS (shill)",
+"Chromebook enterprise enrollment / forced re-enrollment": "Chromebook inscrit par une organisation / réinscription forcée",
 "TechFix sent the phone a yes/no question: “Allow USB debugging?”": "TechFix a envoyé une question oui/non au téléphone : « Autoriser le débogage USB ? »",
 "Answer Allow (yes) on the phone and TechFix gets access right away. Deny (no) keeps the phone closed.": "Réponds Autoriser (oui) sur le téléphone et TechFix obtient l'accès aussitôt. Refuser (non) garde le téléphone fermé.",
 "Android's safety lock: a computer can't ask the phone for access until USB debugging is on. Turn it on once (steps below) — TechFix then sends the yes/no question by itself.": "Verrou de sécurité d'Android : un ordinateur ne peut pas demander l'accès au téléphone tant que le débogage USB est désactivé. Active-le une fois (étapes ci-dessous) — TechFix envoie ensuite la question oui/non tout seul.",
@@ -1052,6 +1062,16 @@ window.TF_STRINGS.fr = {
 "Resolution log": "Journal de résolution"
 };
 window.TF_STRINGS.es = {
+"Chromebook detected": "Chromebook detectado",
+"TechFix has ChromeOS fixes for this device — open the Diagnose Wizard › ChromeOS, or copy chrome://system into Analyze Log for a deeper check.": "TechFix tiene soluciones de ChromeOS para este dispositivo — abre el Asistente de diagnóstico › ChromeOS, o copia chrome://system en Analizar registro para una revisión más a fondo.",
+"ChromeOS \"missing or damaged\" — needs recovery": "ChromeOS «falta o está dañado» — necesita recuperación",
+"ChromeOS developer mode — OS verification off": "ChromeOS en modo desarrollador — verificación del SO desactivada",
+"ChromeOS Linux container failed to start": "El contenedor Linux de ChromeOS no arrancó",
+"ChromeOS update_engine error": "Error de update_engine de ChromeOS",
+"ChromeOS end of automatic updates": "Fin de las actualizaciones automáticas de ChromeOS",
+"Android apps (ARC) crash on ChromeOS": "Fallo de las apps Android (ARC) en ChromeOS",
+"ChromeOS network (shill) failure": "Fallo de red de ChromeOS (shill)",
+"Chromebook enterprise enrollment / forced re-enrollment": "Chromebook inscrito por una organización / reinscripción forzada",
 "TechFix sent the phone a yes/no question: “Allow USB debugging?”": "TechFix envió al teléfono una pregunta de sí/no: «¿Permitir depuración USB?»",
 "Answer Allow (yes) on the phone and TechFix gets access right away. Deny (no) keeps the phone closed.": "Responde Permitir (sí) en el teléfono y TechFix obtiene acceso enseguida. Denegar (no) mantiene el teléfono cerrado.",
 "Android's safety lock: a computer can't ask the phone for access until USB debugging is on. Turn it on once (steps below) — TechFix then sends the yes/no question by itself.": "Bloqueo de seguridad de Android: una computadora no puede pedir acceso al teléfono hasta que la depuración USB esté activada. Actívala una vez (pasos abajo) — luego TechFix envía la pregunta de sí/no solo.",
@@ -2107,6 +2127,16 @@ window.TF_STRINGS.es = {
 "Resolution log": "Registro de resolución"
 };
 window.TF_STRINGS.pt = {
+"Chromebook detected": "Chromebook detectado",
+"TechFix has ChromeOS fixes for this device — open the Diagnose Wizard › ChromeOS, or copy chrome://system into Analyze Log for a deeper check.": "O TechFix tem soluções de ChromeOS para este aparelho — abra o Assistente de diagnóstico › ChromeOS, ou copie chrome://system em Analisar log para uma verificação mais profunda.",
+"ChromeOS \"missing or damaged\" — needs recovery": "ChromeOS “ausente ou danificado” — precisa de recuperação",
+"ChromeOS developer mode — OS verification off": "ChromeOS no modo de desenvolvedor — verificação do SO desativada",
+"ChromeOS Linux container failed to start": "O contêiner Linux do ChromeOS não iniciou",
+"ChromeOS update_engine error": "Erro do update_engine do ChromeOS",
+"ChromeOS end of automatic updates": "Fim das atualizações automáticas do ChromeOS",
+"Android apps (ARC) crash on ChromeOS": "Falha dos apps Android (ARC) no ChromeOS",
+"ChromeOS network (shill) failure": "Falha de rede do ChromeOS (shill)",
+"Chromebook enterprise enrollment / forced re-enrollment": "Chromebook inscrito por uma organização / reinscrição forçada",
 "TechFix sent the phone a yes/no question: “Allow USB debugging?”": "O TechFix enviou ao celular uma pergunta de sim/não: “Permitir depuração USB?”",
 "Answer Allow (yes) on the phone and TechFix gets access right away. Deny (no) keeps the phone closed.": "Responda Permitir (sim) no celular e o TechFix ganha acesso na hora. Negar (não) mantém o celular fechado.",
 "Android's safety lock: a computer can't ask the phone for access until USB debugging is on. Turn it on once (steps below) — TechFix then sends the yes/no question by itself.": "Trava de segurança do Android: um computador não pode pedir acesso ao celular até a depuração USB estar ativada. Ative uma vez (passos abaixo) — depois o TechFix envia a pergunta de sim/não sozinho.",
@@ -3159,6 +3189,16 @@ window.TF_STRINGS.pt = {
 "Resolution log": "Registro de resolução"
 };
 window.TF_STRINGS.de = {
+"Chromebook detected": "Chromebook erkannt",
+"TechFix has ChromeOS fixes for this device — open the Diagnose Wizard › ChromeOS, or copy chrome://system into Analyze Log for a deeper check.": "TechFix hat ChromeOS-Lösungen für dieses Gerät — öffne den Diagnose-Assistenten › ChromeOS oder kopiere chrome://system in Protokoll analysieren für eine genauere Prüfung.",
+"ChromeOS \"missing or damaged\" — needs recovery": "ChromeOS „fehlt oder ist beschädigt“ — Wiederherstellung nötig",
+"ChromeOS developer mode — OS verification off": "ChromeOS im Entwicklermodus — Betriebssystemüberprüfung aus",
+"ChromeOS Linux container failed to start": "Der Linux-Container von ChromeOS ist nicht gestartet",
+"ChromeOS update_engine error": "update_engine-Fehler von ChromeOS",
+"ChromeOS end of automatic updates": "Ende der automatischen ChromeOS-Updates",
+"Android apps (ARC) crash on ChromeOS": "Absturz von Android-Apps (ARC) unter ChromeOS",
+"ChromeOS network (shill) failure": "Netzwerkfehler von ChromeOS (shill)",
+"Chromebook enterprise enrollment / forced re-enrollment": "Chromebook von einer Organisation registriert / erzwungene Neuregistrierung",
 "TechFix sent the phone a yes/no question: “Allow USB debugging?”": "TechFix hat dem Handy eine Ja/Nein-Frage gesendet: „USB-Debugging zulassen?“",
 "Answer Allow (yes) on the phone and TechFix gets access right away. Deny (no) keeps the phone closed.": "Antworte am Handy mit Zulassen (ja), und TechFix bekommt sofort Zugriff. Ablehnen (nein) hält das Handy verschlossen.",
 "Android's safety lock: a computer can't ask the phone for access until USB debugging is on. Turn it on once (steps below) — TechFix then sends the yes/no question by itself.": "Androids Sicherheitssperre: Ein Computer kann erst um Zugriff bitten, wenn USB-Debugging eingeschaltet ist. Schalte es einmal ein (Schritte unten) — danach sendet TechFix die Ja/Nein-Frage von selbst.",
