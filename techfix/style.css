@@ -659,3 +659,15 @@ button{ font-family: inherit; }
 .fmt-check input{ margin-top:3px; accent-color: var(--gold-2); }
 .fmt-confirm{ font-family: var(--font-mono); letter-spacing:2px; text-transform:uppercase; }
 .cx-form .cx-select{ flex:none; width:100%; }
+
+/* Bottom bar on phones: one short word per tab, never cut mid-word; scrolls sideways if needed. */
+.nav-short{ display:none; }
+@media (max-width:860px){
+  .app-nav{ overflow-x:auto; justify-content:flex-start; -webkit-overflow-scrolling:touch; }
+  .nav-item{ flex:1 0 auto; min-width:42px; padding:7px 3px; gap:3px; }
+  .nav-item > span:not(.ico):not(.nav-count):not(.nav-short){ display:none !important; }
+  .nav-item > .nav-short{ display:block; width:auto; white-space:nowrap; font-size:10px; line-height:1.2; text-align:center; overflow-wrap:normal; hyphens:none; -webkit-hyphens:none; }
+  /* When the tabs don't all fit, a soft fade on the right shows there is more to swipe to. */
+  .app-nav{ -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 18px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 18px), transparent); }
+  .app-nav.at-end{ -webkit-mask-image:none; mask-image:none; }
+}

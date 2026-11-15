@@ -1,6 +1,14 @@
 /* TechFix UI translations (fr, es, pt, de). Keys are the English text; numbers become {0}, {1}… */
 window.TF_STRINGS = window.TF_STRINGS || {};
 window.TF_STRINGS.fr = {
+"Wizard": "Assistant",
+"Log": "Journal",
+"Connect": "Connecter",
+"Format": "Formater",
+"Library": "Base",
+"Saved": "Favoris",
+"Scan": "Scan",
+"Security": "Sécurité",
 "Format a USB key, SD card or external drive the right way for what it's for — PC, Mac, camera, PlayStation, Nintendo, Xbox, retro handheld — in FAT{0} (any size), exFAT or NTFS. Or turn it into a bootable TechFix rescue USB.": "Formate une clé USB, une carte SD ou un disque externe comme il faut pour son usage — PC, Mac, appareil photo, PlayStation, Nintendo, Xbox, console rétro — en FAT{0} (toutes tailles), exFAT ou NTFS. Ou transforme-la en clé de secours TechFix bootable.",
 "Default": "Par défaut",
 "Automatic (SD-card standard)": "Automatique (norme des cartes SD)",
@@ -985,6 +993,14 @@ window.TF_STRINGS.fr = {
 "Resolution log": "Journal de résolution"
 };
 window.TF_STRINGS.es = {
+"Wizard": "Asistente",
+"Log": "Registro",
+"Connect": "Conectar",
+"Format": "Formatear",
+"Library": "Base",
+"Saved": "Guardados",
+"Scan": "Escaneo",
+"Security": "Seguridad",
 "Format a USB key, SD card or external drive the right way for what it's for — PC, Mac, camera, PlayStation, Nintendo, Xbox, retro handheld — in FAT{0} (any size), exFAT or NTFS. Or turn it into a bootable TechFix rescue USB.": "Formatea una memoria USB, tarjeta SD o disco externo de la forma correcta para su uso — PC, Mac, cámara, PlayStation, Nintendo, Xbox, consola retro — en FAT{0} (cualquier tamaño), exFAT o NTFS. O conviértela en una memoria de rescate TechFix de arranque.",
 "Default": "Predeterminado",
 "Automatic (SD-card standard)": "Automático (estándar de tarjetas SD)",
@@ -1973,6 +1989,14 @@ window.TF_STRINGS.es = {
 "Resolution log": "Registro de resolución"
 };
 window.TF_STRINGS.pt = {
+"Wizard": "Assistente",
+"Log": "Log",
+"Connect": "Conectar",
+"Format": "Formatar",
+"Library": "Base",
+"Saved": "Salvos",
+"Scan": "Scan",
+"Security": "Segurança",
 "Format a USB key, SD card or external drive the right way for what it's for — PC, Mac, camera, PlayStation, Nintendo, Xbox, retro handheld — in FAT{0} (any size), exFAT or NTFS. Or turn it into a bootable TechFix rescue USB.": "Formate um pendrive, cartão SD ou disco externo do jeito certo para o uso — PC, Mac, câmera, PlayStation, Nintendo, Xbox, portátil retrô — em FAT{0} (qualquer tamanho), exFAT ou NTFS. Ou transforme num pendrive de resgate TechFix inicializável.",
 "Default": "Padrão",
 "Automatic (SD-card standard)": "Automático (padrão de cartões SD)",
@@ -2958,6 +2982,14 @@ window.TF_STRINGS.pt = {
 "Resolution log": "Registro de resolução"
 };
 window.TF_STRINGS.de = {
+"Wizard": "Assistent",
+"Log": "Protokoll",
+"Connect": "Verbinden",
+"Format": "Formatieren",
+"Library": "Wissen",
+"Saved": "Gemerkt",
+"Scan": "Scan",
+"Security": "Sicherheit",
 "Format a USB key, SD card or external drive the right way for what it's for — PC, Mac, camera, PlayStation, Nintendo, Xbox, retro handheld — in FAT{0} (any size), exFAT or NTFS. Or turn it into a bootable TechFix rescue USB.": "Formatiere einen USB-Stick, eine SD-Karte oder ein externes Laufwerk richtig für den Zweck — PC, Mac, Kamera, PlayStation, Nintendo, Xbox, Retro-Handheld — in FAT{0} (jede Größe), exFAT oder NTFS. Oder mach daraus einen bootfähigen TechFix-Rettungsstick.",
 "Default": "Standard",
 "Automatic (SD-card standard)": "Automatisch (SD-Karten-Standard)",

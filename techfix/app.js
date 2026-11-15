@@ -292,6 +292,9 @@ function fallbackCopy(text, done){
 function setView(view){
   state.view = view;
   els(".nav-item").forEach(b => b.classList.toggle("active", b.dataset.view === view));
+  // Phone bottom bar: keep the chosen tab in view.
+  const activeNav = document.querySelector(`.nav-item[data-view="${view}"]`);
+  if(activeNav && activeNav.scrollIntoView && window.matchMedia("(max-width:860px)").matches) activeNav.scrollIntoView({ block:"nearest", inline:"nearest" });
   els(".view").forEach(v => v.classList.toggle("active", v.id === "view-"+view));
   window.scrollTo({top:0, behavior:"instant" in window ? "instant":"auto"});
   if(view === "security"){
@@ -1468,6 +1471,15 @@ function boot(initial){
   els(".nav-item").forEach(btn=>{
     btn.addEventListener("click", ()=> setView(btn.dataset.view));
   });
+  // Fade on the right of the phone bottom bar only while more tabs are hidden to the right.
+  (function(){
+    const nav = document.querySelector(".app-nav");
+    if(!nav) return;
+    const upd = () => nav.classList.toggle("at-end", nav.scrollLeft + nav.clientWidth >= nav.scrollWidth - 4);
+    nav.addEventListener("scroll", upd, { passive:true });
+    window.addEventListener("resize", upd);
+    setTimeout(upd, 300);
+  })();
 
   el("#scan-btn").addEventListener("click", runScan);
   el("#scan-copy-report-btn").addEventListener("click", copyDiagnosticReport);
