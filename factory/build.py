@@ -170,7 +170,7 @@ def cmd_source(app_id, out):
     os.makedirs(www)
     meta = {"id": app["id"], "name": app["name"], "file": app["file"], "pkg": app["pkg"], "desc": app.get("desc", "")}
     cfg = {"name": app["name"], "entry": app.get("entry", "index.html"), "bg": app.get("bg", "#0B0A08")}
-    cfg.update({k: v for k, v in app.get("android", {}).items() if k in ("immersive", "keepScreenOn")})
+    cfg.update({k: v for k, v in app.get("android", {}).items() if k in ("immersive", "keepScreenOn", "mail")})
     # Opt-in native bridge for the Electron build only (main.js requires ./diagnostics when this
     # is true). Absent for every app except the ones that declare `electron.diagnostics` in
     # apps.json, so this changes nothing for any other app's mb-config.json.
