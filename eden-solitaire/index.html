@@ -71,7 +71,7 @@ h1.logo b{color:var(--gold);text-shadow:0 0 28px rgba(232,195,90,.8);display:blo
 .f,.b{position:absolute;inset:0;border-radius:calc(var(--cw)*.09);backface-visibility:hidden;-webkit-backface-visibility:hidden;box-shadow:0 2px 5px rgba(0,0,0,.5)}
 .f{background:linear-gradient(160deg,#fffdf6,#efe6d2);color:#17102b;font-family:Georgia,serif;overflow:hidden}
 .f.red{color:#c2183c}
-.card.gold .f{background:linear-gradient(135deg,#fff6c9,#e8c35a 45%,#fff1b8 60%,#b88a2a);color:#3a2500;box-shadow:0 0 18px var(--gold)}
+#board .card.gold .in .f{background:linear-gradient(135deg,#fff6c9,#e8c35a 45%,#fff1b8 60%,#b88a2a);color:#3a2500;box-shadow:0 0 18px var(--gold)}
 .c{position:absolute;left:.22em;top:.12em;font-weight:700;line-height:1;white-space:nowrap}.c i{font-style:normal;font-size:.9em;margin-left:.05em}
 .c.br{left:auto;top:auto;right:.22em;bottom:.12em;transform:rotate(180deg)}
 .mid{position:absolute;inset:0;display:grid;place-items:center;font-size:2.3em;padding-top:.15em}
@@ -115,6 +115,30 @@ h1.logo b{background:linear-gradient(90deg,#b88a2a,#fff1b8,#e8c35a,#ffffff,#e8c3
 .vico{font-size:64px;line-height:1.1;animation:float 3s ease-in-out infinite;filter:drop-shadow(0 0 18px var(--gold))}
 .verse{text-align:left;border-bottom:1px solid rgba(232,195,90,.25);padding:8px 0;display:flex;gap:10px;font-family:Georgia,serif;font-size:14px;line-height:1.4}.verse .i{font-size:26px;flex:none;width:36px;text-align:center}.verse small{color:var(--gold);display:block;font-family:Cinzel,serif;letter-spacing:.06em}
 #starTot{color:var(--gold2);margin-top:12px;font-size:14px;letter-spacing:.12em}
+/* styles de cartes : un par niveau (classe cdN sur le plateau) */
+.mid u{text-decoration:none}.mr{display:none;line-height:.9;text-align:center}.mr i{display:block;font-style:normal;font-size:.5em;line-height:1.1}
+.cd1 .in .f{background:radial-gradient(ellipse at 50% 40%,#f8ecc8,#e3c98e 85%,#b9954f);color:#3b2a14;box-shadow:inset 0 0 0 .08em #8a6a2e,0 2px 5px rgba(0,0,0,.5)}
+.cd1 .in .f.red{color:#9c1f1f}
+.cd1 .b{background:repeating-linear-gradient(90deg,rgba(0,0,0,.2) 0 2px,transparent 2px 7px),radial-gradient(circle,#d9b566 0 8%,transparent 9%),linear-gradient(160deg,#8a5a2a,#3a2410);border-color:#d9b566}
+.cd1 .ms,.cd3 .ms{display:none}.cd1 .mr,.cd3 .mr{display:block}
+.cd1 .mr{font-family:"Cinzel Decorative",Cinzel,serif;font-weight:900}
+.cd2 .in .f{background:linear-gradient(160deg,#1c2350,#0a0d26);color:#e9ecff;box-shadow:inset 0 0 0 .07em var(--gold),0 2px 5px rgba(0,0,0,.6)}
+.cd2 .in .f.red{color:#ff7f9c}
+.cd2 .mid{text-shadow:0 0 .3em currentColor}
+.cd2 .mid.fig{background:rgba(255,255,255,.08)}
+.cd2 .b{background:radial-gradient(circle at 20% 25%,#fff 0 3%,transparent 4%),radial-gradient(circle at 70% 15%,#ffe9a8 0 2.5%,transparent 3.5%),radial-gradient(circle at 80% 60%,#fff 0 3%,transparent 4%),radial-gradient(circle at 35% 75%,#ffe9a8 0 3%,transparent 4%),radial-gradient(circle at 55% 45%,#fff 0 2%,transparent 3%),linear-gradient(160deg,var(--n1),#05061a)}
+.cd3 .in .f{background:linear-gradient(135deg,#f2f2ee,#cfd2d6 50%,#eceae4);color:#2a2f38;border-radius:calc(var(--cw)*.04);text-shadow:0 1px 0 #fff}
+.cd3 .in .f.red{color:#a02c2c}
+.cd3 .mr{font-family:Cinzel,serif;font-weight:700}
+.cd3 .b{border-radius:calc(var(--cw)*.04);background:repeating-radial-gradient(circle at 50% 50%,rgba(232,195,90,.4) 0 2px,transparent 2px 10px),linear-gradient(160deg,var(--n1),var(--n3))}
+.cd4 .in .f{background:#fffef8;color:#1a2a6e;box-shadow:inset 0 0 0 .13em var(--acc),inset 0 0 0 .19em #1a1030,0 2px 5px rgba(0,0,0,.5)}
+.cd4 .in .f.red{color:#c2183c}
+.cd4 .c{left:.36em;top:.28em}.cd4 .c.br{left:auto;top:auto;right:.36em;bottom:.28em}
+.cd4 .b{background:radial-gradient(circle,#fff1b8 0 10%,transparent 11%),repeating-conic-gradient(from 45deg,var(--acc) 0 25%,var(--n1) 0 50%) 0 0/25% 18%;border-color:#fff1b8}
+.cd5 .in .f{background:linear-gradient(160deg,#fffaf0,#f4e3b5);color:#3a2500;box-shadow:inset 0 0 0 .06em #b88a2a,inset 0 0 0 .14em #fffaf0,inset 0 0 0 .19em #b88a2a,0 2px 5px rgba(0,0,0,.5)}
+.cd5 .in .f.red{color:#b01030}
+.cd5 .c{left:.38em;top:.3em}.cd5 .c.br{left:auto;top:auto;right:.38em;bottom:.3em}
+.cd5 .b{background:radial-gradient(circle,#fff1b8 0 9%,transparent 10%),repeating-conic-gradient(from 0deg,rgba(232,195,90,.6) 0 5deg,transparent 5deg 15deg),linear-gradient(160deg,var(--n1),var(--n3))}
 .tb em{font-style:normal}
 </style>
 </head>
@@ -137,6 +161,7 @@ h1.logo b{background:linear-gradient(90deg,#b88a2a,#fff1b8,#e8c35a,#ffffff,#e8c3
     <button class="btn ghost" id="bMap" data-t="map"></button>
     <button class="btn ghost" id="bBook" data-t="book"></button>
     <button class="btn ghost" id="bFree" data-t="free"></button>
+    <button class="btn ghost" id="bVoice">🗣 <span data-t="voice"></span></button>
     <button class="btn ghost" id="bOpt" data-t="opt"></button>
     <button class="btn ghost sm" id="bLang">🌐 <span data-t="lang"></span></button>
   </div>
@@ -145,11 +170,12 @@ h1.logo b{background:linear-gradient(90deg,#b88a2a,#fff1b8,#e8c35a,#ffffff,#e8c3
 <div id="map" class="screen">
   <h2 data-t="maph"></h2>
   <div id="chaps" style="width:100%;display:flex;flex-direction:column;align-items:center"></div>
-  <button class="btn ghost sm" id="bBack" data-t="back"></button>
+  <button class="btn ghost sm" id="bBack">⌂ <span data-t="back"></span></button>
 </div>
 
 <div id="game" class="screen">
   <div id="top">
+    <button class="ib" id="bHome" aria-label="Menu">⌂</button>
     <button class="ib" id="bPause">☰</button>
     <div class="ttl"><div id="lvname"></div><div id="goaltxt" style="font-size:11px;opacity:.8"></div><div id="goalbar"><div id="goalfill"></div></div></div>
     <div class="stat hm"><small data-t="pass"></small><b id="sPass">∞</b></div>
@@ -185,69 +211,69 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const WHO={N:{n:['Le Récit','The Story'],b:'✦',c:'nar'},S:{n:['Le Scribe','The Scribe'],b:'✎',c:''}};
 const CH=[['I · Au commencement','I · In the Beginning'],['II · L’Exode','II · The Exodus'],['III · Rois et Prophètes','III · Kings and Prophets'],['IV · La Lumière du monde','IV · The Light of the World']];
 const LV=[
-{ch:0,ico:'☀️',name:'La Création',draw:1,goal:10,par:[60,120],
+{ch:0,ico:'☀️',pal:['#3b1d7a','#120a2e','#070414','#ffe9a8'],cd:0,mu:['t1',0,1],name:'La Création',draw:1,goal:10,par:[60,120],
  intro:[['N','Au commencement, la terre était informe et vide, et les ténèbres couvraient l’abîme. Alors une parole retentit… (Genèse 1)'],['S','Voyageur, chaque récit du Livre se cache dans les cartes. Remets-les en ordre : monte dix cartes sur les cercles de lumière.'],['S','Chaque carte montée t’offre de la manne ✦. Dépense-la en dons, au bas de l’écran : la Vision, le Tourbillon et le Bâton.']],
  ref:'Genèse 1.3',clue:'« Dieu dit : Que la lumière soit ! Et la lumière fut. »',
  en:{name:'The Creation',intro:[['N','In the beginning, the earth was without form and void, and darkness lay over the deep. Then a word rang out… (Genesis 1)'],['S','Traveller, every story of the Book is hidden in the cards. Put them in order: move ten cards up to the circles of light.'],['S','Each card you move up gives you manna ✦. Spend it on gifts at the bottom of the screen: the Vision, the Whirlwind and the Staff.']],
  ref:'Genesis 1:3',clue:'“And God said, Let there be light: and there was light.”'}},
-{ch:0,ico:'🕊️',name:'L’Arche de Noé',draw:1,goal:20,par:[120,210],
+{ch:0,ico:'🕊️',pal:['#0f5a6e','#062a38','#02101a','#8fe3ff'],cd:4,mu:['t2',0,1],name:'L’Arche de Noé',draw:1,goal:20,par:[120,210],
  intro:[['N','Les eaux montent sur la terre. Noé, homme juste, a bâti l’arche et y a fait entrer les animaux, deux à deux. (Genèse 6–9)'],['S','Comme eux, range les cartes en bon ordre : vingt cartes, cette fois.']],
  ref:'Genèse 9.13',clue:'« J’ai placé mon arc dans la nue, et il servira de signe d’alliance entre moi et la terre. »',
  en:{name:'Noah’s Ark',intro:[['N','The waters rise over the earth. Noah, a righteous man, has built the ark and brought in the animals, two by two. (Genesis 6–9)'],['S','Like them, line the cards up in good order: twenty cards this time.']],
  ref:'Genesis 9:13',clue:'“I do set my bow in the cloud, and it shall be for a token of a covenant between me and the earth.”'}},
-{ch:0,ico:'🌾',name:'Joseph et ses frères',draw:1,goal:52,par:[240,420],
+{ch:0,ico:'🌾',pal:['#7a5a12','#2a1c06','#0d0802','#ffd76a'],cd:1,mu:['t4',-2,0.9],name:'Joseph et ses frères',draw:1,goal:52,par:[240,420],
  intro:[['N','Vendu par ses frères jaloux, Joseph est emmené en Égypte. D’esclave, il deviendra l’intendant de Pharaon et sauvera sa famille de la famine. (Genèse 37–45)'],['S','Pour voir la fin de l’histoire, il faut tout le jeu : monte les cinquante-deux cartes.']],
  ref:'Genèse 50.20',clue:'« Vous aviez médité de me faire du mal : Dieu l’a changé en bien. »',
  en:{name:'Joseph and His Brothers',intro:[['N','Sold by his jealous brothers, Joseph is taken to Egypt. From slave he will rise to be Pharaoh’s steward and save his family from famine. (Genesis 37–45)'],['S','To see how the story ends you need the whole deck: move up all fifty-two cards.']],
  ref:'Genesis 50:20',clue:'“Ye thought evil against me; but God meant it unto good.”'}},
-{ch:1,ico:'🔥',name:'Le buisson ardent',draw:1,goal:52,par:[220,400],
+{ch:1,ico:'🔥',pal:['#8a2f0c','#33100a','#120503','#ffb46a'],cd:5,mu:['t2',3,1.1],name:'Le buisson ardent',draw:1,goal:52,par:[220,400],
  intro:[['N','Au désert de Madian, Moïse garde les troupeaux. Sur la montagne, un buisson brûle sans se consumer, et une voix l’appelle par son nom. (Exode 3)']],
  ref:'Exode 3.14',clue:'« Je suis celui qui suis. »',
  en:{name:'The Burning Bush',intro:[['N','In the desert of Midian, Moses keeps the flock. On the mountain a bush burns without being consumed, and a voice calls him by name. (Exodus 3)']],
  ref:'Exodus 3:14',clue:'“I AM THAT I AM.”'}},
-{ch:1,ico:'🌊',name:'La mer Rouge',draw:1,goal:52,pass:3,par:[220,400],
+{ch:1,ico:'🌊',pal:['#12357a','#081433','#030816','#7fc4ff'],cd:2,mu:['t3',0,0.92],name:'La mer Rouge',draw:1,goal:52,pass:3,par:[220,400],
  intro:[['N','Les chars de Pharaon approchent, la mer barre la route. Moïse étend la main, et les eaux se fendent. (Exode 14)'],['S','Le passage est étroit : tu ne pourras parcourir la pioche que trois fois. Garde de la manne pour le Tourbillon.']],
  ref:'Exode 14.14',clue:'« L’Éternel combattra pour vous ; et vous, gardez le silence. »',
  en:{name:'The Red Sea',intro:[['N','Pharaoh’s chariots draw near and the sea bars the way. Moses stretches out his hand, and the waters part. (Exodus 14)'],['S','The path is narrow: you may go through the stock only three times. Keep some manna for the Whirlwind.']],
  ref:'Exodus 14:14',clue:'“The LORD shall fight for you, and ye shall hold your peace.”'}},
-{ch:1,ico:'🍞',name:'La manne au désert',draw:3,goal:26,par:[200,360],
+{ch:1,ico:'🍞',pal:['#7a4a3a','#2c1712','#100806','#ffd9c2'],cd:3,mu:['t1',5,0.9],name:'La manne au désert',draw:3,goal:26,par:[200,360],
  intro:[['N','Le peuple a faim dans le désert. Au matin, la rosée se lève et le sol est couvert d’un pain venu du ciel. (Exode 16)'],['S','La route se corse : désormais, les cartes viennent par trois. Vingt-six suffiront.']],
  ref:'Exode 16.4',clue:'« Je ferai pleuvoir pour vous du pain, du haut des cieux. »',
  en:{name:'Manna in the Wilderness',intro:[['N','The people are hungry in the wilderness. In the morning the dew lifts, and the ground is covered with bread from heaven. (Exodus 16)'],['S','The road gets harder: from now on the cards come three at a time. Twenty-six will do.']],
  ref:'Exodus 16:4',clue:'“Behold, I will rain bread from heaven for you.”'}},
-{ch:2,ico:'🪨',name:'David et Goliath',draw:3,goal:52,par:[300,540],
+{ch:2,ico:'🪨',pal:['#1f5a2e','#0b2412','#030d06','#b6f09a'],cd:1,mu:['t3',-2,1],name:'David et Goliath',draw:3,goal:52,par:[300,540],
  intro:[['N','Dans la vallée d’Éla, le géant Goliath défie Israël. Un jeune berger s’avance, sans armure, avec une fronde et cinq pierres polies. (1 Samuel 17)']],
  ref:'1 Samuel 17.47',clue:'« Ce n’est ni par l’épée ni par la lance que l’Éternel sauve. »',
  en:{name:'David and Goliath',intro:[['N','In the valley of Elah the giant Goliath defies Israel. A young shepherd steps forward without armour, with a sling and five smooth stones. (1 Samuel 17)']],
  ref:'1 Samuel 17:47',clue:'“The LORD saveth not with sword and spear.”'}},
-{ch:2,ico:'⛰️',name:'Élie au mont Carmel',draw:1,goal:52,time:480,par:[240,360],
+{ch:2,ico:'⛰️',pal:['#7a1730','#2c0a18','#12040a','#ff8fa3'],cd:5,mu:['t3',3,1.08],name:'Élie au mont Carmel',draw:1,goal:52,time:480,par:[240,360],
  intro:[['N','Seul face à quatre cent cinquante prophètes de Baal, Élie dresse un autel et prie. Le feu doit tomber du ciel avant le soir. (1 Rois 18)'],['S','Le jour décline : tu as huit minutes.']],
  ref:'1 Rois 18.39',clue:'« C’est l’Éternel qui est Dieu ! C’est l’Éternel qui est Dieu ! »',
  en:{name:'Elijah on Mount Carmel',intro:[['N','Alone before four hundred and fifty prophets of Baal, Elijah builds an altar and prays. Fire must fall from heaven before evening. (1 Kings 18)'],['S','The day is fading: you have eight minutes.']],
  ref:'1 Kings 18:39',clue:'“The LORD, he is the God; the LORD, he is the God.”'}},
-{ch:2,ico:'🦁',name:'Daniel dans la fosse',draw:3,goal:52,par:[300,520],
+{ch:2,ico:'🦁',pal:['#4a3a1a','#1c1508','#0a0703','#e8c35a'],cd:3,mu:['t2',-3,0.9],name:'Daniel dans la fosse',draw:3,goal:52,par:[300,520],
  intro:[['N','Pour avoir prié son Dieu malgré le décret du roi, Daniel est jeté dans la fosse aux lions. On scelle la pierre. La nuit tombe. (Daniel 6)']],
  ref:'Daniel 6.22',clue:'« Mon Dieu a envoyé son ange et fermé la gueule des lions. »',
  en:{name:'Daniel in the Lions’ Den',intro:[['N','For praying to his God in spite of the king’s decree, Daniel is thrown into the den of lions. The stone is sealed. Night falls. (Daniel 6)']],
  ref:'Daniel 6:22',clue:'“My God hath sent his angel, and hath shut the lions’ mouths.”'}},
-{ch:3,ico:'⭐',name:'L’étoile de Bethléem',draw:3,goal:52,pass:4,par:[300,540],
+{ch:3,ico:'⭐',pal:['#1a2470','#0a0d33','#030416','#fff1b8'],cd:2,mu:['t4',0,0.95],name:'L’étoile de Bethléem',draw:3,goal:52,pass:4,par:[300,540],
  intro:[['N','Des mages venus d’Orient suivent une étoile jusqu’à Bethléem. Ils portent de l’or, de l’encens et de la myrrhe. (Matthieu 2)'],['S','La route est longue : quatre passages de pioche, pas un de plus.']],
  ref:'Matthieu 2.10',clue:'« Quand ils aperçurent l’étoile, ils furent saisis d’une très grande joie. »',
  en:{name:'The Star of Bethlehem',intro:[['N','Wise men from the East follow a star to Bethlehem. They carry gold, frankincense and myrrh. (Matthew 2)'],['S','The road is long: four passes through the stock, not one more.']],
  ref:'Matthew 2:10',clue:'“When they saw the star, they rejoiced with exceeding great joy.”'}},
-{ch:3,ico:'⛵',name:'La tempête apaisée',draw:3,goal:52,time:720,par:[300,480],
+{ch:3,ico:'⛵',pal:['#24506a','#0c2030','#040c14','#a8e0ff'],cd:4,mu:['t1',-4,1.25],name:'La tempête apaisée',draw:3,goal:52,time:720,par:[300,480],
  intro:[['N','Sur le lac de Galilée, un grand tourbillon s’élève. Les vagues emplissent la barque, et Jésus dort à la poupe. (Marc 4)'],['S','Tiens bon dans la tempête : tu as douze minutes.']],
  ref:'Marc 4.39',clue:'« Silence ! tais-toi ! Et le vent cessa, et il y eut un grand calme. »',
  en:{name:'The Storm Stilled',intro:[['N','On the Sea of Galilee a great storm of wind arises. The waves fill the boat, and Jesus is asleep in the stern. (Mark 4)'],['S','Hold fast in the storm: you have twelve minutes.']],
  ref:'Mark 4:39',clue:'“Peace, be still. And the wind ceased, and there was a great calm.”'}},
-{ch:3,ico:'🌅',name:'Le tombeau vide',draw:3,goal:52,pass:3,par:[330,560],
+{ch:3,ico:'🌅',pal:['#8a5a2a','#3a1c1a','#140a0a','#fff1b8'],cd:5,mu:['t4',4,1.05],name:'Le tombeau vide',draw:3,goal:52,pass:3,par:[330,560],
  intro:[['N','Le premier jour de la semaine, de grand matin, des femmes viennent au tombeau avec des aromates. La pierre a été roulée. (Luc 24)'],['S','Dernier récit : trois passages de pioche. Va jusqu’au bout.']],
  ref:'Luc 24.6',clue:'« Il n’est point ici, mais il est ressuscité. »',
  en:{name:'The Empty Tomb',intro:[['N','On the first day of the week, very early in the morning, women come to the tomb with spices. The stone has been rolled away. (Luke 24)'],['S','Last story: three passes through the stock. Go all the way.']],
  ref:'Luke 24:6',clue:'“He is not here, but is risen.”'}}];
 const EPI=[['N','De la première lumière au matin de Pâques, tu as parcouru le Livre, récit après récit.'],['S','Douze paroles sont maintenant gravées dans ta mémoire. En souvenir de ce voyage, l’as de pique brillera désormais d’or dans ton jeu.']];
 const EPI_EN=[['N','From the first light to Easter morning, you have walked through the Book, story by story.'],['S','Twelve verses are now written in your memory. In remembrance of this journey, the ace of spades will shine gold in your deck.']];
-const STR={sub:['Voyage à travers la Bible','A Journey through the Bible'],tap:['✦ Touchez pour entrer ✦','✦ Tap to enter ✦'],cont:['Continuer le voyage','Continue the journey'],map:['Chapitres','Chapters'],book:['Livre des Paroles','Book of Verses'],free:['Partie libre','Free play'],opt:['Musique & sons','Music & sound'],lang:['English','Français'],maph:['Les rouleaux du Livre','The Scrolls of the Book'],back:['← Retour','← Back'],pass:['PASSAGES','PASSES'],moves:['COUPS','MOVES'],time:['TEMPS','TIME'],undo:['Annuler','Undo'],hint:['Indice','Hint'],manna:['MANNE','MANNA'],vision:['Vision · 3','Vision · 3'],vortex:['Tourbillon · 5','Whirlwind · 5'],staff:['Bâton · 8','Staff · 8'],next:['TOUCHER ▸','TAP ▸']};
+const STR={voice:['Voix du récit','Narrator voice'],sub:['Voyage à travers la Bible','A Journey through the Bible'],tap:['✦ Touchez pour entrer ✦','✦ Tap to enter ✦'],cont:['Continuer le voyage','Continue the journey'],map:['Chapitres','Chapters'],book:['Livre des Paroles','Book of Verses'],free:['Partie libre','Free play'],opt:['Musique & sons','Music & sound'],lang:['English','Français'],maph:['Les rouleaux du Livre','The Scrolls of the Book'],back:['Retour au menu','Back to menu'],pass:['PASSAGES','PASSES'],moves:['COUPS','MOVES'],time:['TEMPS','TIME'],undo:['Annuler','Undo'],hint:['Indice','Hint'],manna:['MANNE','MANNA'],vision:['Vision · 3','Vision · 3'],vortex:['Tourbillon · 5','Whirlwind · 5'],staff:['Bâton · 8','Staff · 8'],next:['TOUCHER ▸','TAP ▸']};
 
 /* ---------- Sauvegarde ---------- */
 let save={done:{},mv:.5,sv:.8,track:'auto',voice:'f',vv:1};
@@ -347,10 +373,10 @@ const TH={
  t3:{name:['Vallée d’Éla','Valley of Elah'],bpm:124,root:50,sc:[0,3,5,7,10],ch:[[0,3,7],[0,3,7],[-4,0,3],[-5,-1,2]],pad:.02,bass:[0,_,0,_,0,_,0,12,0,_,0,_,0,_,7,10],bl:1.6,arp:[0,1,2,3,2,1,0,1,2,3,4,3,2,1,2,3],ai:iSaw,av:.035,mel:.55,melS:[0,3,6,8,10,12,14],li:iHarp,lv:.09,ml:2,kick:'x...x...x...x.x.',hat:'..x...x...x...xx',snr:'....x.......x...'},
  t4:{name:['Étoile de Bethléem','Star of Bethlehem'],bpm:102,root:53,sc:[0,2,4,7,9],ch:[[0,4,7],[-5,-1,2],[-3,0,4],[-7,-3,0]],pad:.03,bass:[0,_,_,0,_,_,7,_,0,_,_,0,_,_,12,_],bl:3,arp:[0,2,4,5,4,2,1,2,3,5,7,5,4,2,1,2],ai:iHarp,av:.05,mel:.6,melS:[0,4,6,8,12,14],li:iBell,lv:.1,ml:3,kick:'x.......x.....x.',hat:'..x.x.x...x.x.x.'}
 };
-const mus={key:null,step:0,next:0,out:null,m:6};
-function playMusic(key){if(!ctx||mus.key===key)return;if(mus.out){const o=mus.out;o.gain.setTargetAtTime(0,ctx.currentTime,.25);setTimeout(()=>o.disconnect(),1500)}
- mus.key=key;mus.step=0;mus.next=ctx.currentTime+.25;mus.out=ctx.createGain();mus.out.connect(mGain);toast('♪ '+L(...TH[key].name))}
-function sched(step,t){const th=TH[mus.key],ch=th.ch[(step>>4)%th.ch.length],s=step&15,out=mus.out,R=th.root,spb=60/th.bpm/4;
+const mus={key:null,id:null,tr:0,bf:1,step:0,next:0,out:null,m:6};
+function playMusic(key,tr=0,bf=1,label){const id=key+'|'+tr+'|'+bf;if(!ctx||mus.id===id)return;mus.id=id;mus.tr=tr;mus.bf=bf;if(mus.out){const o=mus.out;o.gain.setTargetAtTime(0,ctx.currentTime,.25);setTimeout(()=>o.disconnect(),1500)}
+ mus.key=key;mus.step=0;mus.next=ctx.currentTime+.25;mus.out=ctx.createGain();mus.out.connect(mGain);toast('♪ '+(label||L(...TH[key].name)))}
+function sched(step,t){const th=TH[mus.key],ch=th.ch[(step>>4)%th.ch.length],s=step&15,out=mus.out,R=th.root+mus.tr,spb=60/(th.bpm*mus.bf)/4;
  if(s===0)ch.forEach(n=>iPad(R+n+12,t,spb*16,th.pad,out));
  const b=th.bass[s];if(b!=null)iBass(R+ch[0]-12+b,t,spb*th.bl,.2,out);
  const a=th.arp[s];if(a!=null)th.ai(R+12+ch[a%ch.length]+12*(a/ch.length|0),t,spb*2.5,th.av,out);
@@ -359,17 +385,18 @@ function sched(step,t){const th=TH[mus.key],ch=th.ch[(step>>4)%th.ch.length],s=s
  if(th.hat&&th.hat[s]==='x')noise({t,f:7500,ft:'highpass',d:.035,v:.045,out});
  if(th.snr&&th.snr[s]==='x')noise({t,f:1800,d:.13,v:.11,out})}
 setInterval(()=>{if(!ctx||!mus.key||ctx.state!=='running')return;if(mus.next<ctx.currentTime-.5)mus.next=ctx.currentTime+.05;
- while(mus.next<ctx.currentTime+.18){try{sched(mus.step,mus.next)}catch(e){}const th=TH[mus.key];let d=60/th.bpm/4;if(th.swing)d*=mus.step%2?.7:1.3;mus.next+=d;mus.step++}},40);
+ while(mus.next<ctx.currentTime+.18){try{sched(mus.step,mus.next)}catch(e){}const th=TH[mus.key];let d=60/(th.bpm*mus.bf)/4;if(th.swing)d*=mus.step%2?.7:1.3;mus.next+=d;mus.step++}},40);
 /* musique de l'appareil */
 const dev={list:[],i:0,on:false,a:new Audio(),url:null};
 dev.a.onended=()=>devPlay(dev.i+1);
-function stopGen(){if(ctx&&mus.out){const o=mus.out;o.gain.setTargetAtTime(0,ctx.currentTime,.2);setTimeout(()=>o.disconnect(),1200);mus.out=null}mus.key=null}
+function stopGen(){if(ctx&&mus.out){const o=mus.out;o.gain.setTargetAtTime(0,ctx.currentTime,.2);setTimeout(()=>o.disconnect(),1200);mus.out=null}mus.key=null;mus.id=null}
 const devName=()=>dev.list.length?dev.list[dev.i].name.replace(/\.[^.]+$/,''):'';
 function devPlay(i){if(!dev.list.length)return;dev.i=(i+dev.list.length)%dev.list.length;if(dev.url)URL.revokeObjectURL(dev.url);dev.url=URL.createObjectURL(dev.list[dev.i]);dev.a.src=dev.url;dev.a.volume=save.mv;dev.on=true;stopGen();
  dev.a.play().then(()=>toast('♪ '+devName())).catch(()=>toast(L('Lecture impossible pour ce fichier.','This file cannot be played.')));devUI()}
 function devStop(){dev.a.pause();dev.on=false;autoMusic();devUI()}
 function devUI(){const e=$('#oDev');if(!e)return;e.textContent=dev.on?'♪ '+devName()+' ('+(dev.i+1)+'/'+dev.list.length+')':L('Aucun morceau choisi — la musique du jeu joue.','No track selected — game music is playing.');$('#oCtl').style.display=dev.list.length?'flex':'none'}
-function autoMusic(){if(!ctx||dev.on)return;playMusic(save.track!=='auto'?save.track:(scr==='game'?'t'+(G.ch+1):'menu'))}
+const curLv=()=>G.lv||LV[G.fp||0];
+function autoMusic(){if(!ctx||dev.on)return;if(save.track!=='auto')return playMusic(save.track);if(scr!=='game')return playMusic('menu');const l=curLv();playMusic(l.mu[0],l.mu[1],l.mu[2],lt(l).name)}
 
 /* ---------- Voix du récit ---------- */
 const NV=window.MBVoice||null,SS=!NV&&('speechSynthesis' in window)?window.speechSynthesis:null;
@@ -378,11 +405,8 @@ const FEMN=/am[ée]lie|audrey|aur[ée]lie|marie|hortense|julie|denise|sylvie|c[�
  MALN=/thomas|paul|claude|henri|antoine|nicolas|daniel|david|guy|mark|george|ryan|alex|fred|james|oliver|liam|william|eric|brian|christopher|roger|homme/i;
 function pickV(g){let best=null,bs=-1,bm=false;for(const v of vList){if(!(v.lang||'').toLowerCase().replace('_','-').startsWith(save.lang))continue;const n=v.name||'',nm=n.replace(/female/ig,''),male=/male/i.test(nm)||MALN.test(nm),fem=/female/i.test(n)||(FEMN.test(n)&&!/male/i.test(nm)),m=g==='f'?fem&&!male:male&&!fem;
   const sc=(m?10:0)+(/natural|neural|online|premium|enhanced|google/i.test(n)?3:0)+(/-ca$/i.test(v.lang)?1:0);if(sc>bs){bs=sc;best=v;bm=m}}return{v:best,match:bm}}
-const voice={on:false,pri:0,u:null,wd:0};let haloN=null;
-function halo(on){if(!ctx)return;const t=ctx.currentTime;mGain.gain.setTargetAtTime(save.mv*.55*(on?.3:1),t,.25);if(dev.on)dev.a.volume=save.mv*(on?.3:1);
- if(on&&!haloN){const g=ctx.createGain();g.gain.setValueAtTime(0,t);g.gain.setTargetAtTime(.045*save.vv,t,.6);g.connect(master);const sd=ctx.createGain();sd.gain.value=.6;g.connect(sd);sd.connect(dly);
-  const os=[72,76,79,84].map((m,i)=>{const o=ctx.createOscillator(),l=ctx.createOscillator(),lg=ctx.createGain();o.type='sine';o.frequency.value=mtof(m);o.detune.value=i*4-6;l.frequency.value=4+i*.7;lg.gain.value=4;l.connect(lg);lg.connect(o.frequency);o.connect(g);o.start();l.start();return[o,l]});haloN={g,os}}
- else if(!on&&haloN){const h=haloN;haloN=null;h.g.gain.setTargetAtTime(0,t,.4);setTimeout(()=>{h.os.forEach(q=>q.forEach(o=>{try{o.stop()}catch(e){}}));try{h.g.disconnect()}catch(e){}},2500)}}
+const voice={on:false,pri:0,u:null,wd:0};
+function halo(on){if(!ctx)return;mGain.gain.setTargetAtTime(save.mv*.55*(on?.3:1),ctx.currentTime,.25);if(dev.on)dev.a.volume=save.mv*(on?.3:1)}
 function vEnd(){voice.on=false;voice.pri=0;voice.u=null;clearTimeout(voice.wd);halo(false)}
 function shut(){if(!voice.on)return;try{if(NV)NV.stop();else if(SS)SS.cancel()}catch(e){}vEnd()}
 window.__mbVoice=w=>{if(w==='done')vEnd()};
@@ -390,8 +414,8 @@ const vClean=t=>String(t).replace(/(\d+)[.:](\d+)/g,(m,a,b)=>L('chapitre '+a+', 
 function say(text,pri=1){if(save.voice==='off'||(!NV&&!SS))return;if(voice.on&&voice.pri>pri)return;const g=save.voice,t=vClean(text);if(!t)return;
  try{if(!NV&&SS)SS.cancel()}catch(e){}voice.u=null;voice.on=true;voice.pri=pri;halo(true);clearTimeout(voice.wd);voice.wd=setTimeout(vEnd,4000+t.length*110);
  const lang=save.lang==='en'?'en-US':'fr-CA';
- if(NV){try{NV.speak(t,lang,g,g==='f'?1.12:.72,.92,save.vv)}catch(e){vEnd()}return}
- const pk=pickV(g),u=new SpeechSynthesisUtterance(t);if(pk.v){u.voice=pk.v;u.lang=pk.v.lang}else u.lang=lang;u.pitch=pk.match?(g==='f'?1.1:.9):(g==='f'?1.35:.6);u.rate=.9;u.volume=save.vv;
+ if(NV){try{NV.speak(t,lang,g,g==='f'?1.1:.74,g==='f'?.86:.84,save.vv)}catch(e){vEnd()}return}
+ const pk=pickV(g),u=new SpeechSynthesisUtterance(t);if(pk.v){u.voice=pk.v;u.lang=pk.v.lang}else u.lang=lang;u.pitch=pk.match?(g==='f'?1.12:.82):(g==='f'?1.35:.6);u.rate=g==='f'?.86:.84;u.volume=save.vv;
  u.onend=u.onerror=()=>{if(voice.u===u)vEnd()};voice.u=u;setTimeout(()=>{if(voice.u===u)try{SS.speak(u)}catch(e){vEnd()}},60)}
 
 /* ---------- Effets visuels ---------- */
@@ -404,7 +428,7 @@ function quake(){board.classList.remove('quake');void board.offsetWidth;board.cl
 function floatTxt(x,y,t,big){const e=document.createElement('div');e.className='ft'+(big?' big':'');e.textContent=t;e.style.left=x+'px';e.style.top=y+'px';document.body.appendChild(e);setTimeout(()=>e.remove(),1150)}
 setInterval(()=>{bc.clearRect(0,0,VW,VH);for(const s of stars){s.p+=s.s;bc.globalAlpha=.35+.65*Math.abs(Math.sin(s.p));bc.fillStyle=s.r>1.3?'#ffe9a8':'#fff';bc.beginPath();bc.arc(s.x,s.y,s.r,0,6.28);bc.fill()}
  if(scr==='game'&&amb.length<45&&Math.random()<.35)amb.push({x:Math.random()*VW,y:VH+5,v:.4+Math.random()*.9,l:1,s:1+Math.random()*2.2,w:Math.random()*6});
- amb=amb.filter(a=>{a.y-=a.v;a.w+=.05;a.x+=Math.sin(a.w)*.5;a.l-=.004;if(a.l<=0)return false;bc.globalAlpha=a.l*.7;bc.fillStyle=AMB[G.ch];bc.beginPath();bc.arc(a.x,a.y,a.s,0,6.28);bc.fill();return true});
+ amb=amb.filter(a=>{a.y-=a.v;a.w+=.05;a.x+=Math.sin(a.w)*.5;a.l-=.004;if(a.l<=0)return false;bc.globalAlpha=a.l*.7;bc.fillStyle=curLv().pal[3];bc.beginPath();bc.arc(a.x,a.y,a.s,0,6.28);bc.fill();return true});
  if(!shoot&&Math.random()<.006)shoot={x:Math.random()*VW,y:0,l:1};if(shoot){bc.globalAlpha=shoot.l;bc.strokeStyle='#fff';bc.lineWidth=1.5;bc.beginPath();bc.moveTo(shoot.x,shoot.y);bc.lineTo(shoot.x-50,shoot.y-25);bc.stroke();shoot.x+=14;shoot.y+=7;shoot.l-=.03;if(shoot.l<=0)shoot=null}bc.globalAlpha=1},60);
 const fx={p:[],rings:[],cards:[],trail:false,run:false};
 const COL=['#fff1b8','#e8c35a','#b58cff','#ffffff','#7fc4ff','#ff9ecb'];
@@ -425,7 +449,7 @@ let toastT;function toast(t){const e=$('#toast');e.textContent=t;e.classList.add
 
 /* ---------- Écrans, dialogues, modales ---------- */
 let scr='splash';
-function show(id){scr=id;$$('.screen').forEach(s=>s.classList.toggle('on',s.id===id));document.body.dataset.ch=id==='game'?G.ch:0;if(id==='menu')$('#starTot').textContent='★ '+Object.values(save.done).reduce((a,b)=>a+b,0)+' / 36';autoMusic()}
+function show(id){scr=id;$$('.screen').forEach(s=>s.classList.toggle('on',s.id===id));document.body.dataset.ch=id==='game'?G.ch:0;{const pal=id==='game'?curLv().pal:null;['--n1','--n2','--n3','--acc'].forEach((k,i)=>pal?document.body.style.setProperty(k,pal[i]):document.body.style.removeProperty(k))}if(id==='menu')$('#starTot').textContent='★ '+Object.values(save.done).reduce((a,b)=>a+b,0)+' / 36';autoMusic()}
 function modal(html,h={}){const m=$('#modal');m.innerHTML='<div class="box">'+html+'</div>';m.classList.add('on');m.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{S.click();const f=h[b.dataset.a];if(b.dataset.keep==null)closeModal();f&&f()})}
 function closeModal(){$('#modal').classList.remove('on')}
 const dlg={q:[],i:0,ty:null,full:'',cb:null};
@@ -437,20 +461,25 @@ function buildMap(){const c=$('#chaps');c.innerHTML='';CH.forEach((n,ci)=>{const
  LV.forEach((l,i)=>{if(l.ch!==ci)return;const open=i===0||save.done[i-1],st=save.done[i]||0,b=document.createElement('div');b.className='lv'+(open?'':' lock');
   b.innerHTML=`<div class="n">${open?l.ico:'🔒'}</div><div>${i+1}. ${lt(l).name}</div><div class="st">${'★'.repeat(st)}${'☆'.repeat(st?3-st:0)}</div>`;if(open)b.onclick=()=>{S.click();startLevel(i)};g.appendChild(b)});c.appendChild(d)})}
 function nextLevel(){for(let i=0;i<LV.length;i++)if(!save.done[i])return i;return LV.length-1}
-function options(back){modal(`<h2>${L('Musique &amp; sons','Music &amp; sound')}</h2><label class="sl">${L('Musique','Music')}</label><input type="range" id="oM" min="0" max="1" step=".05" value="${save.mv}">
+const vTest=()=>say(save.voice==='m'?L('Je suis Joseph. Je lirai chaque récit pour toi.','I am Joseph. I will read each story to you.'):L('Je suis Marie. Je lirai chaque récit pour toi.','I am Mary. I will read each story to you.'),3);
+const vLabel=()=>save.voice==='f'?'Marie':save.voice==='m'?'Joseph':L('aucune','off');
+function voiceModal(back){const b=(v,t)=>`<button class="btn ${save.voice===v?'':'ghost'}" data-v="${v}">${save.voice===v?'✓ ':''}${t}</button>`;
+ modal(`<h2>${L('Voix du récit','Narrator voice')}</h2><p>${L('Choisis la voix qui lit les récits et réagit au jeu.','Choose the voice that reads the stories and reacts to the game.')}</p>
+ <div class="row" style="flex-direction:column;align-items:stretch">${b('f','♀ Marie — '+L('voix féminine, douce','gentle female voice'))}${b('m','♂ Joseph — '+L('voix masculine, grave','deep male voice'))}${b('off',L('Aucune voix','No voice'))}</div>
+ <label class="sl">${L('Volume de la voix','Voice volume')}</label><input type="range" id="oVV" min="0" max="1" step=".05" value="${save.vv}">
+ ${NV||SS?'':`<p style="font-size:12px;opacity:.7">${L('La voix n’est pas disponible sur cet appareil.','Voice is not available on this device.')}</p>`}
+ <div class="row"><button class="btn ghost sm" id="oVT">▶ ${L('Écouter','Listen')}</button><button class="btn" data-a="ok">${L('Fermer','Close')}</button></div>`,{ok:()=>{persist();back&&back()}});
+ $$('[data-v]').forEach(e=>e.onclick=()=>{S.click();shut();save.voice=e.dataset.v;persist();voiceModal(back);vTest()});
+ $('#oVV').oninput=e=>{save.vv=+e.target.value};$('#oVV').onchange=()=>{persist();vTest()};$('#oVT').onclick=vTest}
+function options(back){modal(`<h2>${L('Musique &amp; sons','Music &amp; sound')}</h2><div class="row" style="margin:0 0 6px"><button class="btn ghost sm" id="oVoice">🗣 ${L('Voix du récit','Narrator voice')} : ${vLabel()}</button></div><label class="sl">${L('Musique','Music')}</label><input type="range" id="oM" min="0" max="1" step=".05" value="${save.mv}">
  <label class="sl">${L('Bruitages','Sound effects')}</label><input type="range" id="oS" min="0" max="1" step=".05" value="${save.sv}">
- <label class="sl">${L('Thème musical du jeu','Game music theme')}</label><select id="oT"><option value="auto">${L('Automatique (selon le chapitre)','Automatic (by chapter)')}</option>${Object.keys(TH).map(k=>`<option value="${k}"${save.track===k?' selected':''}>${L(...TH[k].name)}</option>`).join('')}</select>
+ <label class="sl">${L('Thème musical du jeu','Game music theme')}</label><select id="oT"><option value="auto">${L('Automatique (change à chaque niveau)','Automatic (changes every level)')}</option>${Object.keys(TH).map(k=>`<option value="${k}"${save.track===k?' selected':''}>${L(...TH[k].name)}</option>`).join('')}</select>
  <label class="sl">${L('Musique de l’appareil','Music from this device')}</label>
  <label class="btn ghost sm" style="display:inline-block">${L('Choisir des morceaux…','Choose tracks…')}<input type="file" id="oF" accept="audio/*" multiple style="display:none"></label>
  <p id="oDev" style="font-size:13px;margin:8px 0"></p>
  <div class="row" id="oCtl" style="margin-top:4px"><button class="btn ghost sm" id="oPrev">⏮</button><button class="btn ghost sm" id="oPP">⏯</button><button class="btn ghost sm" id="oNext">⏭</button><button class="btn ghost sm" id="oGame">${L('Musique du jeu','Game music')}</button></div>
- <label class="sl">${L('Voix du récit','Narrator voice')}</label><select id="oV"><option value="off">${L('Aucune','Off')}</option><option value="f">${L('Féminine','Female')}</option><option value="m">${L('Masculine','Male')}</option></select>
- <input type="range" id="oVV" min="0" max="1" step=".05" value="${save.vv}" style="margin-top:10px" aria-label="${L('Volume de la voix','Voice volume')}">
- <div class="row" style="margin-top:6px"><button class="btn ghost sm" id="oVT">▶ ${L('Écouter la voix','Hear the voice')}</button></div>
- ${NV||SS?'':`<p style="font-size:12px;opacity:.7">${L('La voix n’est pas disponible sur cet appareil.','Voice is not available on this device.')}</p>`}
  <div class="row"><button class="btn" data-a="ok">${L('Fermer','Close')}</button></div>`,{ok:()=>{persist();back&&back()}});
- const vt=()=>say(L('Que la lumière soit. Je lirai chaque récit pour toi.','Let there be light. I will read each story to you.'),3);
- $('#oV').value=save.voice;$('#oV').onchange=e=>{shut();save.voice=e.target.value;persist();vt()};$('#oVV').oninput=e=>{save.vv=+e.target.value};$('#oVV').onchange=()=>{persist();vt()};$('#oVT').onclick=vt;
+ $('#oVoice').onclick=()=>{S.click();voiceModal(()=>options(back))};
  $('#oM').oninput=e=>{save.mv=+e.target.value;setVol();dev.a.volume=save.mv};$('#oS').oninput=e=>{save.sv=+e.target.value;setVol();S.found(5)};$('#oT').onchange=e=>{save.track=e.target.value;autoMusic()};
  $('#oF').onchange=e=>{const f=[...e.target.files].filter(x=>x.type.startsWith('audio')||/\.(mp3|m4a|aac|ogg|oga|wav|flac|opus|wma)$/i.test(x.name));if(f.length){dev.list=f;devPlay(0)}else toast(L('Aucun fichier audio reconnu.','No audio file recognised.'))};
  $('#oPrev').onclick=()=>devPlay(dev.i-1);$('#oNext').onclick=()=>devPlay(dev.i+1);$('#oGame').onclick=devStop;
@@ -463,7 +492,7 @@ const G={st:null,lv:null,idx:-1,ch:0,draw:1,pl:0,tl:0,goal:52,undo:[],score:0,mo
 function buildCards(){board.innerHTML='';const mk=(c,t)=>{const e=document.createElement('div');e.className='slot '+c;e.textContent=t||'';board.appendChild(e);return e};
  slots={stock:mk('','↻'),waste:mk(''),f:[0,1,2,3].map(i=>mk('f',SU[i])),t:[0,1,2,3,4,5,6].map(()=>mk(''))};slots.stock.id='slotStock';
  for(let id=0;id<52;id++){const e=document.createElement('div');e.className='card down';e.dataset.id=id;const r=rank(id),s=SU[suit(id)],k=RK[r],fig=r>10;
-  e.innerHTML=`<div class="in"><div class="f${red(id)?' red':''}"><span class="c">${k}<i>${s}</i></span><span class="mid${fig?' fig':''}">${fig?`<b>${k}</b><i>${s}</i>`:s}</span><span class="c br">${k}<i>${s}</i></span></div><div class="b"></div></div>`;board.appendChild(e);els[id]=e}}
+  e.innerHTML=`<div class="in"><div class="f${red(id)?' red':''}"><span class="c">${k}<i>${s}</i></span><span class="mid${fig?' fig':''}">${fig?`<b>${k}</b><i>${s}</i>`:`<u class="ms">${s}</u><u class="mr">${k}<i>${s}</i></u>`}</span><span class="c br">${k}<i>${s}</i></span></div><div class="b"></div></div>`;board.appendChild(e);els[id]=e}}
 function met(){const W=board.clientWidth,H=board.clientHeight,gap=Math.max(4,Math.min(16,W*.014)),cw=Math.floor(Math.min((W-gap*8)/7,132,H/4.9)),ch=cw*1.4,ox=(W-(7*cw+6*gap))/2;return{W,H,gap,cw,ch,ox,y0:gap,y1:gap+ch+gap*1.6,cx:i=>ox+i*(cw+gap)}}
 let zT;
 function layout(raise){if(!G.st)return;const m=met(),st=G.st;board.style.setProperty('--cw',m.cw+'px');
@@ -486,9 +515,9 @@ function hud(){const n=fcount();$('#sScore').textContent=G.score;$('#sMoves').te
  $('#manaN').textContent=G.mana;$$('.tb.sp').forEach(b=>{const ok=G.mana>=COST[b.dataset.sp];b.classList.toggle('ready',ok);b.classList.toggle('off',!ok)})}
 const COST={vision:3,vortex:5,wand:8};
 function startLevel(i){const l=LV[i];G.idx=i;G.lv=l;G.ch=l.ch;G.draw=l.draw;G.pl=l.pass||0;G.tl=l.time||0;G.goal=l.goal;$('#lvname').textContent=`${i+1} · ${lt(l).name}`;show('game');newGame();dialog(lt(l).intro,()=>{if(i===0){flash('#fff');S.spell()}dealAnim()})}
-function startFree(draw){G.idx=-1;G.lv=null;G.ch=Math.random()*4|0;G.draw=draw;G.pl=0;G.tl=0;G.goal=52;$('#lvname').textContent=L('Partie libre','Free play');show('game');newGame();dealAnim()}
+function startFree(draw){G.idx=-1;G.lv=null;G.fp=Math.random()*LV.length|0;G.ch=LV[G.fp].ch;G.draw=draw;G.pl=0;G.tl=0;G.goal=52;$('#lvname').textContent=L('Partie libre','Free play');show('game');newGame();dealAnim()}
 function newGame(seed){closeModal();clearInterval(G.auto);G.auto=null;fx.trail=false;fx.cards=[];G.seed=seed||pickSeed(G.draw,G.pl,G.goal);G.st=deal(G.seed);G.undo=[];G.score=0;G.moves=0;G.time=0;G.mana=3;G.over=true;G.busy=true;
- if(!els.length)buildCards();els[0].classList.toggle('gold',!!save.done[11]);const m=met();board.style.setProperty('--cw',m.cw+'px');board.classList.remove('peek');{const q=(e,x,y)=>e.style.transform=`translate(${x}px,${y}px)`;q(slots.stock,m.cx(0),m.y0);q(slots.waste,m.cx(1),m.y0);slots.f.forEach((e,i)=>q(e,m.cx(3+i),m.y0));slots.t.forEach((e,i)=>q(e,m.cx(i),m.y1))}
+ if(!els.length)buildCards();els[0].classList.toggle('gold',!!save.done[11]);const m=met();board.style.setProperty('--cw',m.cw+'px');board.className='cd'+curLv().cd;{const q=(e,x,y)=>e.style.transform=`translate(${x}px,${y}px)`;q(slots.stock,m.cx(0),m.y0);q(slots.waste,m.cx(1),m.y0);slots.f.forEach((e,i)=>q(e,m.cx(3+i),m.y0));slots.t.forEach((e,i)=>q(e,m.cx(i),m.y1))}
  els.forEach(e=>{e.classList.add('nt','down');e.style.opacity=1;e.style.transform=`translate3d(${m.cx(0)}px,${m.y0}px,0)`;e.classList.remove('hint')});void board.offsetWidth;els.forEach(e=>e.classList.remove('nt'));hud()}
 function dealAnim(){S.shuffle(14);let n=0;G.st.tab.forEach(c=>c.forEach(id=>{els[id].style.transitionDelay=(n++*28)+'ms'}));layout();
  setTimeout(()=>{els.forEach(e=>e.style.transitionDelay='');G.over=false;G.busy=false;S.flip()},n*28+380)}
@@ -532,13 +561,13 @@ function victory(){for(let i=0;i<7;i++)setTimeout(firework,i*420);const l=G.lv,s
  if(l){save.done[G.idx]=Math.max(save.done[G.idx]||0,st);persist()}
  const showM=()=>{modal(`<h2>${last?L('Voyage accompli !','Journey complete!'):L('Victoire !','Victory!')}</h2>${l?'<div class="vico">'+l.ico+'</div>':''}<div class="stars"><i>★</i><i>★</i><i>★</i></div><p>Score <b style="color:var(--gold)">${G.score}</b> · ${L('Temps','Time')} ${fmt(G.time)} · ${G.moves} ${L('coups','moves')}</p>
   ${l?`<div class="clue"><small>✦ ${L('PAROLE DÉCOUVERTE','VERSE UNLOCKED')} — ${x.ref.toUpperCase()}</small><p style="margin:0;font-style:italic">${x.clue}</p><p style="margin:6px 0 0;font-size:11px;opacity:.6">${BIB()}</p></div>`:''}
-  <div class="row">${l&&!last?`<button class="btn" data-a="next">${L('Niveau suivant ▸','Next level ▸')}</button>`:''}<button class="btn ghost" data-a="again">${L('Rejouer','Play again')}</button><button class="btn ghost" data-a="map">${l?L('Chapitres','Chapters'):'Menu'}</button></div>`,
-  {next:()=>startLevel(G.idx+1),again:()=>l?startLevel(G.idx):startFree(G.draw),map:()=>{if(l){buildMap();show('map')}else show('menu')}});
+  <div class="row">${l&&!last?`<button class="btn" data-a="next">${L('Niveau suivant ▸','Next level ▸')}</button>`:''}<button class="btn ghost" data-a="again">${L('Rejouer','Play again')}</button><button class="btn ghost" data-a="map">${l?L('Chapitres','Chapters'):'Menu'}</button>${l?'<button class="btn ghost" data-a="menu">⌂ Menu</button>':''}</div>`,
+  {next:()=>startLevel(G.idx+1),again:()=>l?startLevel(G.idx):startFree(G.draw),map:()=>{if(l){buildMap();show('map')}else show('menu')},menu:()=>{shut();show('menu')}});
   say((last?L('Voyage accompli !','Journey complete!'):L('Victoire !','Victory!'))+(l?' '+x.ref+'. '+x.clue:''),2);
   $$('.stars i').forEach((e,i)=>{if(i<st)setTimeout(()=>{e.classList.add('on');S.star(i)},500+i*380)})};
  if(last&&first){els[0].classList.add('gold');dialog(L(EPI,EPI_EN),showM)}else showM()}
 function lose(why){if(G.over)return;G.over=true;clearInterval(G.auto);G.auto=null;S.lose();say(why,2);modal(`<h2>${L('Le chemin est rude…','The road is hard…')}</h2><p>${why}</p><p style="opacity:.75">${L('Les cartes peuvent être redistribuées, et les dons sont là pour t’aider.','The cards can be dealt again, and the gifts are there to help.')}</p>
- <div class="row"><button class="btn" data-a="re">${L('Nouvelle donne','New deal')}</button><button class="btn ghost" data-a="same">${L('Même donne','Same deal')}</button><button class="btn ghost" data-a="q">${L('Quitter','Quit')}</button></div>`,
+ <div class="row"><button class="btn" data-a="re">${L('Nouvelle donne','New deal')}</button><button class="btn ghost" data-a="same">${L('Même donne','Same deal')}</button><button class="btn ghost" data-a="q">⌂ ${L('Retour au menu','Back to menu')}</button></div>`,
  {re:()=>{newGame();dealAnim()},same:()=>{newGame(G.seed);dealAnim()},q:()=>{shut();show('menu')}})}
 
 /* ---------- Entrées ---------- */
@@ -560,13 +589,15 @@ function endDrag(e,cancel){if(!D)return;const d=D;D=null;d.ids.forEach(id=>els[i
   if(mv)act(mv);else{S.err();d.ids.forEach(id=>{els[id].classList.add('shake');setTimeout(()=>els[id].classList.remove('shake'),320)})}}}
 board.addEventListener('pointerup',e=>endDrag(e,false));board.addEventListener('pointercancel',e=>endDrag(e,true));
 $('#bUndo').onclick=undo;$('#bHint').onclick=hint;$$('.tb.sp').forEach(b=>b.onclick=()=>cast(b.dataset.sp,b));
-function pause(){S.click();modal(`<h2>Pause</h2><div class="row" style="flex-direction:column;align-items:stretch"><button class="btn" data-a="r">${L('Reprendre','Resume')}</button><button class="btn ghost" data-a="same">${L('Recommencer cette donne','Restart this deal')}</button><button class="btn ghost" data-a="new">${L('Nouvelle donne','New deal')}</button><button class="btn ghost" data-a="opt">${L('Musique &amp; sons','Music &amp; sound')}</button><button class="btn ghost" data-a="q">${L('Quitter','Quit')}</button></div>`,
- {same:()=>{newGame(G.seed);dealAnim()},new:()=>{newGame();dealAnim()},opt:()=>options(),q:()=>{shut();show('menu')}})}
+function pause(){S.click();modal(`<h2>Pause</h2><div class="row" style="flex-direction:column;align-items:stretch"><button class="btn" data-a="r">${L('Reprendre','Resume')}</button><button class="btn ghost" data-a="same">${L('Recommencer cette donne','Restart this deal')}</button><button class="btn ghost" data-a="new">${L('Nouvelle donne','New deal')}</button><button class="btn ghost" data-a="voice">🗣 ${L('Voix du récit','Narrator voice')}</button><button class="btn ghost" data-a="opt">${L('Musique &amp; sons','Music &amp; sound')}</button><button class="btn ghost" data-a="q">⌂ ${L('Retour au menu','Back to menu')}</button></div>`,
+ {same:()=>{newGame(G.seed);dealAnim()},new:()=>{newGame();dealAnim()},voice:()=>voiceModal(),opt:()=>options(),q:()=>{shut();show('menu')}})}
 $('#bPause').onclick=pause;
+function goMenu(){S.click();if(G.over||!G.moves){shut();return show('menu')}modal(`<h2>${L('Retour au menu ?','Back to the menu?')}</h2><p>${L('La partie en cours sera abandonnée.','The current game will be abandoned.')}</p><div class="row"><button class="btn" data-a="y">${L('Oui, au menu','Yes, to the menu')}</button><button class="btn ghost" data-a="n">${L('Continuer à jouer','Keep playing')}</button></div>`,{y:()=>{shut();G.over=true;clearInterval(G.auto);G.auto=null;show('menu')}})}
+$('#bHome').onclick=goMenu;
 $('#splash').onclick=()=>{initAudio();if(ctx&&ctx.state==='suspended')ctx.resume();S.spell();burst(VW/2,VH/2,60,7,0);ring(VW/2,VH/2);show('menu');say(L('Bienvenue dans Eden Solitaire.','Welcome to Eden Solitaire.'),1)};
 $('#bCont').onclick=()=>{S.click();startLevel(nextLevel())};$('#bMap').onclick=()=>{S.click();buildMap();show('map')};$('#bBook').onclick=()=>{S.click();modal('<h2>'+L('Livre des Paroles','Book of Verses')+'</h2>'+LV.map((l,i)=>{const x=lt(l);return save.done[i]?`<div class="verse"><div class="i">${l.ico}</div><div><small>${x.name} — ${x.ref}</small><i>${x.clue}</i></div></div>`:`<div class="verse" style="opacity:.45"><div class="i">🔒</div><div><small>${L('Récit','Story')} ${i+1}</small>${L('À découvrir…','Yet to be discovered…')}</div></div>`}).join('')+`<p style="font-size:11px;opacity:.6">${BIB()}</p><div class="row"><button class="btn" data-a="ok">${L('Fermer','Close')}</button></div>`)};
-$('#bLang').onclick=()=>{S.click();save.lang=save.lang==='en'?'fr':'en';persist();applyLang();mus.key=null;show('menu')};
-$('#bBack').onclick=()=>{S.click();show('menu')};$('#bOpt').onclick=()=>{S.click();options()};
+$('#bLang').onclick=()=>{S.click();save.lang=save.lang==='en'?'fr':'en';persist();applyLang();mus.key=null;mus.id=null;show('menu')};
+$('#bBack').onclick=()=>{S.click();show('menu')};$('#bOpt').onclick=()=>{S.click();options()};$('#bVoice').onclick=()=>{S.click();voiceModal()};
 $('#bFree').onclick=()=>{S.click();modal(`<h2>${L('Partie libre','Free play')}</h2><p>${L('Klondike classique, donne gagnable, dons inclus.','Classic Klondike, winnable deal, gifts included.')}</p><div class="row"><button class="btn" data-a="d1">${L('Tirage 1 carte','Draw 1 card')}</button><button class="btn ghost" data-a="d3">${L('Tirage 3 cartes','Draw 3 cards')}</button></div><div class="row"><button class="btn ghost sm" data-a="x">${L('Annuler','Cancel')}</button></div>`,{d1:()=>startFree(1),d3:()=>startFree(3)})};
 addEventListener('resize',resize);document.addEventListener('visibilitychange',()=>{if(ctx){document.hidden?ctx.suspend():ctx.resume()}if(dev.on){document.hidden?dev.a.pause():dev.a.play().catch(()=>{})}if(document.hidden)shut()});
 applyLang();resize();
