@@ -35,6 +35,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.core.content.FileProvider;
 import androidx.webkit.WebViewAssetLoader;
 
 import org.json.JSONObject;
@@ -56,6 +57,7 @@ public class MainActivity extends Activity {
     private static final int GOLD = Color.parseColor("#D4AD62");
     private static final int INK = Color.parseColor("#F3EFE6");
     private static final int REQ_FILE = 42;
+    private static final int REQ_CAMERA = 43;
 
     private WebView web;
     private ImageButton maxButton;
@@ -69,6 +71,7 @@ public class MainActivity extends Activity {
     private boolean voice = false;
     private VoiceBridge voiceBridge;
     private ValueCallback<Uri[]> fileCallback;
+    private Uri cameraPhoto;
     private Updater updater;
     private LinearLayout updateStrip;
     private TextView updateText;
@@ -291,6 +294,19 @@ public class MainActivity extends Activity {
             public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
                 if (fileCallback != null) fileCallback.onReceiveValue(null);
                 fileCallback = callback;
+                // <input capture> ("Photo rapide" in ProDFos' scanner, also inside Office In 1): open the camera,
+                // not the file picker (Martin, 2026-11-16: the scanner did not work in the Office In 1 app).
+                if (params.isCaptureEnabled() && wantsImages(params)) {
+                    Intent camera = cameraIntent();
+                    if (camera != null) {
+                        try {
+                            startActivityForResult(camera, REQ_CAMERA);
+                            return true;
+                        } catch (ActivityNotFoundException | SecurityException e) {
+                            cameraPhoto = null;
+                        }
+                    }
+                }
                 try {
                     startActivityForResult(pickIntent(params), REQ_FILE);
                 } catch (ActivityNotFoundException e) {
@@ -309,6 +325,41 @@ public class MainActivity extends Activity {
                 openOutside(Uri.parse(url));
             }
         });
+    }
+
+    /** True when the page asks for pictures (accept="image/*", or nothing said). */
+    private static boolean wantsImages(WebChromeClient.FileChooserParams params) {
+        String[] accept = params.getAcceptTypes();
+        if (accept == null) return true;
+        boolean any = false;
+        for (String a : accept) for (String t : a.split(",")) {
+            t = t.trim().toLowerCase(java.util.Locale.ROOT);
+            if (t.isEmpty()) continue;
+            any = true;
+            if (t.startsWith("image/") || t.equals(".jpg") || t.equals(".jpeg") || t.equals(".png")) return true;
+        }
+        return !any;
+    }
+
+    /** The phone's camera app, writing the full-size photo into this app's cache (no camera permission needed:
+        the camera app takes the picture). Null when there is no camera app. */
+    private Intent cameraIntent() {
+        try {
+            File dir = new File(getCacheDir(), "camera");
+            if (!dir.isDirectory() && !dir.mkdirs()) return null;
+            File[] old = dir.listFiles();
+            if (old != null) for (File f : old) if (f.lastModified() < System.currentTimeMillis() - 86_400_000L) f.delete();
+            File photo = new File(dir, "photo-" + System.currentTimeMillis() + ".jpg");
+            cameraPhoto = FileProvider.getUriForFile(this, getPackageName() + ".files", photo);
+            Intent i = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            i.putExtra(MediaStore.EXTRA_OUTPUT, cameraPhoto);
+            i.setClipData(android.content.ClipData.newRawUri("photo", cameraPhoto));
+            i.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            return i;
+        } catch (RuntimeException e) {
+            cameraPhoto = null;
+            return null;
+        }
     }
 
     /* The file picker for an <input type=file>. WebView's own createIntent() takes the first accept
@@ -396,6 +447,13 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQ_CAMERA && fileCallback != null) {
+            boolean taken = resultCode == RESULT_OK && cameraPhoto != null;
+            fileCallback.onReceiveValue(taken ? new Uri[]{cameraPhoto} : null);
+            fileCallback = null;
+            cameraPhoto = null;
+            return;
+        }
         if (requestCode == REQ_FILE && fileCallback != null) {
             Uri[] picked = null;
             if (resultCode == RESULT_OK && data != null && data.getClipData() != null && data.getClipData().getItemCount() > 0) {
