@@ -145,7 +145,68 @@ async function tfEnsureFixes(){
 }
 const tfFixById = (id) => _tfFixes.find(f => f.id === id) || null;
 
-async function runFixPlan(ids, title){
+/* ---------- Done tasks leave the to-do list ----------
+   Once the task for a finding has run and succeeded (fixed / nothing wrong / measured / opened /
+   restart needed), that finding moves out of the list into a folded "done" line. It comes back only
+   if the problem gets WORSE (higher severity), after 7 days if it's still detected, or on request.
+   When the problem is really gone the record is dropped, so a new occurrence shows up as new. */
+const TF_DONE_KEY = "techfix:done-tasks", TF_DONE_DAYS = 7;
+const TF_SEV_ORDER = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
+function tfDoneLoad(){ try{ return JSON.parse(localStorage.getItem(TF_DONE_KEY) || "{}") || {}; }catch(_){ return {}; } }
+function tfDoneSave(d){ try{ localStorage.setItem(TF_DONE_KEY, JSON.stringify(d)); }catch(_){} }
+const tfIsReport = (r) => !!(r && r.code && (r.code.indexOf("space_report") === 0 || r.code === "memory_report"));
+const tfTaskOk = (r) => ["fixed", "ok", "done", "reboot", "opened", "started"].includes(r.state) || tfIsReport(r);
+function tfMarkDone(ctx, results){
+  if(!ctx || !ctx.scope || !(ctx.codes || []).length || !results.length) return;
+  const d = tfDoneLoad(), ok = results.every(tfTaskOk);
+  for(const c of ctx.codes){
+    const k = ctx.scope + ":" + c;
+    if(ok) d[k] = { t: Date.now(), sev: (ctx.sev || {})[c] || "low" }; else delete d[k];
+  }
+  tfDoneSave(d);
+}
+function tfSplitDone(scope, findings){
+  const d = tfDoneLoad(), now = Date.now(), present = new Set(findings.map(f => f.code));
+  let changed = false;
+  for(const k of Object.keys(d)){
+    if(k.indexOf(scope + ":") !== 0) continue;
+    if(!present.has(k.slice(scope.length + 1)) || now - d[k].t > TF_DONE_DAYS * 86400000){ delete d[k]; changed = true; }
+  }
+  if(changed) tfDoneSave(d);
+  const active = [], done = [];
+  for(const f of findings){
+    const h = d[scope + ":" + f.code];
+    if(h && (TF_SEV_ORDER[f.severity] ?? 9) >= (TF_SEV_ORDER[h.sev] ?? 9)) done.push(Object.assign({}, f, { doneAt: h.t }));
+    else active.push(f);
+  }
+  return { active, done };
+}
+function tfUndo(scope, code){ const d = tfDoneLoad(); delete d[scope + ":" + code]; tfDoneSave(d); }
+function tfCtx(scope, list){
+  const sev = {}; list.forEach(f => { sev[f.code] = f.severity; });
+  return { scope, codes: list.map(f => f.code), sev };
+}
+// The folded "done" line under a findings list. titleOf / detailOf: (finding) → text.
+function tfDoneHtml(scope, done, titleOf, detailOf){
+  if(!done.length) return "";
+  // Same article → one row (e.g. two "low on memory" signs).
+  const rows = new Map();
+  for(const f of done){ const k = f.kbId || f.code; if(!rows.has(k)) rows.set(k, { f, members: [] }); rows.get(k).members.push(f); }
+  const when = (t) => { try{ return new Date(t).toLocaleString(typeof tfLocale === "function" ? tfLocale() : undefined, { dateStyle:"medium", timeStyle:"short" }); }catch(_){ return new Date(t).toLocaleString(); } };
+  return `<details class="tf-done" data-tf-done-scope="${tfEsc(scope)}"><summary>✓ ${tfEsc(T("{n} task(s) done — TechFix keeps an eye on them", { n: rows.size }))}</summary>
+    <div class="stat-note" style="margin:6px 0;">${tfEsc(T("Already handled. A card comes back only if its problem gets worse, or after 7 days if it's still there."))}</div>
+    ${[...rows.values()].map(({ f, members }) => `<div class="tf-done-row"><div class="tf-done-body"><div class="tf-done-title">${tfEsc(titleOf(f))}</div>
+      <div class="finding-meta">${tfEsc(T("Done {date}", { date: when(f.doneAt) }))} · ${tfEsc(T("still measured:"))} ${tfEsc(members.map(detailOf).join(" "))}</div></div>
+      <button class="btn sm ghost" data-tf-undo="${tfEsc(members.map(m => m.code).join(","))}">${tfEsc(T("Show again"))}</button></div>`).join("")}</details>`;
+}
+function tfWireDone(wrap, rerender){
+  wrap.querySelectorAll("[data-tf-undo]").forEach(b => b.addEventListener("click", () => {
+    const scope = b.closest("[data-tf-done-scope]").dataset.tfDoneScope;
+    b.dataset.tfUndo.split(",").forEach(c => tfUndo(scope, c)); rerender();
+  }));
+}
+
+async function runFixPlan(ids, title, ctx){
   if(!tfHasWin()) return showInstallSheet();
   await tfEnsureFixes();
   const items = [...new Set(ids)].map(tfFixById).filter(Boolean);
@@ -172,7 +233,7 @@ async function runFixPlan(ids, title){
     }, true)
   });
   if(res !== "go" || !chosen.length) return;
-  return executeFixes(chosen, title);
+  return executeFixes(chosen, title, ctx);
 }
 
 /* ---------- Results: what really happened ---------- */
@@ -250,7 +311,7 @@ function tfRenderResult(row, r){
     `<div class="fix-verdict"><span class="fix-badge ${st.cls}">${tfEsc(T(st.label))}</span> <span>${tfEsc(tfResultText(r))}</span></div>${out}`);
 }
 
-async function executeFixes(ids, title){
+async function executeFixes(ids, title, ctx){
   let root = null, closeSheet = null;
   const html = `<div class="fix-progress">${ids.map(id => `<div class="fix-step" data-step="${tfEsc(id)}"><span class="mark wait">•</span><div class="fix-step-body"><span class="fix-step-label">${tfEsc(T((tfFixById(id) || {}).label || id))}</span></div></div>`).join("")}</div>
     <p class="sheet-note" id="fix-status">${tfEsc(T("Working… some repairs take several minutes. Keep TechFix open."))}</p><div id="fix-next"></div>`;
@@ -280,8 +341,10 @@ async function executeFixes(ids, title){
   const status = root && root.querySelector("#fix-status");
   if(status){
     const parts = [];
-    const fixed = count(["fixed"]), fine = count(["ok"]), reboot = count(["reboot"]), bad = count(["failed","partial","cancelled"]);
+    const measured = results.filter(tfIsReport).length;
+    const fixed = count(["fixed"]), fine = results.filter(r => r.state === "ok" && !tfIsReport(r)).length, reboot = count(["reboot"]), bad = count(["failed","partial","cancelled"]);
     if(fixed) parts.push(T("{n} fixed", { n: fixed }));
+    if(measured) parts.push(T("{n} measured", { n: measured }));
     if(fine) parts.push(T("{n} had nothing wrong", { n: fine }));
     if(reboot) parts.push(T("{n} finish after a restart", { n: reboot }));
     if(bad) parts.push(T("{n} need more work", { n: bad }));
@@ -298,8 +361,10 @@ async function executeFixes(ids, title){
     await tfEnsureFixes();
     const labels = next.map(id => T((tfFixById(id) || {}).label || id));
     root.querySelector("#fix-next").innerHTML = `<div class="fix-next"><div class="fix-next-label">${tfEsc(T("Recommended next step"))}</div><ul>${labels.map(l => `<li>${tfEsc(l)}</li>`).join("")}</ul><button class="btn primary sm" id="fix-next-go">${TF_ICON_WRENCH}<span>${tfEsc(T("Continue the repair"))}</span></button></div>`;
-    root.querySelector("#fix-next-go").addEventListener("click", () => { if(closeSheet) closeSheet("next"); runFixPlan(next, title); });
+    root.querySelector("#fix-next-go").addEventListener("click", () => { if(closeSheet) closeSheet("next"); runFixPlan(next, title, ctx); });
   }
+  // A task that went fine leaves the to-do list (it stays visible if it failed).
+  tfMarkDone(ctx, results);
   try{
     if(typeof runNativeScan === "function") await runNativeScan(true);
     if(typeof runSecurityScan === "function" && window.__tfSecurityRan) await runSecurityScan(true);
@@ -354,7 +419,8 @@ function fixItForEntry(entry, localized){
 }
 
 // For a native finding: its own safe + risky repair, in one sheet.
-function fixItForFinding(f, title){
+function fixItForFinding(f, title, scope){
   if(f.androidKey) return openAndroidFix([f.androidKey]);
-  return runFixPlan([f.safeFixId, f.riskyFixId].flat().filter(Boolean), title);
+  const members = f.members || [f];
+  return runFixPlan(members.flatMap(m => [m.safeFixId, m.riskyFixId].flat()).filter(Boolean), title, scope ? tfCtx(scope, members) : null);
 }

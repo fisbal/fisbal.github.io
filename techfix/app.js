@@ -643,10 +643,12 @@ const DX_FINDING = {
   mem_test_failed: "failed memory test", mem_bsod: "memory blue screens", mem_corrected: "corrected memory errors",
   pup_found: "adware installed", pua_threats: "unwanted apps flagged", bundled_extras: "bundled extras", pua_block_off: "unwanted-app blocking off"
 };
-function diagnosisCard(res){
+// skip: diagnosis indexes to leave out (every problem they explain is already done).
+function diagnosisCard(res, skip){
   const dx = (res && res.diagnosis) || [];
-  if(!dx.length) return "";
+  if(!dx.length || dx.every((x, i) => skip && skip.has(i))) return "";
   return `<div class="dx-card"><div class="dx-eyebrow">${esc(T("TechFix's diagnosis"))}</div>${dx.map((x, i) => {
+    if(skip && skip.has(i)) return "";
     const [title, why] = DX_TEXT[x.code] || [x.code, ""];
     const explains = (x.explains || []).map(c => T(DX_FINDING[c] || c));
     return `<div class="dx-item ${esc(x.level)}">
@@ -678,27 +680,56 @@ function renderNativeResults(){
   const memPct = res.memory && res.memory.totalKB ? Math.round((1 - res.memory.freeKB/res.memory.totalKB)*100) : null;
   const sysLine = `<span class="notranslate-tf">${esc(sys.caption||"Windows")} (build ${esc(sys.build||"?")})</span> · <span>${res.admin ? "Administrator" : "standard user"}</span> · <span>RAM ${memPct==null?'—':memPct+'%'} in use</span>`;
 
-  const findings = (res.findings||[]).slice().sort((a,b)=>(SEV_RANK[a.severity]??9)-(SEV_RANK[b.severity]??9));
+  const all = (res.findings||[]).slice().sort((a,b)=>(SEV_RANK[a.severity]??9)-(SEV_RANK[b.severity]??9));
+  // Done tasks leave the list (fixit.js tfSplitDone); same-article findings share one card.
+  const split = tfSplitDone("sys", all);
+  const doneCodes = new Set(split.done.map(f => f.code));
+  const groups = new Map();
+  for(const f of split.active){
+    const key = f.kbId || f.code;
+    if(!groups.has(key)) groups.set(key, Object.assign({}, f, { members: [] }));
+    groups.get(key).members.push(f);
+  }
+  const findings = [...groups.values()];
+  const presentCodes = new Set(all.map(f => f.code));
+  // A diagnosis is done when every problem it explains is done — problems another diagnosis also
+  // explains (e.g. "many startup programs") don't keep it open on their own.
+  const dxList = res.diagnosis || [];
+  const dxSkip = new Set(dxList.map((x, i) => {
+    const ex = (x.explains || []).filter(c => presentCodes.has(c));
+    const own = ex.filter(c => !dxList.some((y, j) => j !== i && (y.explains || []).includes(c)));
+    const core = own.length ? own : ex;
+    return core.length && core.every(c => doneCodes.has(c)) ? i : -1;
+  }).filter(i => i >= 0));
+  state.native.dxSkip = dxSkip;
   const primaryDisk = (res.disks||[])[0];
   const diskPct = primaryDisk && primaryDisk.sizeBytes ? (1 - primaryDisk.freeBytes/primaryDisk.sizeBytes) : null;
   const sevCounts = {
-    crit: findings.filter(f=>f.severity==="critical").length, high: findings.filter(f=>f.severity==="high").length,
-    medium: findings.filter(f=>f.severity==="medium").length, low: findings.filter(f=>f.severity==="low").length
+    crit: split.active.filter(f=>f.severity==="critical").length, high: split.active.filter(f=>f.severity==="high").length,
+    medium: split.active.filter(f=>f.severity==="medium").length, low: split.active.filter(f=>f.severity==="low").length
   };
+  const titleOf = (f) => { const kb = f.kbId ? KB.find(k=>k.id===f.kbId) : null; return kb ? kbL(kb).title : nativeDetail(f); };
+  const doneBlock = tfDoneHtml("sys", split.done, titleOf, nativeDetail);
   const cockpitRow = `<div class="cockpit-row">
     <div class="gauge-card">${gaugeSVG({ pct: memPct==null?null:memPct/100, tier: gaugeTier(memPct==null?null:memPct/100, 0.9), valueLabel: memPct==null?'—':memPct+'%', unitLabel:'MEMORY' })}<div class="gauge-label">Memory</div></div>
     <div class="gauge-card">${gaugeSVG({ pct: diskPct, tier: gaugeTier(diskPct, 0.9), valueLabel: diskPct==null?'—':Math.round(diskPct*100)+'%', unitLabel: primaryDisk ? 'USED' : 'DISK' })}<div class="gauge-label">${esc(primaryDisk ? primaryDisk.id : "Disk")}</div></div>
     <div class="gauge-card" style="justify-content:center; min-height:98px;">${annunciatorRow(sevCounts)}<div class="gauge-label" style="margin-top:10px;">Status</div></div>
   </div>`;
 
-  if(findings.length === 0){
+  if(all.length === 0){
     wrap.innerHTML = `${cockpitRow}<div class="stat-note" style="margin-bottom:10px;">${sysLine}</div>
       <div class="empty-good">${ICON.check}<span><strong>Nothing found</strong> — disk health, driver errors, the event log, pending reboot, and network all checked clean just now.</span></div>`;
     return;
   }
+  if(findings.length === 0){
+    wrap.innerHTML = `${cockpitRow}<div class="stat-note" style="margin-bottom:10px;">${sysLine}</div>
+      <div class="empty-good">${ICON.check}<span><strong>${esc(T("Nothing left to do"))}</strong> — ${esc(T("every task has been done. TechFix keeps checking and brings a card back only if a problem gets worse."))}</span></div>${doneBlock}`;
+    tfWireDone(wrap, renderNativeResults);
+    return;
+  }
 
   wrap.innerHTML = `${cockpitRow}<div class="stat-note" style="margin-bottom:10px;">${sysLine}</div>
-    ${diagnosisCard(res)}
+    ${diagnosisCard(res, dxSkip)}
     <div class="finding-list">${findings.map((f,i)=>{
       const kb = f.kbId ? KB.find(k=>k.id===f.kbId) : null;
       // No exact KB id on this finding (e.g. a generic native-scan detail) — offline
@@ -712,27 +743,28 @@ function renderNativeResults(){
         <div class="finding-sev ${f.severity}"></div>
         <div class="finding-body">
           <div class="finding-title">${esc(title)}</div>
-          <div class="finding-meta">${esc(nativeDetail(f))}</div>
+          ${f.members.map(m => `<div class="finding-meta">${esc(nativeDetail(m))}</div>`).join("")}
           ${fuzzy ? `<div class="finding-meta" style="margin-top:4px;">Closest known issue (pattern match, not confirmed): <strong>${esc(kbL(fuzzy.entry).title)}</strong></div>` : ""}
-          ${f.safeFixId || f.riskyFixId ? `<div class="finding-meta" style="margin-top:6px;" data-fix-row="${i}"></div>` : ""}
+          ${f.members.some(m => m.safeFixId || m.riskyFixId) ? `<div class="finding-meta" style="margin-top:6px;" data-fix-row="${i}"></div>` : ""}
         </div>
         ${linkTarget ? `<div class="finding-arrow" data-kb="${linkTarget}">${ICON.chevron}</div>` : ""}
       </div>`;
-    }).join("")}</div>`;
+    }).join("")}</div>${doneBlock}`;
+  tfWireDone(wrap, renderNativeResults);
 
   els(".finding .finding-arrow", wrap).forEach(node=>{
     node.addEventListener("click", ()=> openKbEntry(node.dataset.kb));
   });
 
   findings.forEach((f,i)=>{
-    if(!f.safeFixId && !f.riskyFixId) return;
+    if(!f.members.some(m => m.safeFixId || m.riskyFixId)) return;
     const row = wrap.querySelector(`[data-fix-row="${i}"]`);
     if(!row) return;
     const kb = f.kbId ? KB.find(k=>k.id===f.kbId) : null;
     const btn = document.createElement("button");
     btn.className = "btn sm primary fixit-btn";
     btn.innerHTML = `${ICON.wrench}<span>Fix it</span>`;
-    btn.addEventListener("click", (e)=>{ e.stopPropagation(); fixItForFinding(f, kb ? kbL(kb).title : nativeDetail(f)); });
+    btn.addEventListener("click", (e)=>{ e.stopPropagation(); fixItForFinding(f, kb ? kbL(kb).title : nativeDetail(f), "sys"); });
     row.appendChild(btn);
   });
 }
@@ -871,7 +903,9 @@ function initNativeDiagnostics(){
   el("#native-results").addEventListener("click", (e)=>{
     const b = e.target.closest(".dx-fix"); if(!b) return;
     const x = ((state.native.result && state.native.result.diagnosis) || [])[+b.dataset.dx];
-    if(x) runFixPlan(x.plan, T((DX_TEXT[x.code] || [x.code])[0], x.params));
+    if(!x) return;
+    const present = (state.native.result.findings || []).filter(f => (x.explains || []).includes(f.code));
+    runFixPlan(x.plan, T((DX_TEXT[x.code] || [x.code])[0], x.params), tfCtx("sys", present));
   });
   renderNativeResults();
 }

@@ -1205,7 +1205,15 @@ window.TF_STRINGS.fr = {
 "{i} of {n}: switch off {app}": "{i} sur {n} : désactive {app}",
 "{i} of {n}: uninstall {app}": "{i} sur {n} : désinstalle {app}",
 "Android is asking on the screen: tap OK / Uninstall to remove {app}, then come back and tap Next.": "Android te le demande à l'écran : touche OK / Désinstaller pour supprimer {app}, puis reviens et touche Suivant.",
-"Play Protect is open: turn on “Scan apps with Play Protect”, tap Scan, then come back and tap Done.": "Play Protect est ouvert : active « Analyser les applis avec Play Protect », touche Analyser, puis reviens et touche Terminé."
+"Play Protect is open: turn on “Scan apps with Play Protect”, tap Scan, then come back and tap Done.": "Play Protect est ouvert : active « Analyser les applis avec Play Protect », touche Analyser, puis reviens et touche Terminé.",
+"{n} task(s) done — TechFix keeps an eye on them": "{n} tâche(s) faite(s) — TechFix garde un œil dessus",
+"Already handled. A card comes back only if its problem gets worse, or after 7 days if it's still there.": "Déjà traité. Une carte ne revient que si son problème s'aggrave, ou après 7 jours s'il est toujours là.",
+"Done {date}": "Fait le {date}",
+"still measured:": "toujours mesuré :",
+"Show again": "Réafficher",
+"{n} measured": "{n} mesuré(s)",
+"Nothing left to do": "Plus rien à faire",
+"every task has been done. TechFix keeps checking and brings a card back only if a problem gets worse.": "toutes les tâches ont été faites. TechFix continue de vérifier et ne ramène une carte que si un problème s'aggrave."
 };
 window.TF_STRINGS.es = {
 "Chromebook detected": "Chromebook detectado",
@@ -2416,7 +2424,15 @@ window.TF_STRINGS.es = {
 "{i} of {n}: switch off {app}": "{i} de {n}: desactiva {app}",
 "{i} of {n}: uninstall {app}": "{i} de {n}: desinstala {app}",
 "Android is asking on the screen: tap OK / Uninstall to remove {app}, then come back and tap Next.": "Android te lo pregunta en la pantalla: toca Aceptar / Desinstalar para quitar {app}, luego vuelve y toca Siguiente.",
-"Play Protect is open: turn on “Scan apps with Play Protect”, tap Scan, then come back and tap Done.": "Play Protect está abierto: activa «Analizar apps con Play Protect», toca Analizar, luego vuelve y toca Listo."
+"Play Protect is open: turn on “Scan apps with Play Protect”, tap Scan, then come back and tap Done.": "Play Protect está abierto: activa «Analizar apps con Play Protect», toca Analizar, luego vuelve y toca Listo.",
+"{n} task(s) done — TechFix keeps an eye on them": "{n} tarea(s) hecha(s) — TechFix las vigila",
+"Already handled. A card comes back only if its problem gets worse, or after 7 days if it's still there.": "Ya atendido. Una tarjeta solo vuelve si su problema empeora, o tras 7 días si sigue ahí.",
+"Done {date}": "Hecho el {date}",
+"still measured:": "aún medido:",
+"Show again": "Mostrar de nuevo",
+"{n} measured": "{n} medido(s)",
+"Nothing left to do": "Nada más que hacer",
+"every task has been done. TechFix keeps checking and brings a card back only if a problem gets worse.": "todas las tareas están hechas. TechFix sigue revisando y solo devuelve una tarjeta si un problema empeora."
 };
 window.TF_STRINGS.pt = {
 "Chromebook detected": "Chromebook detectado",
@@ -3624,7 +3640,15 @@ window.TF_STRINGS.pt = {
 "{i} of {n}: switch off {app}": "{i} de {n}: desligue {app}",
 "{i} of {n}: uninstall {app}": "{i} de {n}: desinstale {app}",
 "Android is asking on the screen: tap OK / Uninstall to remove {app}, then come back and tap Next.": "O Android está perguntando na tela: toque em OK / Desinstalar para remover {app}, depois volte e toque em Próximo.",
-"Play Protect is open: turn on “Scan apps with Play Protect”, tap Scan, then come back and tap Done.": "O Play Protect está aberto: ative “Verificar apps com o Play Protect”, toque em Verificar, depois volte e toque em Concluído."
+"Play Protect is open: turn on “Scan apps with Play Protect”, tap Scan, then come back and tap Done.": "O Play Protect está aberto: ative “Verificar apps com o Play Protect”, toque em Verificar, depois volte e toque em Concluído.",
+"{n} task(s) done — TechFix keeps an eye on them": "{n} tarefa(s) feita(s) — o TechFix fica de olho",
+"Already handled. A card comes back only if its problem gets worse, or after 7 days if it's still there.": "Já tratado. Um cartão só volta se o problema piorar, ou depois de 7 dias se ainda estiver lá.",
+"Done {date}": "Feito em {date}",
+"still measured:": "ainda medido:",
+"Show again": "Mostrar de novo",
+"{n} measured": "{n} medido(s)",
+"Nothing left to do": "Nada mais a fazer",
+"every task has been done. TechFix keeps checking and brings a card back only if a problem gets worse.": "todas as tarefas foram feitas. O TechFix continua verificando e só traz um cartão de volta se um problema piorar."
 };
 window.TF_STRINGS.de = {
 "Chromebook detected": "Chromebook erkannt",
@@ -4829,5 +4853,13 @@ window.TF_STRINGS.de = {
 "{i} of {n}: switch off {app}": "{i} von {n}: {app} ausschalten",
 "{i} of {n}: uninstall {app}": "{i} von {n}: {app} deinstallieren",
 "Android is asking on the screen: tap OK / Uninstall to remove {app}, then come back and tap Next.": "Android fragt auf dem Bildschirm: Tippe auf OK / Deinstallieren, um {app} zu entfernen, komm dann zurück und tippe auf Weiter.",
-"Play Protect is open: turn on “Scan apps with Play Protect”, tap Scan, then come back and tap Done.": "Play Protect ist offen: Schalte „Apps mit Play Protect scannen“ ein, tippe auf Scannen, komm dann zurück und tippe auf Fertig."
+"Play Protect is open: turn on “Scan apps with Play Protect”, tap Scan, then come back and tap Done.": "Play Protect ist offen: Schalte „Apps mit Play Protect scannen“ ein, tippe auf Scannen, komm dann zurück und tippe auf Fertig.",
+"{n} task(s) done — TechFix keeps an eye on them": "{n} Aufgabe(n) erledigt — TechFix behält sie im Blick",
+"Already handled. A card comes back only if its problem gets worse, or after 7 days if it's still there.": "Bereits erledigt. Eine Karte kommt nur zurück, wenn sich ihr Problem verschlimmert, oder nach 7 Tagen, wenn es noch da ist.",
+"Done {date}": "Erledigt am {date}",
+"still measured:": "weiterhin gemessen:",
+"Show again": "Wieder anzeigen",
+"{n} measured": "{n} gemessen",
+"Nothing left to do": "Nichts mehr zu tun",
+"every task has been done. TechFix keeps checking and brings a card back only if a problem gets worse.": "alle Aufgaben sind erledigt. TechFix prüft weiter und bringt eine Karte nur zurück, wenn sich ein Problem verschlimmert."
 };

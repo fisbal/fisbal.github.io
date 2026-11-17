@@ -142,8 +142,11 @@ function renderSecurityView(){
   if(!res){ wrap.innerHTML = head + `<div class="stat-note">${esc(state.securityBusy ? T("Checking… this can take up to a minute.") : T("Run a security check to see how well this device is protected."))}</div>`; wireSecurityHead(); return; }
   if(res.error){ wrap.innerHTML = head + `<div class="stat-note">${esc(T("Security check failed:"))} ${esc(res.error)}</div>`; wireSecurityHead(); return; }
 
-  const findings = (res.findings || []).slice().sort((a, b) => (SEV_RANK[a.severity] ?? 9) - (SEV_RANK[b.severity] ?? 9));
-  const score = secScore(findings);
+  const allFindings = (res.findings || []).slice().sort((a, b) => (SEV_RANK[a.severity] ?? 9) - (SEV_RANK[b.severity] ?? 9));
+  // The score stays honest (every problem still detected counts); done tasks just leave the to-do list.
+  const score = secScore(allFindings);
+  const secSplit = native ? tfSplitDone("sec", allFindings) : { active: allFindings, done: [] };
+  const findings = secSplit.active;
   const tier = score >= 85 ? "ok" : score >= 60 ? "warn" : "crit";
   const counts = { crit: findings.filter(f => f.severity === "critical").length, high: findings.filter(f => f.severity === "high").length,
                    medium: findings.filter(f => f.severity === "medium").length, low: findings.filter(f => f.severity === "low").length };
@@ -153,8 +156,10 @@ function renderSecurityView(){
     </div>
     <div class="stat-note" style="margin:-4px 0 10px;">${esc(T("The score is TechFix's own checklist: 100 minus points for each problem found."))}</div>`;
 
-  const list = findings.length ? `<div class="finding-list">${findings.map(secFindingHtml).join("")}</div>`
-    : `<div class="empty-good">${ICON.check}<span><strong>${esc(T("Well protected"))}</strong> — ${esc(T("no security problem found in this check."))}</span></div>`;
+  const doneBlock = tfDoneHtml("sec", secSplit.done, (f) => T(SEC_TITLE[f.code] || f.detail || f.code), (f) => f.code && NATIVE_DETAIL[f.code] ? nativeDetail(f) : (f.detail || ""));
+  const list = (findings.length ? `<div class="finding-list">${findings.map(secFindingHtml).join("")}</div>`
+    : allFindings.length ? `<div class="empty-good">${ICON.check}<span><strong>${esc(T("Nothing left to do"))}</strong> — ${esc(T("every task has been done. TechFix keeps checking and brings a card back only if a problem gets worse."))}</span></div>`
+    : `<div class="empty-good">${ICON.check}<span><strong>${esc(T("Well protected"))}</strong> — ${esc(T("no security problem found in this check."))}</span></div>`) + doneBlock;
 
   let extra = "";
   if(native){
@@ -177,9 +182,10 @@ function renderSecurityView(){
     extra + selfProtectionHtml();
 
   wireSecurityHead();
+  tfWireDone(wrap, renderSecurityView);
   wrap.querySelectorAll("[data-sec-fix]").forEach(b => b.addEventListener("click", () => {
     const f = findings[Number(b.dataset.secFix)];
-    fixItForFinding(f, T(SEC_TITLE[f.code] || f.detail));
+    fixItForFinding(f, T(SEC_TITLE[f.code] || f.detail), "sec");
   }));
   wrap.querySelectorAll("[data-sec-prevent]").forEach(b => b.addEventListener("click", () => {
     const f = res.forecast[Number(b.dataset.secPrevent)];
