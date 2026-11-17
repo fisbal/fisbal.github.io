@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld("techfixNative", {
   },
   // Automatic mode: get / set the level, check now, last background result.
   auto: (op, payload) => ipcRenderer.invoke("techfix:auto", op, payload),
+  procs: (op, payload) => ipcRenderer.invoke("techfix:proc", op, payload),
   onAuto: (cb) => {
     const chans = ["techfix:auto-state", "techfix:auto-result", "techfix:auto-open"];
     const hs = chans.map((c) => { const h = (_e, d) => { try { cb(c.replace("techfix:auto-", ""), d); } catch (_) {} }; ipcRenderer.on(c, h); return [c, h]; });

@@ -656,6 +656,7 @@ function diagnosisCard(res, skip){
       <div class="dx-why">${esc(T(why, x.params))}</div>
       ${explains.length ? `<div class="dx-explains">${esc(T("This explains:"))} ${esc(explains.join(" · "))}</div>` : ""}
       ${(x.plan || []).length ? `<button class="btn primary sm dx-fix" data-dx="${i}">${TF_ICON_WRENCH}<span>${esc(T("Fix in this order"))}</span></button>` : ""}
+      ${x.code === "dx_memory" && typeof tfProcBtn === "function" ? tfProcBtn("ghost") : ""}
       ${x.after ? `<div class="dx-after"><strong>${esc(T("Then:"))}</strong> ${esc(T(DX_AFTER[x.after] || ""))}</div>` : ""}
     </div>`; }).join("")}</div>`;
 }
@@ -766,6 +767,8 @@ function renderNativeResults(){
     btn.innerHTML = `${ICON.wrench}<span>Fix it</span>`;
     btn.addEventListener("click", (e)=>{ e.stopPropagation(); fixItForFinding(f, kb ? kbL(kb).title : nativeDetail(f), "sys"); });
     row.appendChild(btn);
+    // Memory problems: also offer to close the program that holds the memory.
+    if(typeof TF_MEM_CODES !== "undefined" && f.members.some(m => TF_MEM_CODES.has(m.code))) row.insertAdjacentHTML("beforeend", " " + tfProcBtn("ghost"));
   });
 }
 

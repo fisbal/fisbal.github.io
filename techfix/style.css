@@ -715,3 +715,11 @@ button{ font-family: inherit; }
 .tf-done summary{ cursor:pointer; font-size:13.5px; color: var(--ok); font-weight:600; }
 .tf-done-row{ display:flex; gap:10px; align-items:center; justify-content:space-between; padding:8px 0; border-top:1px solid var(--border-soft); }
 .tf-done-title{ font-size:13.5px; font-weight:600; color: var(--text-dim); }
+
+/* ---------- Close a program ---------- */
+.tf-proc{ display:flex; gap:12px; align-items:center; padding:9px 0; border-top:1px solid var(--border-soft); }
+.tf-proc-body{ flex:1; min-width:0; }
+.tf-proc-name{ font-weight:600; font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tf-proc-mb{ font-family: var(--mono, monospace); font-size:13px; color: var(--gold-2); min-width:70px; text-align:right; }
+.tf-proc-verdict .fix-verdict{ margin-top:4px; font-size:12.5px; }
+.tf-done-btns{ display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }

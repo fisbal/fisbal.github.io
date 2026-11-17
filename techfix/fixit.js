@@ -197,7 +197,8 @@ function tfDoneHtml(scope, done, titleOf, detailOf){
     <div class="stat-note" style="margin:6px 0;">${tfEsc(T("Already handled. A card comes back only if its problem gets worse, or after 7 days if it's still there."))}</div>
     ${[...rows.values()].map(({ f, members }) => `<div class="tf-done-row"><div class="tf-done-body"><div class="tf-done-title">${tfEsc(titleOf(f))}</div>
       <div class="finding-meta">${tfEsc(T("Done {date}", { date: when(f.doneAt) }))} · ${tfEsc(T("still measured:"))} ${tfEsc(members.map(detailOf).join(" "))}</div></div>
-      <button class="btn sm ghost" data-tf-undo="${tfEsc(members.map(m => m.code).join(","))}">${tfEsc(T("Show again"))}</button></div>`).join("")}</details>`;
+      <div class="tf-done-btns">${typeof TF_MEM_CODES !== "undefined" && members.some(m => TF_MEM_CODES.has(m.code)) ? tfProcBtn("ghost") : ""}
+      <button class="btn sm ghost" data-tf-undo="${tfEsc(members.map(m => m.code).join(","))}">${tfEsc(T("Show again"))}</button></div></div>`).join("")}</details>`;
 }
 function tfWireDone(wrap, rerender){
   wrap.querySelectorAll("[data-tf-undo]").forEach(b => b.addEventListener("click", () => {
@@ -308,7 +309,8 @@ function tfRenderResult(row, r){
   row.querySelector(".mark").textContent = st.mark;
   const out = r.out && r.state !== "opened" ? `<details class="fix-raw"><summary>${tfEsc(T("Details"))}</summary><pre>${tfEsc(r.out)}</pre></details>` : "";
   row.querySelector(".fix-step-body").insertAdjacentHTML("beforeend",
-    `<div class="fix-verdict"><span class="fix-badge ${st.cls}">${tfEsc(T(st.label))}</span> <span>${tfEsc(tfResultText(r))}</span></div>${out}`);
+    `<div class="fix-verdict"><span class="fix-badge ${st.cls}">${tfEsc(T(st.label))}</span> <span>${tfEsc(tfResultText(r))}</span></div>${out}` +
+    (r.code === "memory_report" && typeof tfProcBtn === "function" ? `<div style="margin-top:8px;">${tfProcBtn("primary")}</div>` : ""));
 }
 
 async function executeFixes(ids, title, ctx){

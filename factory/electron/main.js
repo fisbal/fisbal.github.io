@@ -177,6 +177,14 @@ if (diagnostics) {
     if (op === "last") return auto.lastResult();
     return { error: "unknown" };
   });
+  // "Close a program": the user's heaviest programs, closed normally or (confirmed) forced.
+  ipcMain.handle("techfix:proc", async (e, op, payload) => {
+    if (!fromOurView(e)) return { error: "unauthorized" };
+    const procs = require("./procs");
+    if (op === "list") return procs.list();
+    if (op === "close") return procs.close(payload && payload.name, !!(payload && payload.force));
+    return { error: "unknown" };
+  });
   ipcMain.handle("techfix:connect", async (e, op, payload) => {
     if (!fromOurView(e)) return { error: "unauthorized" };
     const send = (ev) => { try { if (!e.sender.isDestroyed()) e.sender.send("techfix:connect-progress", Object.assign({ op: String(op) }, ev)); } catch (_) {} };
