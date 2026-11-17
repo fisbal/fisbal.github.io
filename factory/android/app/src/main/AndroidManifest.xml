@@ -5,6 +5,12 @@
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- Android 12+: lets the app's own later updates install without asking again (granted automatically). -->
     <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
+    <!-- Two optional permissions, filled in per app by the factory (build.py → gradle placeholders).
+         TechFix only: see every installed app for the unwanted / spy apps check (QUERY_ALL_PACKAGES)
+         and open Android's own "Uninstall?" dialog (REQUEST_DELETE_PACKAGES). Every other app gets an
+         unused placeholder name, which Android ignores. -->
+    <uses-permission android:name="${mbExtraPerm1}" />
+    <uses-permission android:name="${mbExtraPerm2}" />
 
     <!-- Android 11+: lets apps with a narrator (VoiceBridge.java) reach the phone's text-to-speech engine. -->
     <queries>

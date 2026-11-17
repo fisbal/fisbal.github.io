@@ -307,6 +307,10 @@ def cmd_android(app_id, src, work):
         "mbVersionName": f"1.{RUN}",
         "mbOrientation": meta.get("orientation", "unspecified"),
     }
+    # TechFix (diagnostics bridge) checks every installed app for adware / spy apps and opens
+    # Android's own uninstall dialog — the only app that asks for these two permissions.
+    if app.get("electron", {}).get("diagnostics"):
+        props.update({"mbExtraPerm1": "android.permission.QUERY_ALL_PACKAGES", "mbExtraPerm2": "android.permission.REQUEST_DELETE_PACKAGES"})
     if meta.get("keystore"):
         shutil.copy2(os.path.join(src, "keystore.jks"), os.path.join(work, "keys", "app.jks"))
         props.update({"mbStoreFile": "../keys/app.jks", "mbStorePass": meta["keystore"]["pass"],

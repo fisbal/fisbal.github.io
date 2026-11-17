@@ -1487,6 +1487,7 @@ function rerenderAll(){
   if(typeof cxRerender === "function") cxRerender();
   if(typeof fmtRerender === "function") fmtRerender();
   if(typeof autoRerender === "function") autoRerender();
+  if(typeof thLocalInit === "function") thLocalInit();
 }
 
 function boot(initial){

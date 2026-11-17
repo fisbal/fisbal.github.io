@@ -3,6 +3,7 @@ package com.martinb.shell;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.KeyguardManager;
+import android.app.AppOpsManager;
 import android.app.admin.DevicePolicyManager;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
@@ -11,7 +12,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Environment;
@@ -24,21 +27,32 @@ import android.webkit.JavascriptInterface;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * TechFix-only native bridge on Android (window.TechFixAndroid). Attached by MainActivity ONLY when
  * mb-config.json has diagnostics:true (TechFix) and the page is the app's own offline content, so
  * every other MartinB app is unaffected.
  *
- * Two calls, nothing else:
+ * Calls:
  *   scan()            real readings an Android app may take without extra permissions: battery
  *                     (level, health, temperature, cycles), free storage, RAM, heat status, OS and
  *                     security-patch age, screen lock, encryption, developer options/USB debugging,
  *                     and which apps hold device-admin or accessibility control (spyware signs).
  *   openSettings(key) opens the exact Settings screen for a fix, from the fixed list below.
+ *   threatScan()      the unwanted / spy apps check: for each app the user installed — who installed
+ *                     it, whether it has an icon, whether it may draw over other apps, accessibility /
+ *                     notification / device-admin rights, install date — in the SAME text format as
+ *                     the USB check (factory/electron/connect.js THREAT_SH), so techfix/threats.js
+ *                     classifies both identically. Read-only; nothing leaves the phone.
+ *   uninstall(pkg)    opens Android's own "Uninstall this app?" dialog (the user confirms).
+ *   openApp(pkg)      opens that app's Settings page (pop-ups, notifications, battery, permissions).
  *
  * Android does not let an ordinary app change system settings by itself, so on a phone the
  * "Fix it" button takes the user straight to the right screen instead of running the change.
@@ -79,7 +93,7 @@ final class TechFixBridge {
                 int volt = b.getIntExtra(BatteryManager.EXTRA_VOLTAGE, -1);
                 if (volt > 0) bat.put("voltageMv", volt);
                 int cycles = b.getIntExtra("android.os.extra.CYCLE_COUNT", -1);
-                if (cycles >= 0) bat.put("cycles", cycles);
+                if (cycles > 0) bat.put("cycles", cycles);
                 r.put("battery", bat);
             }
 
@@ -127,6 +141,93 @@ final class TechFixBridge {
         }
         return r.toString();
     }
+
+    private static final Pattern PKG = Pattern.compile("^[A-Za-z][\\w]*(\\.[\\w]+)+$");
+
+    @JavascriptInterface
+    @SuppressWarnings("deprecation")
+    public String threatScan() {
+        StringBuilder o = new StringBuilder();
+        try {
+            Context ctx = activity.getApplicationContext();
+            PackageManager pm = ctx.getPackageManager();
+            ContentResolver cr = ctx.getContentResolver();
+            o.append("@@TF:sdk\n").append(Build.VERSION.SDK_INT).append('\n');
+            List<PackageInfo> all = pm.getInstalledPackages(PackageManager.GET_PERMISSIONS);
+            StringBuilder pk = new StringBuilder(), la = new StringBuilder(), ov = new StringBuilder(), ti = new StringBuilder(), lb = new StringBuilder();
+            AppOpsManager aom = (AppOpsManager) ctx.getSystemService(Context.APP_OPS_SERVICE);
+            boolean overlayOk = aom != null;
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
+            for (PackageInfo p : all) {
+                ApplicationInfo ai = p.applicationInfo;
+                if (ai == null || (ai.flags & (ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)) != 0) continue;
+                if (p.packageName.equals(ctx.getPackageName())) continue;
+                String inst = null;
+                try {
+                    if (Build.VERSION.SDK_INT >= 30) inst = pm.getInstallSourceInfo(p.packageName).getInstallingPackageName();
+                    else inst = pm.getInstallerPackageName(p.packageName);
+                } catch (Exception ignored) { }
+                pk.append("package:").append(p.packageName).append("  installer=").append(inst == null ? "null" : inst).append('\n');
+                if (pm.getLaunchIntentForPackage(p.packageName) != null) la.append("  ").append(p.packageName).append("/.Launch\n");
+                ti.append("  Package [").append(p.packageName).append("] (x):\n    firstInstallTime=").append(df.format(new Date(p.firstInstallTime))).append('\n');
+                try { lb.append(p.packageName).append('=').append(String.valueOf(pm.getApplicationLabel(ai)).replace('\n', ' ')).append('\n'); } catch (Exception ignored) { }
+                boolean asks = false;
+                if (p.requestedPermissions != null) for (String rp : p.requestedPermissions) if ("android.permission.SYSTEM_ALERT_WINDOW".equals(rp)) { asks = true; break; }
+                if (asks && overlayOk) {
+                    try {
+                        int mode = Build.VERSION.SDK_INT >= 29
+                            ? aom.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_SYSTEM_ALERT_WINDOW, ai.uid, p.packageName)
+                            : aom.checkOpNoThrow(AppOpsManager.OPSTR_SYSTEM_ALERT_WINDOW, ai.uid, p.packageName);
+                        if (mode == AppOpsManager.MODE_ALLOWED) ov.append(p.packageName).append('\n');
+                    } catch (Exception e) { overlayOk = false; }
+                }
+            }
+            o.append("@@TF:pkgs\n").append(pk);
+            o.append("@@TF:launch\n").append(la);
+            o.append("@@TF:overlay\n").append(overlayOk ? ov.toString() : "error\n");
+            o.append("@@TF:acc\n").append(nz(safeSecure(cr, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES))).append('\n');
+            o.append("@@TF:nl\n").append(nz(safeSecure(cr, "enabled_notification_listeners"))).append('\n');
+            o.append("@@TF:admins\n");
+            DevicePolicyManager dpm = (DevicePolicyManager) ctx.getSystemService(Context.DEVICE_POLICY_SERVICE);
+            List<ComponentName> admins = dpm == null ? null : dpm.getActiveAdmins();
+            if (admins != null) for (ComponentName c : admins) o.append("ComponentInfo{").append(c.flattenToString()).append("}\n");
+            o.append("@@TF:times\n").append(ti);
+            String v = null;
+            try { v = Settings.Global.getString(cr, "package_verifier_enable"); } catch (Exception ignored) { }
+            o.append("@@TF:verify\n").append(nz(v)).append('\n');
+            o.append("@@TF:labels\n").append(lb);
+            o.append("@@TF:end\n");
+        } catch (Exception e) {
+            o.append("@@TF:error\n").append(e).append('\n');
+        }
+        return o.toString();
+    }
+
+    @JavascriptInterface
+    public boolean uninstall(String pkg) {
+        if (pkg == null || !PKG.matcher(pkg).matches()) return false;
+        return startOnUi(new Intent(Intent.ACTION_DELETE, Uri.parse("package:" + pkg)));
+    }
+
+    @JavascriptInterface
+    public boolean openApp(String pkg) {
+        if (pkg == null || !PKG.matcher(pkg).matches()) return false;
+        return startOnUi(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + pkg)));
+    }
+
+    private boolean startOnUi(final Intent i) {
+        final boolean[] ok = { false };
+        final Object lock = new Object();
+        activity.runOnUiThread(() -> {
+            try { i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); activity.startActivity(i); ok[0] = true; }
+            catch (ActivityNotFoundException | SecurityException e) { ok[0] = false; }
+            synchronized (lock) { lock.notifyAll(); }
+        });
+        synchronized (lock) { try { lock.wait(1500); } catch (InterruptedException ignored) { } }
+        return ok[0];
+    }
+
+    private static String nz(String s) { return s == null ? "" : s; }
 
     @JavascriptInterface
     public boolean openSettings(String key) {

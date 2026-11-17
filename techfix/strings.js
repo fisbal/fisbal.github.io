@@ -1194,7 +1194,18 @@ window.TF_STRINGS.fr = {
 "Then reset your browser if its home page or search engine changed, and remove unknown extensions. For a second opinion, Malwarebytes AdwCleaner (free) removes leftovers. Next time, get games from Steam, Epic, GOG or the Microsoft Store and choose \"Custom install\" to untick extra offers.": "Ensuite, réinitialise ton navigateur si sa page d'accueil ou son moteur de recherche a changé, et retire les extensions inconnues. Pour un deuxième avis, Malwarebytes AdwCleaner (gratuit) enlève les restes. La prochaine fois, prends les jeux sur Steam, Epic, GOG ou le Microsoft Store et choisis « Installation personnalisée » pour décocher les offres.",
 "{n} adware / unwanted item(s) found and quarantined. Windows now blocks this kind of app (undo a quarantine in Windows Security › Protection history)": "{n} publiciel(s) / élément(s) indésirable(s) trouvé(s) et mis en quarantaine. Windows bloque maintenant ce genre d'app (annuler une quarantaine : Sécurité Windows › Historique de protection)",
 "Scan done: no adware or unwanted app found by Microsoft Defender": "Analyse terminée : Microsoft Defender n'a trouvé aucun publiciel ni app indésirable",
-"Windows now blocks adware and unwanted apps; the scan found nothing to remove": "Windows bloque maintenant les publiciels et apps indésirables ; l'analyse n'a rien trouvé à supprimer"
+"Windows now blocks adware and unwanted apps; the scan found nothing to remove": "Windows bloque maintenant les publiciels et apps indésirables ; l'analyse n'a rien trouvé à supprimer",
+"Stop": "Arrêter",
+"First: switch off {app}": "D'abord : désactive {app}",
+"{app} is a device administrator, so Android won't uninstall it yet. On the screen that just opened (Device admin apps), switch {app} off, come back here, then tap Next.": "{app} est administrateur de l'appareil, donc Android refuse encore de la désinstaller. Sur l'écran qui vient de s'ouvrir (Applis d'administration de l'appareil), désactive {app}, reviens ici, puis touche Suivant.",
+"Next": "Suivant",
+"Android is asking on the screen: tap OK / Uninstall to remove {app}, then come back and tap Done.": "Android te le demande à l'écran : touche OK / Désinstaller pour supprimer {app}, puis reviens et touche Terminé.",
+"Block {app}'s ads": "Bloquer les pubs de {app}",
+"{app}'s settings are open. Turn off “Appear on top” (or “Display over other apps”) and Notifications, and set Battery to Restricted. The app stays, its pop-ups stop. Then come back and tap Done.": "Les paramètres de {app} sont ouverts. Désactive « Afficher par-dessus » (ou « Afficher sur les autres applis ») et les Notifications, et mets la Batterie sur Limitée. L'app reste, ses pop-ups s'arrêtent. Puis reviens et touche Terminé.",
+"{i} of {n}: switch off {app}": "{i} sur {n} : désactive {app}",
+"{i} of {n}: uninstall {app}": "{i} sur {n} : désinstalle {app}",
+"Android is asking on the screen: tap OK / Uninstall to remove {app}, then come back and tap Next.": "Android te le demande à l'écran : touche OK / Désinstaller pour supprimer {app}, puis reviens et touche Suivant.",
+"Play Protect is open: turn on “Scan apps with Play Protect”, tap Scan, then come back and tap Done.": "Play Protect est ouvert : active « Analyser les applis avec Play Protect », touche Analyser, puis reviens et touche Terminé."
 };
 window.TF_STRINGS.es = {
 "Chromebook detected": "Chromebook detectado",
@@ -2394,7 +2405,18 @@ window.TF_STRINGS.es = {
 "Then reset your browser if its home page or search engine changed, and remove unknown extensions. For a second opinion, Malwarebytes AdwCleaner (free) removes leftovers. Next time, get games from Steam, Epic, GOG or the Microsoft Store and choose \"Custom install\" to untick extra offers.": "Luego restablece tu navegador si cambió la página de inicio o el buscador, y quita extensiones desconocidas. Como segunda opinión, Malwarebytes AdwCleaner (gratis) quita los restos. La próxima vez, consigue juegos en Steam, Epic, GOG o Microsoft Store y elige «Instalación personalizada» para desmarcar ofertas.",
 "{n} adware / unwanted item(s) found and quarantined. Windows now blocks this kind of app (undo a quarantine in Windows Security › Protection history)": "{n} adware / elemento(s) no deseado(s) encontrado(s) y en cuarentena. Windows ahora bloquea este tipo de app (deshacer una cuarentena: Seguridad de Windows › Historial de protección)",
 "Scan done: no adware or unwanted app found by Microsoft Defender": "Análisis terminado: Microsoft Defender no encontró adware ni apps no deseadas",
-"Windows now blocks adware and unwanted apps; the scan found nothing to remove": "Windows ahora bloquea el adware y las apps no deseadas; el análisis no encontró nada que quitar"
+"Windows now blocks adware and unwanted apps; the scan found nothing to remove": "Windows ahora bloquea el adware y las apps no deseadas; el análisis no encontró nada que quitar",
+"Stop": "Detener",
+"First: switch off {app}": "Primero: desactiva {app}",
+"{app} is a device administrator, so Android won't uninstall it yet. On the screen that just opened (Device admin apps), switch {app} off, come back here, then tap Next.": "{app} es administrador del dispositivo, así que Android aún no la desinstala. En la pantalla que se acaba de abrir (Apps de administración del dispositivo), desactiva {app}, vuelve aquí y toca Siguiente.",
+"Next": "Siguiente",
+"Android is asking on the screen: tap OK / Uninstall to remove {app}, then come back and tap Done.": "Android te lo pregunta en la pantalla: toca Aceptar / Desinstalar para quitar {app}, luego vuelve y toca Listo.",
+"Block {app}'s ads": "Bloquear los anuncios de {app}",
+"{app}'s settings are open. Turn off “Appear on top” (or “Display over other apps”) and Notifications, and set Battery to Restricted. The app stays, its pop-ups stop. Then come back and tap Done.": "Los ajustes de {app} están abiertos. Desactiva «Mostrar encima» (o «Mostrar sobre otras apps») y las Notificaciones, y pon la Batería en Restringida. La app se queda, sus ventanas emergentes paran. Luego vuelve y toca Listo.",
+"{i} of {n}: switch off {app}": "{i} de {n}: desactiva {app}",
+"{i} of {n}: uninstall {app}": "{i} de {n}: desinstala {app}",
+"Android is asking on the screen: tap OK / Uninstall to remove {app}, then come back and tap Next.": "Android te lo pregunta en la pantalla: toca Aceptar / Desinstalar para quitar {app}, luego vuelve y toca Siguiente.",
+"Play Protect is open: turn on “Scan apps with Play Protect”, tap Scan, then come back and tap Done.": "Play Protect está abierto: activa «Analizar apps con Play Protect», toca Analizar, luego vuelve y toca Listo."
 };
 window.TF_STRINGS.pt = {
 "Chromebook detected": "Chromebook detectado",
@@ -3591,7 +3613,18 @@ window.TF_STRINGS.pt = {
 "Then reset your browser if its home page or search engine changed, and remove unknown extensions. For a second opinion, Malwarebytes AdwCleaner (free) removes leftovers. Next time, get games from Steam, Epic, GOG or the Microsoft Store and choose \"Custom install\" to untick extra offers.": "Depois, redefina o navegador se a página inicial ou o buscador mudou, e remova extensões desconhecidas. Como segunda opinião, o Malwarebytes AdwCleaner (grátis) remove os restos. Da próxima vez, pegue jogos na Steam, Epic, GOG ou Microsoft Store e escolha “Instalação personalizada” para desmarcar ofertas.",
 "{n} adware / unwanted item(s) found and quarantined. Windows now blocks this kind of app (undo a quarantine in Windows Security › Protection history)": "{n} adware / item(ns) indesejado(s) encontrado(s) e em quarentena. O Windows agora bloqueia esse tipo de app (desfazer uma quarentena: Segurança do Windows › Histórico de proteção)",
 "Scan done: no adware or unwanted app found by Microsoft Defender": "Análise concluída: o Microsoft Defender não encontrou adware nem apps indesejados",
-"Windows now blocks adware and unwanted apps; the scan found nothing to remove": "O Windows agora bloqueia adware e apps indesejados; a análise não encontrou nada para remover"
+"Windows now blocks adware and unwanted apps; the scan found nothing to remove": "O Windows agora bloqueia adware e apps indesejados; a análise não encontrou nada para remover",
+"Stop": "Parar",
+"First: switch off {app}": "Primeiro: desligue {app}",
+"{app} is a device administrator, so Android won't uninstall it yet. On the screen that just opened (Device admin apps), switch {app} off, come back here, then tap Next.": "{app} é administrador do dispositivo, então o Android ainda não o desinstala. Na tela que acabou de abrir (Apps de administrador do dispositivo), desligue {app}, volte aqui e toque em Próximo.",
+"Next": "Próximo",
+"Android is asking on the screen: tap OK / Uninstall to remove {app}, then come back and tap Done.": "O Android está perguntando na tela: toque em OK / Desinstalar para remover {app}, depois volte e toque em Concluído.",
+"Block {app}'s ads": "Bloquear os anúncios de {app}",
+"{app}'s settings are open. Turn off “Appear on top” (or “Display over other apps”) and Notifications, and set Battery to Restricted. The app stays, its pop-ups stop. Then come back and tap Done.": "As configurações de {app} estão abertas. Desligue “Sobrepor a outros apps” e as Notificações, e coloque a Bateria em Restrita. O app fica, os pop-ups param. Depois volte e toque em Concluído.",
+"{i} of {n}: switch off {app}": "{i} de {n}: desligue {app}",
+"{i} of {n}: uninstall {app}": "{i} de {n}: desinstale {app}",
+"Android is asking on the screen: tap OK / Uninstall to remove {app}, then come back and tap Next.": "O Android está perguntando na tela: toque em OK / Desinstalar para remover {app}, depois volte e toque em Próximo.",
+"Play Protect is open: turn on “Scan apps with Play Protect”, tap Scan, then come back and tap Done.": "O Play Protect está aberto: ative “Verificar apps com o Play Protect”, toque em Verificar, depois volte e toque em Concluído."
 };
 window.TF_STRINGS.de = {
 "Chromebook detected": "Chromebook erkannt",
@@ -4785,5 +4818,16 @@ window.TF_STRINGS.de = {
 "Then reset your browser if its home page or search engine changed, and remove unknown extensions. For a second opinion, Malwarebytes AdwCleaner (free) removes leftovers. Next time, get games from Steam, Epic, GOG or the Microsoft Store and choose \"Custom install\" to untick extra offers.": "Setze danach den Browser zurück, wenn Startseite oder Suchmaschine geändert wurden, und entferne unbekannte Erweiterungen. Als zweite Meinung entfernt Malwarebytes AdwCleaner (kostenlos) Reste. Nächstes Mal Spiele von Steam, Epic, GOG oder dem Microsoft Store holen und „Benutzerdefinierte Installation“ wählen, um Zusatzangebote abzuwählen.",
 "{n} adware / unwanted item(s) found and quarantined. Windows now blocks this kind of app (undo a quarantine in Windows Security › Protection history)": "{n} Adware / unerwünschte(s) Element(e) gefunden und in Quarantäne. Windows blockiert solche Apps jetzt (Quarantäne aufheben: Windows-Sicherheit › Schutzverlauf)",
 "Scan done: no adware or unwanted app found by Microsoft Defender": "Scan fertig: Microsoft Defender hat keine Adware und keine unerwünschte App gefunden",
-"Windows now blocks adware and unwanted apps; the scan found nothing to remove": "Windows blockiert jetzt Adware und unerwünschte Apps; der Scan hat nichts zu entfernen gefunden"
+"Windows now blocks adware and unwanted apps; the scan found nothing to remove": "Windows blockiert jetzt Adware und unerwünschte Apps; der Scan hat nichts zu entfernen gefunden",
+"Stop": "Stopp",
+"First: switch off {app}": "Zuerst: {app} ausschalten",
+"{app} is a device administrator, so Android won't uninstall it yet. On the screen that just opened (Device admin apps), switch {app} off, come back here, then tap Next.": "{app} ist Geräteadministrator, daher deinstalliert Android die App noch nicht. Schalte {app} auf dem gerade geöffneten Bildschirm (Geräteadministrator-Apps) aus, komm zurück und tippe auf Weiter.",
+"Next": "Weiter",
+"Android is asking on the screen: tap OK / Uninstall to remove {app}, then come back and tap Done.": "Android fragt auf dem Bildschirm: Tippe auf OK / Deinstallieren, um {app} zu entfernen, komm dann zurück und tippe auf Fertig.",
+"Block {app}'s ads": "Werbung von {app} blockieren",
+"{app}'s settings are open. Turn off “Appear on top” (or “Display over other apps”) and Notifications, and set Battery to Restricted. The app stays, its pop-ups stop. Then come back and tap Done.": "Die Einstellungen von {app} sind offen. Schalte „Über anderen Apps einblenden“ und Benachrichtigungen aus und stelle den Akku auf Eingeschränkt. Die App bleibt, ihre Pop-ups hören auf. Komm dann zurück und tippe auf Fertig.",
+"{i} of {n}: switch off {app}": "{i} von {n}: {app} ausschalten",
+"{i} of {n}: uninstall {app}": "{i} von {n}: {app} deinstallieren",
+"Android is asking on the screen: tap OK / Uninstall to remove {app}, then come back and tap Next.": "Android fragt auf dem Bildschirm: Tippe auf OK / Deinstallieren, um {app} zu entfernen, komm dann zurück und tippe auf Weiter.",
+"Play Protect is open: turn on “Scan apps with Play Protect”, tap Scan, then come back and tap Done.": "Play Protect ist offen: Schalte „Apps mit Play Protect scannen“ ein, tippe auf Scannen, komm dann zurück und tippe auf Fertig."
 };

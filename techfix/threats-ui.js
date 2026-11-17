@@ -1,10 +1,14 @@
-/* ===================== TechFix — "Unwanted & spy apps" panel (Connect tab) =====================
-   Runs on every connected phone, in the installed app and in Chrome (WebUSB). The phone sends raw
-   signals (op "threatScan"), techfix/threats.js classifies them, and this panel lets the person
-   remove, mute (block ads / pop-ups / background) or keep each app. Nothing is removed without a click. */
+/* ===================== TechFix — "Unwanted & spy apps" panel =====================
+   One panel, two ways to reach the phone:
+   · Connect tab  — a phone plugged into the PC app or into Chrome (WebUSB): op "threatScan" over
+                    ADB; TechFix can uninstall / mute apps itself (THDRV.usb).
+   · On the phone — the TechFix Android app checks its own phone (window.TechFixAndroid.threatScan,
+                    factory/android TechFixBridge.java): Android asks "Uninstall?" for each app and
+                    pop-ups are switched off on the app's own Settings page (THDRV.local).
+   Both send the same raw text, classified by techfix/threats.js. Nothing is removed without a click. */
 "use strict";
 
-Object.assign(CX_RESULT, {
+if (typeof CX_RESULT !== "undefined") Object.assign(CX_RESULT, {
   app_admin_first: "{app} is a device administrator, so Android protects it. The phone now shows “Device admin apps”: switch {app} off there, then tap Uninstall again.",
   apps_removed: "{ok} of {n} apps removed.",
   apps_removed_admin: "{ok} of {n} apps removed. The others are device administrators: the phone shows “Device admin apps” — switch them off there, then remove them again.",
@@ -40,6 +44,66 @@ const TH_REASON = {
 };
 function thTrusted(){ try{ return new Set(JSON.parse(localStorage.getItem("techfix:keep-apps") || "[]")); }catch(_){ return new Set(); } }
 function thKeep(pkg){ try{ const s = thTrusted(); s.add(pkg); localStorage.setItem("techfix:keep-apps", JSON.stringify([...s])); }catch(_){} }
+function thName(key, pkg){
+  const l = TH.res[key] && TH.res[key].labels && TH.res[key].labels[pkg];
+  return l || (typeof cxAppName === "function" ? cxAppName(pkg) : pkg);
+}
+// Waits for the person to answer Android's own dialog on the phone, then carries on.
+function thAsk(title, text, next){
+  return openSheet({ title: `${TF_ICON_WRENCH} ${esc(title)}`, html: `<p class="sheet-p">${esc(text)}</p>`,
+    actions: [{ id:"stop", label:T("Stop") }, { id:"next", label: next || T("Done"), primary:true }] });
+}
+
+/* ---------- The two ways to reach the phone ---------- */
+const THDRV = {
+  usb: (serial) => ({
+    key: serial,
+    box: () => el(`[data-cx-dev="${CSS.escape(serial)}"] [data-cx-threats]`),
+    scan: () => cxCall("threatScan", { serial }),
+    uninstall: async (pkg) => { await cxAppAct(serial, pkg, "app-uninstall"); },
+    quiet: async (pkg) => { await cxRun(T("Block its ads") + " — " + thName(serial, pkg), "phoneAction", { serial, id: "app-quiet", args: { pkg } }); },
+    removeAll: async (pkgs) => { await cxRun(T("Remove the {n} dangerous apps", { n: pkgs.length }), "phoneAction", { serial, id: "apps-remove", args: { pkgs } }); },
+    protect: async () => { await cxRun(T("Turn Play Protect on"), "phoneAction", { serial, id: "protect-on" }); },
+    changed: () => { if (typeof CX !== "undefined" && CX.all) { delete CX.all[serial]; delete CX.all[serial + ":s"]; } }
+  }),
+  local: () => ({
+    key: "local",
+    box: () => el("#android-threats [data-cx-threats]"),
+    scan: async () => { try { return { raw: window.TechFixAndroid.threatScan() }; } catch (e) { return { error: String(e) }; } },
+    uninstall: async (pkg, item) => {
+      const name = thName("local", pkg);
+      if (item && item.powers && item.powers.includes("admin")) {
+        window.TechFixAndroid.openSettings("device-admin");
+        if (await thAsk(T("First: switch off {app}", { app: name }), T("{app} is a device administrator, so Android won't uninstall it yet. On the screen that just opened (Device admin apps), switch {app} off, come back here, then tap Next.", { app: name }), T("Next")) !== "next") return;
+      }
+      window.TechFixAndroid.uninstall(pkg);
+      await thAsk(T("Uninstall {app}?", { app: name }), T("Android is asking on the screen: tap OK / Uninstall to remove {app}, then come back and tap Done.", { app: name }));
+    },
+    quiet: async (pkg) => {
+      const name = thName("local", pkg);
+      window.TechFixAndroid.openApp(pkg);
+      await thAsk(T("Block {app}'s ads", { app: name }), T("{app}'s settings are open. Turn off “Appear on top” (or “Display over other apps”) and Notifications, and set Battery to Restricted. The app stays, its pop-ups stop. Then come back and tap Done.", { app: name }));
+    },
+    removeAll: async (pkgs, items) => {
+      for (let i = 0; i < pkgs.length; i++) {
+        const it = items.find(x => x.pkg === pkgs[i]);
+        const name = thName("local", pkgs[i]);
+        if (it && it.powers && it.powers.includes("admin")) {
+          window.TechFixAndroid.openSettings("device-admin");
+          if (await thAsk(T("{i} of {n}: switch off {app}", { i: i + 1, n: pkgs.length, app: name }), T("{app} is a device administrator, so Android won't uninstall it yet. On the screen that just opened (Device admin apps), switch {app} off, come back here, then tap Next.", { app: name }), T("Next")) !== "next") return;
+        }
+        window.TechFixAndroid.uninstall(pkgs[i]);
+        const last = i === pkgs.length - 1;
+        if (await thAsk(T("{i} of {n}: uninstall {app}", { i: i + 1, n: pkgs.length, app: name }), T("Android is asking on the screen: tap OK / Uninstall to remove {app}, then come back and tap Next.", { app: name }), last ? T("Done") : T("Next")) !== "next") return;
+      }
+    },
+    protect: async () => {
+      window.TechFixAndroid.openSettings("play-protect");
+      await thAsk(T("Turn Play Protect on"), T("Play Protect is open: turn on “Scan apps with Play Protect”, tap Scan, then come back and tap Done."));
+    },
+    changed: () => {}
+  })
+};
 
 function thPanelHtml(){
   return `<div class="cx-apps cx-threats" data-cx-threats>
@@ -49,24 +113,26 @@ function thPanelHtml(){
     <div data-th-body><div class="stat-note">${esc(T("Waiting…"))}</div></div></div>`;
 }
 
-async function thScan(serial){
-  const card = el(`[data-cx-dev="${CSS.escape(serial)}"]`);
-  if(!card || TH.busy[serial]) return;
-  TH.busy[serial] = true;
-  const body = card.querySelector("[data-th-body]");
+// The panel can be rebuilt while a check runs (language switch, phone list refresh), so the
+// result always goes to the panel that is on screen now (drv.box()).
+async function thScanWith(drv){
+  const box = drv.box();
+  if(!box || TH.busy[drv.key]) return;
+  TH.busy[drv.key] = true;
+  const body = box.querySelector("[data-th-body]");
   if(body) body.innerHTML = `<div class="stat-note">${esc(T("Looking at every app you installed…"))}</div>`;
   try{
-    const [raw, ioc] = await Promise.all([cxCall("threatScan", { serial }), TFThreats.loadIoc()]);
-    TH.res[serial] = raw && raw.raw ? TFThreats.analyze(raw.raw, ioc) : { error: (raw && raw.error) || "failed" };
-  } catch(e){ TH.res[serial] = { error: String(e && e.message || e) }; }
-  finally{ TH.busy[serial] = false; }
-  thRender(serial);
+    const [raw, ioc] = await Promise.all([drv.scan(), TFThreats.loadIoc()]);
+    TH.res[drv.key] = raw && raw.raw && !/@@TF:error/.test(raw.raw) ? TFThreats.analyze(raw.raw, ioc) : { error: (raw && raw.error) || "failed" };
+  } catch(e){ TH.res[drv.key] = { error: String(e && e.message || e) }; }
+  finally{ TH.busy[drv.key] = false; }
+  thRenderWith(drv);
 }
 
-function thRender(serial){
-  const card = el(`[data-cx-dev="${CSS.escape(serial)}"]`);
-  const body = card && card.querySelector("[data-th-body]");
-  const r = TH.res[serial];
+function thRenderWith(drv){
+  const box = drv.box();
+  const body = box && box.querySelector("[data-th-body]");
+  const key = drv.key, r = TH.res[key];
   if(!body || !r) return;
   if(r.error){ body.innerHTML = `<div class="stat-note">${esc(T("Couldn't read the app list from the phone."))}</div>`; return; }
   const keep = thTrusted();
@@ -79,12 +145,12 @@ function thRender(serial){
     const why = a.reasons.map(c => T(TH_REASON[c] || c, { name: a.ioc, days: a.ageDays })).join(" · ");
     const quiet = ["adware", "popups", "suspect"].includes(a.kind);
     return `<div class="cx-arow th-row ${k[1]}" data-pkg="${esc(a.pkg)}">
-      <div class="cx-arow-body"><div class="cx-app-name notranslate-tf">${esc(cxAppName(a.pkg))} <span class="fix-badge ${k[1] === "danger" ? "bad" : k[1]}">${esc(T(k[0]))}</span></div>
+      <div class="cx-arow-body"><div class="cx-app-name notranslate-tf">${esc(thName(key, a.pkg))} <span class="fix-badge ${k[1] === "danger" ? "bad" : k[1]}">${esc(T(k[0]))}</span></div>
         <div class="cx-muted cx-pkg notranslate-tf">${esc(a.pkg)}${a.installed ? " · " + esc(a.installed) : ""}</div>
         <div class="th-why">${esc(why)}</div></div>
       <div class="cx-arow-btns">
-        <button class="btn sm ${k[1] === "danger" ? "primary" : "ghost cx-danger"}" data-th-act="app-uninstall">${esc(T("Uninstall"))}</button>
-        ${quiet ? `<button class="btn sm" data-th-act="app-quiet" title="${esc(T("Keeps the app but blocks its pop-ups, notifications and background activity"))}">${esc(T("Block its ads"))}</button>` : ""}
+        <button class="btn sm ${k[1] === "danger" ? "primary" : "ghost cx-danger"}" data-th-act="uninstall">${esc(T("Uninstall"))}</button>
+        ${quiet ? `<button class="btn sm" data-th-act="quiet" title="${esc(T("Keeps the app but blocks its pop-ups, notifications and background activity"))}">${esc(T("Block its ads"))}</button>` : ""}
         <button class="btn sm ghost" data-th-act="keep" title="${esc(T("I know this app — stop flagging it"))}">${esc(T("Keep"))}</button>
       </div></div>`;
   };
@@ -103,30 +169,43 @@ function thRender(serial){
        <div class="stat-note cx-muted">${esc(T("Normal for chat bubbles, screen recorders or navigation apps; a game or a flashlight has no reason to. If ads pop up out of nowhere, the culprit is in this list."))}</div>
        <div class="cx-applist-all">${pops.map(row).join("")}</div></details>` : ""}
     <div class="stat-note cx-muted" style="margin-top:8px;">${esc(T("Spy-app list: Echap stalkerware-indicators (CC-BY 4.0), {n} known families.", { n: r.checks.iocCount }))}${checksNote.length ? " " + esc(T("Note:")) + " " + esc(checksNote.join("; ")) + "." : ""}</div>`;
-  body.querySelectorAll("[data-th-act]").forEach(b => b.addEventListener("click", () => thAct(serial, b.closest("[data-pkg]").dataset.pkg, b.dataset.thAct)));
+  const after = () => { drv.changed(); thScanWith(drv); };
+  body.querySelectorAll("[data-th-act]").forEach(b => b.addEventListener("click", async () => {
+    const pkg = b.closest("[data-pkg]").dataset.pkg, act = b.dataset.thAct;
+    if(act === "keep"){ thKeep(pkg); thRenderWith(drv); return; }
+    if(act === "uninstall") await drv.uninstall(pkg, list.find(x => x.pkg === pkg));
+    if(act === "quiet") await drv.quiet(pkg);
+    after();
+  }));
   const all = body.querySelector("[data-th-all]");
   if(all) all.addEventListener("click", async () => {
     const pk = danger.map(a => a.pkg);
-    if(!(await cxConfirm(T("Remove {n} apps?", { n: pk.length }), T("These apps and their data are removed from the phone: {list}", { list: pk.map(cxAppName).join(", ") }), T("Remove them")))) return;
-    await cxRun(T("Remove the {n} dangerous apps", { n: pk.length }), "phoneAction", { serial, id: "apps-remove", args: { pkgs: pk } });
-    thAfterChange(serial);
+    if(!(await cxConfirm(T("Remove {n} apps?", { n: pk.length }), T("These apps and their data are removed from the phone: {list}", { list: pk.map(p => thName(key, p)).join(", ") }), T("Remove them")))) return;
+    await drv.removeAll(pk, danger);
+    after();
   });
   const pr = body.querySelector("[data-th-protect]");
-  if(pr) pr.addEventListener("click", async () => { await cxRun(T("Turn Play Protect on"), "phoneAction", { serial, id: "protect-on" }); thScan(serial); });
+  if(pr) pr.addEventListener("click", async () => { await drv.protect(); thScanWith(drv); });
 }
 
-async function thAct(serial, pkg, act){
-  if(act === "keep"){ thKeep(pkg); thRender(serial); return; }
-  if(act === "app-uninstall"){ await cxAppAct(serial, pkg, "app-uninstall"); thAfterChange(serial); return; }
-  if(act === "app-quiet"){ await cxRun(T("Block its ads") + " — " + cxAppName(pkg), "phoneAction", { serial, id: "app-quiet", args: { pkg } }); thAfterChange(serial); }
-}
-function thAfterChange(serial){
-  if(CX.all){ delete CX.all[serial]; delete CX.all[serial + ":s"]; }
-  thScan(serial);
-}
+/* ---------- Connect tab (phone on a cable) ---------- */
 function thWire(card, serial){
-  const b = card.querySelector("[data-th-scan]");
-  if(b) b.addEventListener("click", () => thScan(serial));
-  if(TH.res[serial]) thRender(serial);
-  else setTimeout(() => thScan(serial), 1500); // after the health read-out has started
+  const box = card.querySelector("[data-cx-threats]");
+  if(!box) return;
+  const drv = THDRV.usb(serial);
+  box.querySelector("[data-th-scan]").addEventListener("click", () => thScanWith(drv));
+  if(TH.res[serial]) thRenderWith(drv);
+  else if(!TH.busy[serial]) setTimeout(() => thScanWith(drv), 1500); // after the health read-out has started
 }
+
+/* ---------- On the phone itself (TechFix Android app) ---------- */
+function thLocalInit(){
+  if(!window.TechFixAndroid || typeof window.TechFixAndroid.threatScan !== "function") return;
+  const host = el("#android-threats");
+  if(!host) return;
+  host.innerHTML = thPanelHtml();
+  const box = host.querySelector("[data-cx-threats]"), drv = THDRV.local();
+  box.querySelector("[data-th-scan]").addEventListener("click", () => thScanWith(drv));
+  if(TH.res.local) thRenderWith(drv); else if(!TH.busy.local) setTimeout(() => thScanWith(drv), 600);
+}
+document.addEventListener("DOMContentLoaded", () => setTimeout(thLocalInit, 400));

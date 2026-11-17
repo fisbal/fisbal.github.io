@@ -96,6 +96,8 @@ const TFThreats = (() => {
       const t = /firstInstallTime=(\d{4}-\d\d-\d\d)/.exec(line);
       if (t && curPkg && !times[curPkg]) times[curPkg] = t[1];
     }
+    const labels = {};
+    for (const line of String(s.labels || "").split(/\r?\n/)) { const i = line.indexOf("="); if (i > 0) labels[line.slice(0, i)] = line.slice(i + 1).trim(); }
     const idx = (ioc && ioc.idx) || new Map();
     const now = Date.now();
     const out = [];
@@ -133,7 +135,7 @@ const TFThreats = (() => {
     const rank = { danger: 0, warn: 1, info: 2 };
     out.sort((x, y) => rank[x.level] - rank[y.level] || (x.ageDays ?? 9e9) - (y.ageDays ?? 9e9));
     return {
-      sdk, total: apps.length, flagged: out,
+      sdk, total: apps.length, flagged: out, labels,
       counts: { danger: out.filter((x) => x.level === "danger").length, warn: out.filter((x) => x.level === "warn").length, info: out.filter((x) => x.level === "info").length },
       checks: { icons: launchOk, overlay: overlayOk, iocCount: ioc ? ioc.count : 0, iocFresh: !!(ioc && ioc.fresh) },
       protectOff: String(s.verify || "").trim() === "0"

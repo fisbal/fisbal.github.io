@@ -16,6 +16,8 @@ android {
         versionCode = prop("mbVersionCode", "1").toInt()
         versionName = prop("mbVersionName", "1.0")
         manifestPlaceholders["mbOrientation"] = prop("mbOrientation", "unspecified")
+        manifestPlaceholders["mbExtraPerm1"] = prop("mbExtraPerm1", "com.martinb.shell.permission.UNUSED1")
+        manifestPlaceholders["mbExtraPerm2"] = prop("mbExtraPerm2", "com.martinb.shell.permission.UNUSED2")
     }
 
     // Family key kept with the template so every new APK installs over the previous one and keeps the app's data.
