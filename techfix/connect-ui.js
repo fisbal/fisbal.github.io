@@ -105,6 +105,7 @@ const CX_RESULT = {
   app_toggle_failed: "Android refused to change {app}.",
   app_no_screen: "{app} has no screen to open — it runs in the background.",
   app_store_opened: "The Play Store opened on the phone — tap Install there.",
+  app_stopped: "{app} was stopped — {freed} of memory freed. It starts again when you open it.",
   ph_screenshot_web: "Screenshot downloaded — check your Downloads folder.",
   app_saved_web: "{app} downloaded ({n} file(s)) — check your Downloads folder.",
   web_not_here: "This one needs the installed TechFix app (Windows or Mac).",
@@ -468,6 +469,7 @@ function cxPhoneCard(d){
       <span class="cx-dev-state">${esc(d.wireless ? T("Connected over Wi-Fi") : T("Connected by USB"))}</span>
       <button class="btn sm primary" data-cx-scan>${ICON.scan}<span>${esc(scan ? T("Check again") : T("Check this phone"))}</span></button></div>
     <div class="cx-scan">${scan ? cxScanHtml(scan) : ""}</div>
+    ${typeof thPanelHtml === "function" ? thPanelHtml() : ""}
     <div class="cx-apps"><div class="cx-apps-head"><span class="finding-title">${esc(T("MartinB apps"))}</span><span class="cx-muted">${esc(T("Install or update straight onto this phone"))}</span></div>
       <div class="cx-app-list" data-cx-applist><div class="stat-note">${esc(T("Loading…"))}</div></div></div>
     <details class="cx-apps cx-allapps" data-cx-allapps>
@@ -509,6 +511,7 @@ function cxScanHtml(d){
       <div class="gauge-card" style="justify-content:center; min-height:98px;">${annunciatorRow(counts)}<div class="gauge-label" style="margin-top:10px;">${esc(T("Status"))}</div></div>
     </div>
     <div class="stat-note" style="margin-bottom:10px;"><span class="notranslate-tf">${esc([d.manufacturer, d.model].filter(Boolean).join(" "))} · Android ${esc(d.release || "?")}</span>${d.securityPatch ? ` · <span>${esc(T("security patch"))}</span> <span class="notranslate-tf">${esc(d.securityPatch)}</span>` : ""}${st.totalBytes ? ` · <span class="notranslate-tf">${fmtBytes(st.freeBytes)} / ${fmtBytes(st.totalBytes)}</span> <span>${esc(T("free"))}</span>` : ""}${typeof d.apps3p === "number" ? ` · <span>${esc(T("{n} apps installed", { n: d.apps3p }))}</span>` : ""}</div>
+    ${(d.memTop || []).length ? `<div class="cx-breakdown"><span class="cx-muted">${esc(T("What uses the memory:"))}</span> ${d.memTop.map(x => `<span class="cx-chip"><span class="notranslate-tf">${esc(cxAppName(x.app.split(":")[0]))} ${fmtBytes(x.bytes)}</span> <button class="cx-chip-x" data-cx-stop="${esc(x.app.split(":")[0])}" title="${esc(T("Stop this app"))}">✕</button></span>`).join("")}</div>` : ""}
     ${bdItems.length ? `<div class="cx-breakdown"><span class="cx-muted">${esc(T("What fills the storage:"))}</span> ${bdItems.map(x => `<span class="cx-chip">${esc(T(x[0]))} <span class="notranslate-tf">${fmtBytes(x[1])}</span></span>`).join("")}</div>` : ""}
     ${findings.length ? `<div class="finding-list">${findings.map((f, i) => `<div class="finding">
         <div class="finding-sev ${f.severity}"></div>
@@ -565,6 +568,7 @@ function cxWireScan(card, serial){
   card.querySelectorAll("[data-cx-ftool]").forEach(b => b.addEventListener("click", () => cxTool(serial, b.dataset.cxFtool)));
   card.querySelectorAll("[data-cx-open]").forEach(b => b.addEventListener("click", () => cxRun(T("Open the setting on the phone"), "phoneAction", { serial, id:"open-settings", args:{ key: b.dataset.cxOpen } })));
   card.querySelectorAll(".finding-arrow[data-kb]").forEach(n => n.addEventListener("click", () => openKbEntry(n.dataset.kb)));
+  card.querySelectorAll("[data-cx-stop]").forEach(b => b.addEventListener("click", async () => { await cxRun(T("Stop this app") + " — " + cxAppName(b.dataset.cxStop), "phoneAction", { serial, id:"app-stop", args:{ pkg: b.dataset.cxStop } }); cxScan(serial); }));
   card.querySelectorAll("[data-cxf-kb]").forEach(n => n.addEventListener("click", () => openKbEntry(n.getAttribute("data-cxf-kb"))));
 }
 
@@ -641,6 +645,7 @@ function cxRenderAllApps(serial){
         ${a.system ? `<span class="fix-badge info">${esc(T("System"))}</span>` : ""}${a.disabled ? ` <span class="fix-badge warn">${esc(T("Turned off"))}</span>` : ""}</div>
       <div class="cx-arow-btns">
         ${a.disabled ? "" : `<button class="btn sm ghost" data-app-act="app-open" title="${esc(T("Open on the phone"))}">${TF_ICON_NEXT}</button>`}
+        ${a.disabled ? "" : `<button class="btn sm ghost" data-app-act="app-stop" title="${esc(T("Stop this app"))}">■</button>`}
         <button class="btn sm" data-app-act="app-save" title="${esc(T("Save to this PC"))}">${ICON.upload}<span>${esc(T("Save"))}</span></button>
         ${others.map(o => `<button class="btn sm" data-app-act="app-copy" data-to="${esc(o.serial)}">${ICON.copy}<span>${esc(T("To {name}", { name: cxDevName(o) }))}</span></button>`).join("")}
         ${a.system ? (a.disabled ? `<button class="btn sm" data-app-act="app-enable">${esc(T("Turn on"))}</button>` : `<button class="btn sm ghost" data-app-act="app-disable">${esc(T("Turn off"))}</button>`)
@@ -652,7 +657,7 @@ async function cxAppAct(serial, pkg, act, to){
   const name = cxAppName(pkg);
   if(act === "app-uninstall" && !(await cxConfirm(T("Uninstall {app}?", { app: name }), T("{app} and its data on the phone are removed. Save it to this PC first if you may want it back.", { app: pkg }), T("Uninstall")))) return;
   if(act === "app-disable" && !(await cxConfirm(T("Turn off {app}?", { app: name }), T("It's a system app: it stays on the phone but stops running and disappears from the app list. Some phone features may stop working — you can turn it back on here at any time.", { app: pkg }), T("Turn off")))) return;
-  const titles = { "app-open":"Open on the phone", "app-save":"Save to this PC", "app-copy":"Copy to the other phone", "app-uninstall":"Uninstall", "app-disable":"Turn off", "app-enable":"Turn on" };
+  const titles = { "app-stop":"Stop this app", "app-open":"Open on the phone", "app-save":"Save to this PC", "app-copy":"Copy to the other phone", "app-uninstall":"Uninstall", "app-disable":"Turn off", "app-enable":"Turn on" };
   await cxRun(T(titles[act]) + " — " + name, "phoneAction", { serial, id: act, args: { pkg, to } });
   if(["app-uninstall", "app-disable", "app-enable"].includes(act)) cxLoadAllApps(serial, true);
   if(act === "app-copy" && to && CX.all){ delete CX.all[to]; delete CX.all[to + ":s"]; }
@@ -673,6 +678,7 @@ function cxWirePhone(d){
   if(!card) return;
   cxLoadApps(d.serial, false);
   cxWireAllApps(card, d.serial);
+  if(typeof thWire === "function") thWire(card, d.serial);
   card.querySelector("[data-cx-scan]").addEventListener("click", () => cxScan(d.serial));
   card.querySelectorAll("[data-cx-tool]").forEach(b => b.addEventListener("click", () => cxTool(d.serial, b.dataset.cxTool)));
   if(CX.scans[d.serial]) cxWireScan(card, d.serial);

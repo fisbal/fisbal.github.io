@@ -18,6 +18,13 @@ contextBridge.exposeInMainWorld("techfixNative", {
     ipcRenderer.on("techfix:fix-progress", h);
     return () => ipcRenderer.removeListener("techfix:fix-progress", h);
   },
+  // Automatic mode: get / set the level, check now, last background result.
+  auto: (op, payload) => ipcRenderer.invoke("techfix:auto", op, payload),
+  onAuto: (cb) => {
+    const chans = ["techfix:auto-state", "techfix:auto-result", "techfix:auto-open"];
+    const hs = chans.map((c) => { const h = (_e, d) => { try { cb(c.replace("techfix:auto-", ""), d); } catch (_) {} }; ipcRenderer.on(c, h); return [c, h]; });
+    return () => hs.forEach(([c, h]) => ipcRenderer.removeListener(c, h));
+  },
   // "Connect a device": phones over ADB, TechFix on a USB key, remote help. Fixed operations only.
   connect: (op, payload) => ipcRenderer.invoke("techfix:connect", op, payload),
   onConnectProgress: (cb) => {

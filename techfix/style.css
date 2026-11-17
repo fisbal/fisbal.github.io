@@ -683,3 +683,29 @@ button{ font-family: inherit; }
 .cx-pkg{ font: 11px var(--font-mono); overflow:hidden; text-overflow:ellipsis; max-width:100%; white-space:nowrap; }
 .cx-arow-btns{ display:flex; flex-wrap:wrap; gap:6px; }
 .btn.cx-danger{ color:#ffb3b8; border-color: rgba(226,98,106,.45); }
+
+.cx-chip-x{ background:none; border:none; color: var(--text-faint); cursor:pointer; padding:0 0 0 4px; font-size:11px; }
+.cx-chip-x:hover{ color: var(--crit); }
+
+/* ---------- Automatic mode ---------- */
+.auto-card{ margin-top:12px; }
+.auto-levels{ display:grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap:8px; }
+.auto-level{ display:flex; gap:10px; align-items:flex-start; background: var(--surface-2); border:1px solid var(--border); border-radius: var(--radius-s); padding:10px 12px; cursor:pointer; }
+.auto-level.on{ border-color: var(--gold-2); background: rgba(212,169,74,.08); }
+.auto-level input{ margin-top:3px; accent-color: var(--gold-2); }
+.auto-level-body{ display:flex; flex-direction:column; gap:3px; }
+.auto-level-name{ font-weight:600; font-size:13.5px; }
+.auto-level-note{ font-size:12px; color: var(--text-dim); line-height:1.45; }
+.auto-row{ font-size:12.5px; padding:4px 0; border-top:1px solid var(--border-soft); }
+
+/* ---------- Unwanted & spy apps ---------- */
+.cx-threats{ border-color: rgba(212,169,74,.35); }
+.th-sum{ font-size:13.5px; font-weight:600; padding:8px 10px; border-radius: var(--radius-s); margin:6px 0 8px; }
+.th-sum.ok{ background: rgba(80,190,120,.10); color: var(--ok); }
+.th-sum.warn{ background: rgba(230,170,60,.10); color: var(--gold-2); }
+.th-sum.bad{ background: rgba(230,80,80,.12); color: var(--crit); }
+.th-row.danger{ border-left:3px solid var(--crit); }
+.th-row.warn{ border-left:3px solid var(--gold-2); }
+.th-why{ font-size:12px; color: var(--text-dim); margin-top:3px; line-height:1.4; }
+.th-pops{ margin-top:10px; }
+.th-pops summary{ cursor:pointer; font-size:13px; color: var(--text-dim); }

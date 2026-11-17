@@ -197,6 +197,11 @@ const TF_RESULT = {
   space_report: "Biggest space users: {list} — {free} free", space_report_big: "Biggest space users: {list}. Largest files in Downloads: {big} — {free} free",
   installers_deleted: "{n} file(s) deleted — freed {size}, {free} now free",
   space_report_none: "No large folders in the usual places — {free} free",
+  memory_report: "Memory in use: {used} of {total} (committed {commit}). Biggest users: {list}. Free RAM slots: {slots}, maximum supported: {max}",
+  pua_swept: "{n} adware / unwanted item(s) found and quarantined. Windows now blocks this kind of app (undo a quarantine in Windows Security › Protection history)",
+  pua_clean: "Scan done: no adware or unwanted app found by Microsoft Defender",
+  pua_on_clean: "Windows now blocks adware and unwanted apps; the scan found nothing to remove",
+  memtest_scheduled: "The memory test will run at the next restart (about 10 minutes, before Windows starts). Windows shows the result after signing in — run TechFix again to read it",
   dns_ok: "Name lookups (DNS) work", dns_still_failing: "DNS still fails after flushing",
   net_ok: "Connected — internet and DNS work (IP {ip})", net_dns_broken: "Internet works but DNS doesn't",
   net_no_dhcp: "No address from the router (DHCP) — the network adapter or the router is the problem",
@@ -228,7 +233,7 @@ const TF_RESULT = {
   proxy_removed: "Proxy removed and confirmed", hosts_restored: "{n} suspicious line(s) removed — backup: {backup}",
   cancelled: "Cancelled at the administrator prompt", no_result: "No result came back (timed out or interrupted)", not_windows: "Only available on Windows"
 };
-const tfStateOf = (r) => (r.code && r.code.indexOf("space_report") === 0 ? { label: "Measured", cls: "info", mark: "i" } : (TF_STATE[r.state] || TF_STATE.failed));
+const tfStateOf = (r) => (r.code && (r.code.indexOf("space_report") === 0 || r.code === "memory_report") ? { label: "Measured", cls: "info", mark: "i" } : (TF_STATE[r.state] || TF_STATE.failed));
 const tfResultText = (r) => {
   const p = Object.assign({}, r.params || {});
   if(Array.isArray(p.items) && p.items.length) p.list = p.items.map(x => `${T(x.name)} ${x.gb} GB`).join(" · ");

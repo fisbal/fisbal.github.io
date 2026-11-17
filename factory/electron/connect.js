@@ -264,8 +264,33 @@ const SCAN_SH = [
   "echo @@TF:disk", "dumpsys diskstats",
   "echo @@TF:crashapps", "logcat -d -b crash 2>/dev/null | grep 'Process: ' | sed 's/.*Process: //;s/,.*//' | sort | uniq -c | sort -rn | head -5",
   "echo @@TF:cycles", "cat /sys/class/power_supply/battery/cycle_count 2>/dev/null",
+  "echo @@TF:memtop", "dumpsys meminfo 2>/dev/null | grep -m1 -A12 -E 'Total (PSS|RSS) by process'",
   "echo @@TF:end"
 ].join("; ");
+
+// Raw signals for the unwanted / spy apps check (classified in the page by techfix/threats.js,
+// the same code for the installed app and for Chrome): who installed each app, apps with no icon,
+// apps allowed to draw over other apps, accessibility / notification readers, device admins, install dates.
+const THREAT_SH = [
+  "echo @@TF:sdk", "getprop ro.build.version.sdk",
+  "echo @@TF:pkgs", "pm list packages -3 -i",
+  "echo @@TF:launch", "cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.LAUNCHER 2>/dev/null",
+  "echo @@TF:overlay", "appops query-op SYSTEM_ALERT_WINDOW allow 2>/dev/null",
+  "echo @@TF:acc", "settings get secure enabled_accessibility_services",
+  "echo @@TF:nl", "settings get secure enabled_notification_listeners",
+  "echo @@TF:admins", "dumpsys device_policy 2>/dev/null | grep -o 'ComponentInfo{[^}]*}' | sort -u",
+  "echo @@TF:times", "dumpsys package packages 2>/dev/null | grep -E '^  Package \\[|firstInstallTime='",
+  "echo @@TF:verify", "settings get global package_verifier_enable",
+  "echo @@TF:end"
+].join("; ");
+
+async function threatScan(serial) {
+  const d = await requireDevice(serial, ["device"]);
+  if (!d) return { error: "not_connected" };
+  const r = await run(adbPath(), ["-s", serial, "shell", THREAT_SH], { timeout: 120000 });
+  if (r.code !== 0 && !r.out) return { error: (r.err || "scan failed").slice(-300) };
+  return { raw: r.out };
+}
 
 function sections(text) {
   const out = { props: "" };
@@ -302,6 +327,9 @@ function parsePhone(text) {
   const breakdown = { apps: dsz("App Size"), appData: dsz("App Data Size"), caches: dsz("App Cache Size") ?? dsz("Cache Size"),
                       photos: dsz("Photos Size"), videos: dsz("Videos Size"), audio: dsz("Audio Size"), downloads: dsz("Downloads Size"),
                       system: dsz("System Size"), other: dsz("Other Size") };
+  // Biggest memory users (first "Total PSS/RSS by process" list of dumpsys meminfo).
+  const memTop = String(s.memtop || "").split(/\r?\n/).map((l) => /^\s*([\d,]+)K: ([\w.:\-]+) \(pid/.exec(l)).filter(Boolean)
+    .map((m) => ({ app: m[2], bytes: Number(m[1].replace(/,/g, "")) * 1024 })).filter((x) => !/^(system|surfaceflinger|com\.android\.systemui)$/.test(x.app)).slice(0, 6);
   const crashApps = String(s.crashapps || "").trim().split(/\r?\n/).map((l) => /^\s*(\d+)\s+(\S+)/.exec(l)).filter(Boolean).map((m) => ({ app: m[2], count: Number(m[1]) }));
   return {
     source: "adb",
@@ -314,7 +342,7 @@ function parsePhone(text) {
     powerSave: String(s.lowpower || "").trim() === "1",
     uptimeMinutes: Math.round((num(/^([\d.]+)/, s.uptime) || 0) / 60),
     apps3p: num(/(\d+)/, s.pkgs),
-    breakdown, crashApps,
+    breakdown, crashApps, memTop,
     security: {
       // USB debugging is on by definition here — the page reminds the user to turn it off when done.
       usbDebugging: false, developerOptions: false,
@@ -510,7 +538,39 @@ const PHONE_ACTIONS = {
     const pkg = String((args && args.pkg) || "");
     if (!PKG_RE.test(pkg)) return V("failed", "ph_unknown");
     const r = await run(adbPath(), ["-s", serial, "uninstall", pkg], { timeout: 120000 });
-    return /Success/.test(r.out) ? V("fixed", "app_uninstalled", { app: pkg }) : V("failed", "app_uninstall_failed", { app: pkg, detail: (r.out + r.err).trim().slice(-200) });
+    if (/Success/.test(r.out)) return V("fixed", "app_uninstalled", { app: pkg });
+    if (/DEVICE_POLICY_MANAGER/.test(r.out + r.err)) { await shell1(serial, "am start -a " + SETTINGS_INTENT["device-admin"], 20000); return V("opened", "app_admin_first", { app: pkg }); }
+    return V("failed", "app_uninstall_failed", { app: pkg, detail: (r.out + r.err).trim().slice(-200) });
+  },
+  // Removes several apps in one go (the unwanted / spy apps the check found).
+  "apps-remove": async (serial, args) => {
+    const pkgs = (Array.isArray(args && args.pkgs) ? args.pkgs : []).map(String).filter((p) => PKG_RE.test(p)).slice(0, 80);
+    if (!pkgs.length) return V("failed", "ph_unknown");
+    const lines = []; let ok = 0, admin = 0;
+    for (const pkg of pkgs) {
+      const r = await run(adbPath(), ["-s", serial, "uninstall", pkg], { timeout: 120000 });
+      if (/Success/.test(r.out)) { ok++; lines.push({ name: pkg, code: "app_removed_line" }); }
+      else if (/DEVICE_POLICY_MANAGER/.test(r.out + r.err)) { admin++; lines.push({ name: pkg, code: "app_admin_line" }); }
+      else lines.push({ name: pkg, code: "app_remove_failed_line", detail: (r.out + r.err).trim().slice(-120) });
+    }
+    if (admin) await shell1(serial, "am start -a " + SETTINGS_INTENT["device-admin"], 20000);
+    return V(ok === pkgs.length ? "fixed" : ok ? "partial" : "failed", admin ? "apps_removed_admin" : "apps_removed", { ok, n: pkgs.length }, { lines });
+  },
+  // Keeps the app but takes away what adware lives on: drawing over other apps, notifications,
+  // running in the background. Undo = Settings › Apps › that app.
+  "app-quiet": async (serial, args) => {
+    const pkg = String((args && args.pkg) || "");
+    if (!PKG_RE.test(pkg)) return V("failed", "ph_unknown");
+    await shell1(serial, QUIET_SH(pkg), 60000);
+    const g = await shell1(serial, "appops get " + pkg + " SYSTEM_ALERT_WINDOW", 20000);
+    return /deny|ignore|No operations/i.test(g.out) ? V("fixed", "app_quieted", { app: pkg }) : V("failed", "app_quiet_failed", { app: pkg, detail: (g.out + g.err).trim().slice(-160) });
+  },
+  // Turns Google Play Protect's app scanning on and opens it on the phone.
+  "protect-on": async (serial) => {
+    await shell1(serial, PROTECT_SH, 20000);
+    const r = await shell1(serial, "am start -n com.google.android.gms/.security.settings.VerifyAppsSettingsActivity", 20000);
+    if (/Error|Exception/i.test(r.out + r.err)) await shell1(serial, "am start -a " + SETTINGS_INTENT.security, 20000);
+    return V("opened", "protect_opened");
   },
   // System apps can't be removed safely, but they can be switched off (and back on) for this user.
   "app-disable": async (serial, args) => {
@@ -524,6 +584,16 @@ const PHONE_ACTIONS = {
     if (!PKG_RE.test(pkg)) return V("failed", "ph_unknown");
     const r = await shell1(serial, "pm enable --user 0 " + pkg, 60000);
     return /enabled/i.test(r.out) ? V("fixed", "app_enabled", { app: pkg }) : V("failed", "app_toggle_failed", { app: pkg, detail: (r.out + r.err).trim().slice(-200) });
+  },
+  "app-stop": async (serial, args) => {
+    const pkg = String((args && args.pkg) || "");
+    if (!PKG_RE.test(pkg)) return V("failed", "ph_unknown");
+    const before = await memAvail(serial);
+    await shell1(serial, "am force-stop " + pkg, 30000);
+    await new Promise((r) => setTimeout(r, 1200));
+    const after = await memAvail(serial);
+    const freed = before != null && after != null ? Math.max(0, after - before) : 0;
+    return V("fixed", "app_stopped", { app: pkg, freed });
   },
   "app-open": async (serial, args) => {
     const pkg = String((args && args.pkg) || "");
@@ -625,6 +695,9 @@ async function installBundle(serial, file, onProgress) {
 }
 
 const PKG_RE = /^[A-Za-z][\w]*(\.[\w]+)+$/;
+const QUIET_SH = (pkg) => ["appops set " + pkg + " SYSTEM_ALERT_WINDOW deny", "appops set " + pkg + " RUN_ANY_IN_BACKGROUND ignore", "appops set " + pkg + " RUN_IN_BACKGROUND ignore",
+"pm revoke " + pkg + " android.permission.POST_NOTIFICATIONS", "am force-stop " + pkg].map((c) => c + " 2>/dev/null").join("; ");
+const PROTECT_SH = "settings put global package_verifier_enable 1; settings put global verifier_verify_adb_installs 1";
 
 // Every app on the phone: package, version, where it lives, system or not, turned off or not.
 async function appList(serial, system) {
@@ -866,6 +939,7 @@ async function handle(op, payload, onProgress) {
     case "phoneScan": return phoneScan(payload.serial);
     case "catalog": return phoneCatalog(payload.serial);
     case "appList": return appList(payload.serial, !!payload.system);
+    case "threatScan": return threatScan(payload.serial);
     case "phoneAction": return phoneAction(payload.serial, payload.id, payload.args, onProgress);
     case "modeAction": return modeAction(payload.serial, payload.id);
     case "wifiPair": return wifiPair(payload);
@@ -883,4 +957,4 @@ function shutdown() {
   if (adb) { try { execFile(adb, ["kill-server"], { windowsHide: true, timeout: 5000 }, () => {}); } catch (_) {} }
 }
 
-module.exports = { init, handle, shutdown, _test: { parsePhone, sections, SCAN_SH } };
+module.exports = { init, handle, shutdown, _test: { parsePhone, sections, SCAN_SH, THREAT_SH, QUIET_SH } };

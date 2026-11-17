@@ -22,6 +22,7 @@ const SCAN_SH = [
   "echo @@TF:disk", "dumpsys diskstats",
   "echo @@TF:crashapps", "logcat -d -b crash 2>/dev/null | grep 'Process: ' | sed 's/.*Process: //;s/,.*//' | sort | uniq -c | sort -rn | head -5",
   "echo @@TF:cycles", "cat /sys/class/power_supply/battery/cycle_count 2>/dev/null",
+  "echo @@TF:memtop", "dumpsys meminfo 2>/dev/null | grep -m1 -A12 -E 'Total (PSS|RSS) by process'",
   "echo @@TF:end"
 ].join("; ");
 
@@ -60,6 +61,9 @@ function parsePhone(text) {
   const breakdown = { apps: dsz("App Size"), appData: dsz("App Data Size"), caches: dsz("App Cache Size") ?? dsz("Cache Size"),
                       photos: dsz("Photos Size"), videos: dsz("Videos Size"), audio: dsz("Audio Size"), downloads: dsz("Downloads Size"),
                       system: dsz("System Size"), other: dsz("Other Size") };
+  // Biggest memory users (first "Total PSS/RSS by process" list of dumpsys meminfo).
+  const memTop = String(s.memtop || "").split(/\r?\n/).map((l) => /^\s*([\d,]+)K: ([\w.:\-]+) \(pid/.exec(l)).filter(Boolean)
+    .map((m) => ({ app: m[2], bytes: Number(m[1].replace(/,/g, "")) * 1024 })).filter((x) => !/^(system|surfaceflinger|com\.android\.systemui)$/.test(x.app)).slice(0, 6);
   const crashApps = String(s.crashapps || "").trim().split(/\r?\n/).map((l) => /^\s*(\d+)\s+(\S+)/.exec(l)).filter(Boolean).map((m) => ({ app: m[2], count: Number(m[1]) }));
   return {
     source: "adb",
@@ -72,7 +76,7 @@ function parsePhone(text) {
     powerSave: String(s.lowpower || "").trim() === "1",
     uptimeMinutes: Math.round((num(/^([\d.]+)/, s.uptime) || 0) / 60),
     apps3p: num(/(\d+)/, s.pkgs),
-    breakdown, crashApps,
+    breakdown, crashApps, memTop,
     security: {
       // USB debugging is on by definition here — the page reminds the user to turn it off when done.
       usbDebugging: false, developerOptions: false,
@@ -175,7 +179,34 @@ function parsePhone(text) {
     "app-uninstall": async (args) => {
       const pkg = String((args && args.pkg) || ""); if (!PKG_RE.test(pkg)) return V("failed", "ph_unknown");
       const out = await sh("pm uninstall " + pkg);
-      return /Success/.test(out) ? V("fixed", "app_uninstalled", { app: pkg }) : V("failed", "app_uninstall_failed", { app: pkg, detail: out.trim().slice(-200) });
+      if (/Success/.test(out)) return V("fixed", "app_uninstalled", { app: pkg });
+      if (/DEVICE_POLICY_MANAGER/.test(out)) { await sh("am start -a " + SETTINGS_INTENT["device-admin"]); return V("opened", "app_admin_first", { app: pkg }); }
+      return V("failed", "app_uninstall_failed", { app: pkg, detail: out.trim().slice(-200) });
+    },
+    "apps-remove": async (args) => {
+      const pkgs = (Array.isArray(args && args.pkgs) ? args.pkgs : []).map(String).filter((p) => PKG_RE.test(p)).slice(0, 80);
+      if (!pkgs.length) return V("failed", "ph_unknown");
+      const lines = []; let ok = 0, admin = 0;
+      for (const pkg of pkgs) {
+        const out = await sh("pm uninstall " + pkg);
+        if (/Success/.test(out)) { ok++; lines.push({ name: pkg, code: "app_removed_line" }); }
+        else if (/DEVICE_POLICY_MANAGER/.test(out)) { admin++; lines.push({ name: pkg, code: "app_admin_line" }); }
+        else lines.push({ name: pkg, code: "app_remove_failed_line", detail: out.trim().slice(-120) });
+      }
+      if (admin) await sh("am start -a " + SETTINGS_INTENT["device-admin"]);
+      return V(ok === pkgs.length ? "fixed" : ok ? "partial" : "failed", admin ? "apps_removed_admin" : "apps_removed", { ok, n: pkgs.length }, { lines });
+    },
+    "app-quiet": async (args) => {
+      const pkg = String((args && args.pkg) || ""); if (!PKG_RE.test(pkg)) return V("failed", "ph_unknown");
+      await sh(QUIET_SH(pkg));
+      const g = await sh("appops get " + pkg + " SYSTEM_ALERT_WINDOW");
+      return /deny|ignore|No operations/i.test(g) ? V("fixed", "app_quieted", { app: pkg }) : V("failed", "app_quiet_failed", { app: pkg, detail: g.trim().slice(-160) });
+    },
+    "protect-on": async () => {
+      await sh("settings put global package_verifier_enable 1; settings put global verifier_verify_adb_installs 1");
+      const out = await sh("am start -n com.google.android.gms/.security.settings.VerifyAppsSettingsActivity");
+      if (/Error|Exception/i.test(out)) await sh("am start -a " + SETTINGS_INTENT.security);
+      return V("opened", "protect_opened");
     },
     "app-disable": async (args) => {
       const pkg = String((args && args.pkg) || ""); if (!PKG_RE.test(pkg)) return V("failed", "ph_unknown");
@@ -186,6 +217,11 @@ function parsePhone(text) {
       const pkg = String((args && args.pkg) || ""); if (!PKG_RE.test(pkg)) return V("failed", "ph_unknown");
       const out = await sh("pm enable --user 0 " + pkg);
       return /enabled/i.test(out) ? V("fixed", "app_enabled", { app: pkg }) : V("failed", "app_toggle_failed", { app: pkg, detail: out.trim().slice(-200) });
+    },
+    "app-stop": async (args) => {
+      const pkg = String((args && args.pkg) || ""); if (!PKG_RE.test(pkg)) return V("failed", "ph_unknown");
+      const before = await memAvail(); await sh("am force-stop " + pkg); await new Promise((r) => setTimeout(r, 1200)); const after = await memAvail();
+      return V("fixed", "app_stopped", { app: pkg, freed: before != null && after != null ? Math.max(0, after - before) : 0 });
     },
     "app-open": async (args) => {
       const pkg = String((args && args.pkg) || ""); if (!PKG_RE.test(pkg)) return V("failed", "ph_unknown");
@@ -202,6 +238,22 @@ function parsePhone(text) {
     "reboot-recovery": async () => { A().reboot("recovery").catch(() => {}); return V("started", "ph_to_recovery"); },
     "reboot-bootloader": async () => { A().reboot("bootloader").catch(() => {}); return V("started", "ph_to_bootloader"); }
   };
+
+  // Same raw read-out as the installed app (factory/electron/connect.js THREAT_SH); techfix/threats.js classifies it.
+  const THREAT_SH = [
+    "echo @@TF:sdk", "getprop ro.build.version.sdk",
+    "echo @@TF:pkgs", "pm list packages -3 -i",
+    "echo @@TF:launch", "cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.LAUNCHER 2>/dev/null",
+    "echo @@TF:overlay", "appops query-op SYSTEM_ALERT_WINDOW allow 2>/dev/null",
+    "echo @@TF:acc", "settings get secure enabled_accessibility_services",
+    "echo @@TF:nl", "settings get secure enabled_notification_listeners",
+    "echo @@TF:admins", "dumpsys device_policy 2>/dev/null | grep -o 'ComponentInfo{[^}]*}' | sort -u",
+    "echo @@TF:times", "dumpsys package packages 2>/dev/null | grep -E '^  Package \\[|firstInstallTime='",
+    "echo @@TF:verify", "settings get global package_verifier_enable",
+    "echo @@TF:end"
+  ].join("; ");
+  const QUIET_SH = (pkg) => ["appops set " + pkg + " SYSTEM_ALERT_WINDOW deny", "appops set " + pkg + " RUN_ANY_IN_BACKGROUND ignore", "appops set " + pkg + " RUN_IN_BACKGROUND ignore",
+    "pm revoke " + pkg + " android.permission.POST_NOTIFICATIONS", "am force-stop " + pkg].map((c) => c + " 2>/dev/null").join("; ");
 
   async function appList(system) {
     const [all, sys, dis] = await Promise.all([sh("pm list packages -f --show-versioncode"), sh("pm list packages -s"), sh("pm list packages -d")]);
@@ -229,9 +281,10 @@ function parsePhone(text) {
         return { supported: true, web: true, adb: true, devices, fastbootDevices: [], usb: [], drives: [], error: st.error || "" };
       }
       if (op === "modeAction" && p.id === "retry-auth") { A().disconnect().then(() => A().reconnect()).catch(() => {}); return V("started", "ph_prompt_again"); }
-      if (!st.adb) return op === "phoneScan" || op === "appList" ? { error: "not_connected" } : V("failed", "ph_not_connected");
+      if (!st.adb) return op === "phoneScan" || op === "appList" || op === "threatScan" ? { error: "not_connected" } : V("failed", "ph_not_connected");
       if (op === "phoneScan") return parsePhone(await sh(SCAN_SH));
       if (op === "appList") return appList(!!p.system);
+      if (op === "threatScan") return { raw: await sh(THREAT_SH) };
       if (op === "catalog") return { error: "web" };
       if (op === "modeAction" && p.id === "retry-auth") { A().disconnect().then(() => A().reconnect()).catch(() => {}); return V("started", "ph_prompt_again"); }
       if (op === "phoneAction") { const fn = ACTIONS[String(p.id)]; return fn ? await fn(p.args || {}) : V("failed", "web_not_here"); }

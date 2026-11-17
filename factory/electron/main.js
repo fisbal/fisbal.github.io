@@ -15,6 +15,9 @@ const diagnostics = cfg.diagnostics ? require("./diagnostics") : null;
 // Same opt-in: "Connect a device" (phones over ADB, TechFix on a USB key, remote help).
 const connect = cfg.diagnostics ? require("./connect") : null;
 if (connect) connect.init(cfg);
+// Same opt-in: automatic mode (background checks, safe auto-repairs, nightly maintenance task).
+const auto = cfg.diagnostics && process.platform === "win32" ? require("./auto") : null;
+const START_HIDDEN = !!(auto && auto.startedHidden());
 const BAR = 36;
 const MAC = process.platform === "darwin";
 const LOCAL = !cfg.url;
@@ -37,7 +40,17 @@ let updateState = { status: "none" };
 const updater = new Updater(cfg, (state) => {
   updateState = state;
   if (win) win.webContents.send("mb-update-state", state);
+  // TechFix sitting in the tray: install right away and reopen hidden, so it keeps updating itself.
+  if (state.status === "ready" && auto && auto.keepInTray() && win && !win.isVisible()) {
+    auto.markHiddenRestart();
+    if (updater.apply(true)) { app.isQuitting = true; app.quit(); }
+  }
 });
+function showWin() {
+  if (!win) createWindow();
+  if (win.isMinimized()) win.restore();
+  win.show(); win.focus();
+}
 
 function layout() {
   if (!win || !view) return;
@@ -110,7 +123,9 @@ function createWindow() {
   win.on("leave-full-screen", layout);
   win.on("maximize", layout);
   win.on("unmaximize", layout);
-  win.once("ready-to-show", () => win.show());
+  win.once("ready-to-show", () => { if (!START_HIDDEN) win.show(); });
+  // Automatic mode with "keep watching in the background": closing hides TechFix to the tray.
+  win.on("close", (e) => { if (auto && auto.keepInTray() && !app.isQuitting && !auto.quitting) { e.preventDefault(); win.hide(); } });
   win.webContents.on("did-finish-load", () => win.webContents.send("mb-update-state", updateState));
   win.on("closed", () => { win = null; view = null; });
 }
@@ -153,6 +168,15 @@ if (diagnostics) {
     return diagnostics.fixPlan(list, (ev) => { try { if (!e.sender.isDestroyed()) e.sender.send("techfix:fix-progress", ev); } catch (_) {} });
   });
   // "Connect a device": one channel, a fixed set of operations (see connect.js).
+  ipcMain.handle("techfix:auto", async (e, op, payload) => {
+    if (!fromOurView(e)) return { error: "unauthorized" };
+    if (!auto) return { supported: false };
+    if (op === "get") return Object.assign({ supported: true }, auto.publicState());
+    if (op === "set") return Object.assign({ supported: true }, await auto.setSettings(payload && typeof payload === "object" ? payload : {}));
+    if (op === "check") return auto.checkNow("manual");
+    if (op === "last") return auto.lastResult();
+    return { error: "unknown" };
+  });
   ipcMain.handle("techfix:connect", async (e, op, payload) => {
     if (!fromOurView(e)) return { error: "unauthorized" };
     const send = (ev) => { try { if (!e.sender.isDestroyed()) e.sender.send("techfix:connect-progress", Object.assign({ op: String(op) }, ev)); } catch (_) {} };
@@ -162,12 +186,13 @@ if (diagnostics) {
 
 // Closing the app installs a downloaded update quietly, so the next start is the new version.
 app.on("before-quit", () => {
+  app.isQuitting = true;
   if (connect) connect.shutdown();
   if (updater.ready && !updater.applying) updater.apply(false);
 });
 
 app.on("second-instance", () => {
-  if (win) { if (win.isMinimized()) win.restore(); win.focus(); }
+  if (win) { if (win.isMinimized()) win.restore(); win.show(); win.focus(); }
 });
 
 app.whenReady().then(() => {
@@ -188,6 +213,8 @@ app.whenReady().then(() => {
   ]) : null);
   createWindow();
   updater.start();
+  if (auto) auto.init({ diagnostics, repair: require("./repair"), getWin: () => win, showWin,
+    send: (ch, d) => { try { if (view && !view.webContents.isDestroyed()) view.webContents.send(ch, d); } catch (_) {} } });
 });
 
 app.on("window-all-closed", () => app.quit());

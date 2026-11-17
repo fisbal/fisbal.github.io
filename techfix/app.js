@@ -62,6 +62,13 @@ const CATEGORY_DEFS = [
    something. Generic severity counting (below) covers everything a
    signature doesn't recognize by name. */
 const LOG_SIGNATURES = [
+  { id:"win-mem-03", label:"Memory-type blue screen (MEMORY_MANAGEMENT / PFN_LIST_CORRUPT / PAGE_FAULT_IN_NONPAGED_AREA)", pattern:/memory_management|pfn_list_corrupt|page_fault_in_nonpaged_area|bad_pool_(header|caller)|0x0000001a\b|0x0000004e\b/i },
+  { id:"win-mem-01", label:"Windows low on memory (Resource-Exhaustion-Detector 2004)", pattern:/low virtual memory condition|resource-exhaustion-detector|your computer is low on memory/i },
+  { id:"gen-mem-01", label:"Memory test found hardware errors", pattern:/memory diagnostic.{0,80}(detected|found) hardware errors|memtest86\+?.{0,80}\berrors?: *[1-9]/i },
+  { id:"gen-mem-03", label:"Linux OOM killer ended a process", pattern:/out of memory: kill(ed)? process|oom-kill(er)?:|invoked oom-killer/i },
+  { id:"mac-mem-01", label:"macOS ran out of application memory", pattern:/run out of application memory|jetsam/i },
+  { id:"and-mem-01", label:"Android low-memory killer / OutOfMemoryError", pattern:/java\.lang\.OutOfMemoryError|lowmemorykiller|\blmkd\b.{0,60}kill/i },
+  { id:"gen-mem-02", label:"Browser tab \"Out of memory\" crash", pattern:/error code:?\s*out of memory|aw,? snap!?.{0,80}out of memory|RESULT_CODE_HUNG|Out of Memory.{0,20}(chrome|edge|tab)/i },
   { id:"cros-21-01", label:"ChromeOS \"missing or damaged\" — needs recovery", pattern:/chrome ?os is missing or damaged|insert a recovery usb/i },
   { id:"cros-11-01", label:"ChromeOS developer mode — OS verification off", pattern:/os verification is off/i },
   { id:"cros-17-03", label:"ChromeOS Linux container failed to start", pattern:/error starting penguin container|failed to start (termina|penguin)|vm_concierge.{0,80}(fail|error)/i },
@@ -609,7 +616,9 @@ const DX_TEXT = {
   dx_power: ["Sudden power losses ({count})", "The PC turned off without shutting down. Usual causes: overheating, a weak power supply or charger, or a worn battery."],
   dx_drivers: ["Devices with driver errors", "One or more devices don't work because of their driver."],
   dx_network: ["No internet — TechFix finds which link is broken", "It tests from this PC to the router, then to the internet and DNS, and repairs only what is broken."],
-  dx_memory: ["Memory is running out", "Too many programs are open or start with Windows. Biggest users right now: {top}."]
+  dx_memory: ["Memory (RAM) is running out", "Programs need more memory than the PC has free. Biggest users right now: {top}. TechFix measures who uses it, makes sure Windows can extend memory with the page file, then helps you cut what starts with Windows."],
+  dx_adware: ["Adware and unwanted programs are installed", "Found: {names}. These usually arrive with free games and \"free download\" installers, then show ads, change the browser and keep memory, disk and processor busy. TechFix turns on Microsoft Defender's unwanted-app blocking, scans and quarantines them, then helps you uninstall what's left and cut what starts with Windows."],
+  dx_ram_faulty: ["The RAM may be faulty", "A failed memory test, memory-type blue screens or corrected RAM errors all point to a memory stick. No software repair fixes faulty RAM — test it to be sure."]
 };
 const DX_AFTER = {
   dx_after_backup: "Then replace the drive. Don't run disk repairs on it — they stress a failing drive.",
@@ -620,14 +629,19 @@ const DX_AFTER = {
   dx_after_power: "Clean the fans and vents, try another charger or outlet, and check the battery health. No software repair applies.",
   dx_after_drivers: "If a device stays in error, install its driver from the manufacturer's website.",
   dx_after_network: "If your router answers but the internet doesn't, restart the modem or call your provider.",
-  dx_after_memory: "Turn off startup apps you don't need and close heavy programs. If it's constant, the PC needs more RAM."
+  dx_after_memory: "Turn off startup apps you don't need and close heavy programs (in Chrome or Edge turn on Memory Saver). If it stays constant, the PC needs more RAM — the memory report shows free slots and the maximum supported.",
+  dx_after_adware: "Then reset your browser if its home page or search engine changed, and remove unknown extensions. For a second opinion, Malwarebytes AdwCleaner (free) removes leftovers. Next time, get games from Steam, Epic, GOG or the Microsoft Store and choose \"Custom install\" to untick extra offers.",
+  dx_after_ram: "After the test: if errors are found, turn off XMP/EXPO overclocking in the BIOS, reseat the sticks, then test one stick at a time to find the faulty one and replace it. For a deeper test, boot Memtest86+ from the TechFix rescue USB (Format a drive tab)."
 };
 const DX_FINDING = {
   wu_failures: "Windows Update failures", update_stale: "no recent updates", pagefile_high: "page file almost full", mem_high: "memory pressure",
   stability_low: "low stability", cpu_high: "high CPU use", disk_health: "drive health", disk_uncorrected: "drive read/write errors", disk_events: "disk errors",
   bsod: "blue screens", app_crash: "app crashes", whea: "hardware errors", kernel_power: "sudden power losses", cpu_hot: "overheating", battery_worn: "worn battery",
   driver_errors: "device driver errors", gpu_tdr: "display driver resets", gpu_driver_old: "old graphics driver", no_internet: "no internet", dns_fail: "DNS failure",
-  wifi_weak: "weak Wi-Fi", startup_many: "many startup programs"
+  wifi_weak: "weak Wi-Fi", startup_many: "many startup programs",
+  mem_low_events: "low-memory alerts", commit_high: "memory limit reached", pagefile_off: "no page file", mem_small: "little RAM",
+  mem_test_failed: "failed memory test", mem_bsod: "memory blue screens", mem_corrected: "corrected memory errors",
+  pup_found: "adware installed", pua_threats: "unwanted apps flagged", bundled_extras: "bundled extras", pua_block_off: "unwanted-app blocking off"
 };
 function diagnosisCard(res){
   const dx = (res && res.diagnosis) || [];
@@ -1472,6 +1486,7 @@ function rerenderAll(){
   if(state.log.result) renderLogResults();
   if(typeof cxRerender === "function") cxRerender();
   if(typeof fmtRerender === "function") fmtRerender();
+  if(typeof autoRerender === "function") autoRerender();
 }
 
 function boot(initial){

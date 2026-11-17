@@ -44,7 +44,7 @@ const FMT_CLUSTERS = [0, 4096, 8192, 16384, 32768, 65536, 131072];
 const FMT_STEPS = {
   check: "Checking the drive…", clean: "Erasing the partition table…", format: "Formatting…", folders: "Creating the folders…", done: "Finishing…",
   "ventoy-download": "Downloading Ventoy (boot loader)…", ventoy: "Making the key bootable (Ventoy)…", techfix: "Copying TechFix onto the key…",
-  hbcd: "Downloading Hiren's BootCD PE (about 3 GB)…"
+  hbcd: "Downloading Hiren's BootCD PE (about 3 GB)…", memtest: "Adding Memtest86+ (memory test)…"
 };
 Object.assign(CX_RESULT, {
   fmt_done: "Formatted: {letter}: in {fs} — {size}, label “{label}”.",
@@ -60,6 +60,7 @@ Object.assign(CX_RESULT, {
   fmt_no_result: "Formatting didn't report back. Check the drive in File Explorer.",
   rescue_done: "The TechFix rescue USB is ready on {letter}: — it boots any PC (choose it in the boot menu: F12, F11, F10, F9, F8 or Esc).",
   rescue_too_small: "This key is too small — use one of at least {need}.",
+  rescue_memtest_failed: "Memtest86+ couldn't be added — the key still boots; you can copy its .iso from memtest.org later.",
   rescue_hbcd_failed: "Hiren's BootCD PE didn't download — the key still boots; you can add any .iso later.",
   ventoy_offline: "Couldn't reach Ventoy's official download. Check the internet connection.",
   ventoy_download: "The Ventoy download failed. Check the internet connection and try again.",
@@ -132,6 +133,7 @@ function renderFormatView(){
 
     <div class="panel cx-card"><div class="panel-title">${ICON.shield}${esc(T("TechFix rescue USB (bootable)"))}</div>
       <p class="stat-note" style="margin:0 0 8px;">${esc(T("Turns the chosen key into a USB that boots any PC — even one whose Windows no longer starts — with TechFix on it. It uses Ventoy (free, open source): any .iso you copy onto the key later (Windows, Linux, rescue tools) appears in its boot menu."))}</p>
+      <label class="fmt-check"><input type="checkbox" id="fmt-memtest" checked> <span>${esc(T("Add Memtest86+ — tests the memory (RAM) without Windows (free, open source, 2 MB)"))}</span></label>
       <label class="fmt-check"><input type="checkbox" id="fmt-hbcd" checked> <span>${esc(T("Add Hiren's BootCD PE — a free Windows rescue desktop with repair tools (about 3 GB, needs an 8 GB key or more)"))}</span></label>
       <div class="cx-row"><button class="btn fmt-danger" id="fmt-rescue">${ICON.shield}<span>${esc(T("Create the rescue USB"))}</span></button></div>
       <p class="stat-note cx-muted" style="margin:8px 0 0;">${esc(T("To start a PC from it: plug it in, switch the PC on and press the boot-menu key (F12, F11, F10, F9, F8 or Esc depending on the brand), then choose the USB key."))}</p>
@@ -232,7 +234,7 @@ async function fmtRescue(){
   if(!(await fmtConfirm(T("Create the rescue USB"), d))) return;
   FMT.busy = true; fmtRenderSummary();
   try{
-    await cxRun(T("TechFix rescue USB (bootable)"), "fmtRescue", { number: d.number, uid: d.uid, size: d.size, hbcd: el("#fmt-hbcd").checked, style: "MBR" });
+    await cxRun(T("TechFix rescue USB (bootable)"), "fmtRescue", { number: d.number, uid: d.uid, size: d.size, hbcd: el("#fmt-hbcd").checked, memtest: el("#fmt-memtest").checked, style: "MBR" });
   } finally { FMT.busy = false; fmtRefresh(true); }
 }
 

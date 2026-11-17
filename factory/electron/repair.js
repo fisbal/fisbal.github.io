@@ -235,6 +235,47 @@ $hib = Join-Path $sys 'hiberfil.sys'; $h = 0; try { $h = [math]::Round((Get-Item
       return V("ok", big ? "space_report_big" : "space_report", { list, big, free: (d.freeGB || 0) + " GB", items });
     }
   },
+  // ---------------------------------------------------------------- memory (RAM)
+  "memory-report": {
+    label: "Show what is using the memory (RAM)", tier: "safe", kind: "report", admin: false, timeoutMs: 2 * 60000,
+    run: String.raw`$os = Get-CimInstance Win32_OperatingSystem; $cs = Get-CimInstance Win32_ComputerSystem
+$apps = @(Get-Process | Group-Object ProcessName | ForEach-Object { @{ name = $_.Name; gb = [math]::Round((($_.Group | Measure-Object PrivateMemorySize64 -Sum).Sum) / 1GB, 2); n = $_.Count } } | Sort-Object { $_.gb } -Descending | Select-Object -First 8)
+$dimms = @(Get-CimInstance Win32_PhysicalMemory | ForEach-Object { @{ gb = [math]::Round($_.Capacity / 1GB, 0); speed = $_.ConfiguredClockSpeed } })
+$pma = Get-CimInstance Win32_PhysicalMemoryArray | Select-Object -First 1
+$mx = [double]$pma.MaxCapacityEx; if (-not $mx) { $mx = [double]$pma.MaxCapacity }
+"@@TF " + (@{ items = $apps; totalGB = [math]::Round($os.TotalVisibleMemorySize / 1MB, 1); freeGB = [math]::Round($os.FreePhysicalMemory / 1MB, 1)
+  commitGB = [math]::Round(($os.TotalVirtualMemorySize - $os.FreeVirtualMemory) / 1MB, 1); limitGB = [math]::Round($os.TotalVirtualMemorySize / 1MB, 1)
+  sticks = $dimms.Count; slots = [int]$pma.MemoryDevices; maxGB = [math]::Round($mx / 1MB, 0); auto = [bool]$cs.AutomaticManagedPagefile } | ConvertTo-Json -Compress -Depth 4)`,
+    judge: (r) => {
+      const d = r.data || {};
+      const items = arr(d.items).filter((x) => x.gb >= 0.05).map((x) => ({ name: x.n > 1 ? `${x.name} ×${x.n}` : x.name, gb: x.gb }));
+      const list = items.map((x) => `${x.name} ${x.gb} GB`).join(" · ");
+      const used = d.totalGB != null && d.freeGB != null ? +(d.totalGB - d.freeGB).toFixed(1) : "?";
+      const freeSlots = d.slots ? Math.max(0, d.slots - (d.sticks || 0)) : "?";
+      return V("ok", "memory_report", { list, items, used: used + " GB", total: (d.totalGB || "?") + " GB", commit: (d.commitGB || "?") + " / " + (d.limitGB || "?") + " GB", slots: freeSlots, max: d.maxGB ? d.maxGB + " GB" : "?" });
+    }
+  },
+  "memtest-schedule": {
+    label: "Test the RAM with the Windows Memory Diagnostic at the next restart", tier: "risky", admin: true,
+    cmd: "bcdedit /bootsequence {memdiag}  (the test runs before Windows starts, then Windows opens normally and shows the result)",
+    check: String.raw`@{ v = [int](((bcdedit /enum '{bootmgr}') | Out-String) -match 'bootsequence\s+\{memdiag\}') }`,
+    run: String.raw`bcdedit /bootsequence '{memdiag}' | Out-Null; if ($LASTEXITCODE -ne 0) { throw "bcdedit failed ($LASTEXITCODE)" }`,
+    judge: (r) => (g(r.after, "v") ? V("reboot", "memtest_scheduled") : V("failed", "setting_blocked"))
+  },
+  "pagefile-auto": {
+    label: "Let Windows manage the page file size automatically (needs a reboot)", tier: "risky", admin: true,
+    cmd: "Set-CimInstance Win32_ComputerSystem -Property @{ AutomaticManagedPagefile = $true }",
+    check: String.raw`@{ v = [int][bool](Get-CimInstance Win32_ComputerSystem).AutomaticManagedPagefile }`,
+    run: String.raw`Get-CimInstance Win32_ComputerSystem | Set-CimInstance -Property @{ AutomaticManagedPagefile = $true } -ErrorAction Stop`,
+    judge: judgeSetting(1, true)
+  },
+  "memory-compression-on": {
+    label: "Turn Windows memory compression back on (needs a reboot)", tier: "risky", admin: true,
+    cmd: "Enable-MMAgent -MemoryCompression",
+    check: String.raw`@{ v = [int][bool](Get-MMAgent).MemoryCompression }`,
+    run: `Enable-MMAgent -MemoryCompression -ErrorAction Stop`,
+    judge: judgeSetting(1, true)
+  },
   "clear-dev-caches": {
     label: "Delete rebuildable developer caches (Gradle, npm, pip, NuGet HTTP cache)", tier: "risky", admin: false, manualOnly: true, manualNote: "redownload", timeoutMs: 20 * 60000,
     cmd: "del ~\\.gradle\\caches ; npm-cache ; pip\\Cache ; NuGet\\v3-cache  (re-downloaded on the next build)",
@@ -450,6 +491,25 @@ Start-Service cryptsvc,bits,wuauserv -ErrorAction SilentlyContinue
     check: `@{ on = @(Get-NetFirewallProfile | Where-Object Enabled).Count }`,
     run: `Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled True -ErrorAction Stop`,
     judge: (r) => (g(r.after, "on") === 3 ? V(g(r.before, "on") === 3 ? "ok" : "fixed", "firewall_on") : V("failed", "setting_blocked"))
+  },
+  // One click against adware: turn on Defender's unwanted-app blocking, update, quick scan, then
+  // quarantine what it found (quarantine can be undone in Windows Security › Protection history).
+  "pua-sweep": {
+    label: "Find and remove adware & unwanted apps (Microsoft Defender)", tier: "safe", admin: true, timeoutMs: 50 * 60000,
+    check: String.raw`$t = @(Get-MpThreat -ErrorAction SilentlyContinue | Where-Object IsActive)
+@{ pua = [int](Get-MpPreference).PUAProtection; threats = $t.Count; names = (($t | Select-Object -First 3 | ForEach-Object { $_.ThreatName }) -join ', ');
+   recent = @(Get-MpThreatDetection -ErrorAction SilentlyContinue | Where-Object { $_.InitialDetectionTime -gt (Get-Date).AddHours(-3) }).Count }`,
+    run: String.raw`Set-MpPreference -PUAProtection Enabled -ErrorAction Stop
+Update-MpSignature -ErrorAction SilentlyContinue
+Start-MpScan -ScanType QuickScan -ErrorAction Stop
+if (@(Get-MpThreat -ErrorAction SilentlyContinue | Where-Object IsActive).Count) { Remove-MpThreat -ErrorAction SilentlyContinue }`,
+    judge: (r) => {
+      if (r.err && !g(r.after, "recent")) return V("failed", "scan_not_run", { msg: r.err.slice(0, 160) });
+      const left = g(r.after, "threats") || 0, found = Math.max(0, (g(r.after, "recent") || 0) - (g(r.before, "recent") || 0));
+      if (left) return V("partial", "threats_left", { n: left, names: g(r.after, "names") }, { next: ["defender-offline"] });
+      if (found) return V("fixed", "pua_swept", { n: found });
+      return V(g(r.before, "pua") === 1 ? "ok" : "fixed", g(r.before, "pua") === 1 ? "pua_clean" : "pua_on_clean");
+    }
   },
   "pua-on": { label: "Block potentially unwanted apps (adware, bundled junk)", tier: "risky", admin: true, cmd: "Set-MpPreference -PUAProtection Enabled", check: `@{ v = [int](Get-MpPreference).PUAProtection }`, run: `Set-MpPreference -PUAProtection Enabled -ErrorAction Stop`, judge: judgeSetting(1) },
   "cfa-on": { label: "Turn on ransomware protection (Controlled Folder Access)", tier: "risky", admin: true, cmd: "Set-MpPreference -EnableControlledFolderAccess Enabled", check: `@{ v = [int](Get-MpPreference).EnableControlledFolderAccess }`, run: `Set-MpPreference -EnableControlledFolderAccess Enabled -ErrorAction Stop`, judge: judgeSetting(1) },

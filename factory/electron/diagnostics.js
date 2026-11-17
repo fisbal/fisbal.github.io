@@ -136,6 +136,31 @@ try {
 try { $r.pagefile = @(Get-CimInstance Win32_PageFileUsage | ForEach-Object { @{ current = $_.CurrentUsage; allocated = $_.AllocatedBaseSize; peak = $_.PeakUsage } }) } catch { $r.pagefile = @() }
 try { $r.topMem = @(Get-Process | Sort-Object WorkingSet64 -Descending | Select-Object -First 5 | ForEach-Object { @{ name = $_.ProcessName; mb = [int]($_.WorkingSet64 / 1MB) } }) } catch { $r.topMem = @() }
 
+# Memory in depth: the sticks, free slots, commit charge, page-file mode, "low memory" alerts and
+# who caused them, Windows Memory Diagnostic results, memory-type blue screens, corrected RAM errors.
+try {
+  $r.dimms = @(Get-CimInstance Win32_PhysicalMemory | ForEach-Object { @{ slot = [string]$_.DeviceLocator; gb = [math]::Round($_.Capacity / 1GB, 1); speed = $_.ConfiguredClockSpeed; maker = ([string]$_.Manufacturer).Trim(); part = ([string]$_.PartNumber).Trim() } })
+  $pma = Get-CimInstance Win32_PhysicalMemoryArray | Where-Object { $_.Use -eq 3 -or $_.Use -eq $null } | Select-Object -First 1
+  if ($pma) { $r.memSlots = [int]$pma.MemoryDevices; $mx = [double]$pma.MaxCapacityEx; if (-not $mx) { $mx = [double]$pma.MaxCapacity }; $r.memMaxGB = [math]::Round($mx / 1MB, 0) }
+} catch { }
+$r.commit = @{ limitKB = $os.TotalVirtualMemorySize; freeKB = $os.FreeVirtualMemory }
+$r.pagefileAuto = [bool]$cs.AutomaticManagedPagefile
+try { $r.pagefileCount = @(Get-CimInstance Win32_PageFileUsage).Count } catch { }
+try { $r.memCompression = [bool](Get-MMAgent -ErrorAction Stop).MemoryCompression } catch { }
+try {
+  $lm = @(Get-WinEvent -FilterHashtable @{ LogName = 'System'; ProviderName = 'Microsoft-Windows-Resource-Exhaustion-Detector'; Id = 2004; StartTime = (Get-Date).AddDays(-30) } -MaxEvents 50 -ErrorAction Stop)
+  $r.lowMem = @{ count = $lm.Count; culprits = @($lm | ForEach-Object { [regex]::Matches([string]$_.Message, '([\w .\-]+\.exe) \(\d+\)') | Select-Object -First 1 | ForEach-Object { $_.Groups[1].Value.Trim() } } | Group-Object | Sort-Object Count -Descending | Select-Object -First 3 | ForEach-Object { $_.Name }) }
+} catch { $r.lowMem = @{ count = 0; culprits = @() } }
+try {
+  $mt = Get-WinEvent -FilterHashtable @{ LogName = 'System'; ProviderName = 'Microsoft-Windows-MemoryDiagnostics-Results' } -MaxEvents 1 -ErrorAction Stop
+  if ($mt) { $r.memTest = @{ id = $mt.Id; days = [int]((Get-Date) - $mt.TimeCreated).TotalDays } }
+} catch { }
+try {
+  $bc = @(Get-WinEvent -FilterHashtable @{ LogName = 'System'; ProviderName = @('Microsoft-Windows-WER-SystemErrorReporting', 'BugCheck'); Id = 1001; StartTime = (Get-Date).AddDays(-60) } -MaxEvents 50 -ErrorAction Stop)
+  $r.memBugchecks = @($bc | Where-Object { [string]$_.Message -match '0x0000001a|0x0000004e|0x00000050|0x00000019|0x000000c2|0x0000012b|0x0000001e|MEMORY_MANAGEMENT|PFN_LIST_CORRUPT|PAGE_FAULT_IN_NONPAGED_AREA|BAD_POOL' }).Count
+} catch { $r.memBugchecks = 0 }
+$r.ev.wheaMem = (CountEv 'System' @('Microsoft-Windows-WHEA-Logger') @(47) 30)
+
 # Battery wear (design vs. full-charge capacity)
 try {
   $b = Get-CimInstance Win32_Battery | Select-Object -First 1
@@ -166,11 +191,34 @@ try {
   if ($lic) { $r.licenseStatus = [int]$lic.LicenseStatus }
 } catch { }
 
+# Installed programs (adware / bundled junk check) + what Defender itself flagged as unwanted
+$uk = @('HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*', 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*', 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*')
+try { $r.programs = @(Get-ItemProperty $uk -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -and $_.SystemComponent -ne 1 -and -not $_.ParentKeyName } | Select-Object -First 500 | ForEach-Object { @{ n = [string]$_.DisplayName; p = [string]$_.Publisher; d = [string]$_.InstallDate; kb = [int]$_.EstimatedSize } }) } catch { $r.programs = @() }
+try { $r.puaThreats = @(Get-MpThreat -ErrorAction Stop | Where-Object { $_.IsActive -and ($_.ThreatName -match '^PUA:|Adware|BrowserModifier|SoftwareBundler|PUADlManager') } | Select-Object -First 10 | ForEach-Object { [string]$_.ThreatName }) } catch { $r.puaThreats = @() }
+try { $r.puaSetting = [int](Get-MpPreference -ErrorAction Stop).PUAProtection } catch { $r.puaSetting = $null }
+
 $r | ConvertTo-Json -Depth 6 -Compress
 `;
 
+// Adware / unwanted programs: names security vendors (Microsoft PUA, Malwarebytes PUP) flag again
+// and again, mostly arriving bundled with free games and "free download" installers.
+const PUP_RE = /\b(wave ?browser|wavesor|onelaunch|shift browser|web ?companion|bytefence|segurazo|santivirus|restoro|reimage( repair)?|pc accelerate|advanced pc cleaner|pc optimizer pro|pc ?helpsoft|driver support|outbyte|search ?protect|conduit|ask toolbar|babylon toolbar|mindspark|myway|smart ?pc ?fixer|advanced system protector|mypc ?backup|webdiscover)\b/i;
+const BUNDLED_RE = /\b(mcafee (webadvisor|security scan)|avast secure browser|avg secure browser|norton safe ?search|ccleaner browser|opera browser assistant|yahoo (toolbar|search)|bing bar)\b/i;
+function unwantedPrograms(d) {
+  const seen = new Set(), pup = [], bundled = [];
+  for (const x of arr(d.programs)) {
+    const n = String(x.n || "").trim(); if (!n || seen.has(n.toLowerCase())) continue; seen.add(n.toLowerCase());
+    // A "Chromium" that isn't from The Chromium Authors is a classic adware browser clone.
+    const fakeChromium = /^chromium$/i.test(n) && !/chromium/i.test(String(x.p || ""));
+    if (PUP_RE.test(n) || fakeChromium) pup.push({ name: n, publisher: x.p || "", date: x.d || "", mb: Math.round((x.kb || 0) / 1024) });
+    else if (BUNDLED_RE.test(n)) bundled.push({ name: n, publisher: x.p || "", date: x.d || "" });
+  }
+  return { pup, bundled };
+}
+
 function buildSystemFindings(d) {
   const findings = [];
+  const has3 = (c) => findings.some((f) => f.code === c);
   const add = (code, severity, params, kbId, safeFixId, riskyFixId, detail) =>
     findings.push({ code, severity, params: params || {}, kbId: kbId || null, safeFixId: safeFixId || null, riskyFixId: riskyFixId || null, detail: detail || code });
 
@@ -198,11 +246,30 @@ function buildSystemFindings(d) {
 
   if (d.memory && d.memory.totalKB) {
     const usedPct = (1 - d.memory.freeKB / d.memory.totalKB) * 100;
-    if (usedPct >= 90) add("mem_high", "high", { pct: Math.round(usedPct) }, "win-11-04", null, null, `System memory is ${usedPct.toFixed(0)}% in use right now`);
-    else if (usedPct >= 80) add("mem_high", "low", { pct: Math.round(usedPct) }, "win-11-04", null, null, `System memory is ${usedPct.toFixed(0)}% in use right now`);
+    if (usedPct >= 90) add("mem_high", "high", { pct: Math.round(usedPct) }, "win-11-04", "memory-report", null, `System memory is ${usedPct.toFixed(0)}% in use right now`);
+    else if (usedPct >= 80) add("mem_high", "low", { pct: Math.round(usedPct) }, "win-11-04", "memory-report", null, `System memory is ${usedPct.toFixed(0)}% in use right now`);
   }
   for (const pf of arr(d.pagefile)) {
-    if (pf.allocated > 0 && pf.current / pf.allocated >= 0.8) add("pagefile_high", "medium", { pct: Math.round((pf.current / pf.allocated) * 100) }, "win-11-04", null, null, "The page file is almost full");
+    if (pf.allocated > 0 && pf.current / pf.allocated >= 0.8) add("pagefile_high", "medium", { pct: Math.round((pf.current / pf.allocated) * 100) }, "win-mem-01", d.pagefileAuto === false ? null : "memory-report", d.pagefileAuto === false ? "pagefile-auto" : null, "The page file is almost full");
+  }
+  // --- memory in depth ---
+  const memGB = d.memory && d.memory.totalKB ? d.memory.totalKB / 1048576 : null;
+  const sticks = arr(d.dimms).filter((x) => num(x.gb));
+  const installedGB = sticks.reduce((a, x) => a + x.gb, 0);
+  const lowMem = d.lowMem || {};
+  if ((lowMem.count || 0) > 0) add("mem_low_events", lowMem.count >= 3 ? "high" : "medium", { count: lowMem.count, names: arr(lowMem.culprits).join(", ") || "?" }, "win-mem-01", "memory-report", d.pagefileAuto === false ? "pagefile-auto" : null, `Windows ran low on memory ${lowMem.count} time(s) in 30 days`);
+  if (d.commit && d.commit.limitKB && d.commit.limitKB > 0) {
+    const cPct = (1 - d.commit.freeKB / d.commit.limitKB) * 100;
+    if (cPct >= 90) add("commit_high", "high", { pct: Math.round(cPct) }, "win-mem-01", "memory-report", d.pagefileAuto === false ? "pagefile-auto" : null, `Committed memory is ${cPct.toFixed(0)}% of the limit`);
+  }
+  if (d.pagefileAuto === false && num(d.pagefileCount) === 0) add("pagefile_off", "medium", {}, "win-mem-01", null, "pagefile-auto", "There is no page file — programs can close when memory runs out");
+  if (d.memTest && (d.memTest.id === 1102 || d.memTest.id === 1202)) add("mem_test_failed", "critical", { days: d.memTest.days }, "gen-mem-01", null, null, "The Windows Memory Diagnostic found hardware errors in the RAM");
+  if ((d.memBugchecks || 0) > 0) add("mem_bsod", d.memBugchecks >= 2 ? "high" : "medium", { count: d.memBugchecks }, "win-mem-03", null, "memtest-schedule", `${d.memBugchecks} memory-type blue screen(s) in 60 days`);
+  if ((ev.wheaMem || 0) > 0) add("mem_corrected", "medium", { count: ev.wheaMem }, "gen-mem-01", null, "memtest-schedule", `${ev.wheaMem} corrected memory error(s) reported by the hardware in 30 days`);
+  if (installedGB > 0 && memGB != null && installedGB - memGB > Math.max(1, installedGB * 0.12)) add("mem_reserved", "low", { installed: +installedGB.toFixed(1), usable: +memGB.toFixed(1) }, "win-mem-02", null, null, `${installedGB} GB installed but only ${memGB.toFixed(1)} GB usable`);
+  if (memGB != null && memGB < 7.5 && (has3("mem_high") || (lowMem.count || 0) > 0)) {
+    const free = num(d.memSlots) != null ? Math.max(0, d.memSlots - sticks.length) : null;
+    add("mem_small", "low", { gb: Math.round(memGB), slots: free == null ? "?" : free, max: num(d.memMaxGB) || "?" }, "win-mem-01", "memory-report", null, `Only ${Math.round(memGB)} GB of RAM`);
   }
   if (num(d.cpuLoad) != null && d.cpuLoad >= 85) add("cpu_high", "medium", { pct: d.cpuLoad }, "win-10-05", null, null, `CPU is ${d.cpuLoad}% busy while TechFix measured it`);
   if (num(d.tempC) != null && d.tempC >= 85) add("cpu_hot", d.tempC >= 95 ? "critical" : "high", { temp: d.tempC }, "gen-pow-01", null, null, `System thermal zone at ${d.tempC} °C`);
@@ -224,6 +291,11 @@ function buildSystemFindings(d) {
   if (d.pendingReboot) add("pending_reboot", "low", {}, "win-10-01", null, null, "A Windows reboot is pending");
   const upDays = Math.floor((d.uptimeMinutes || 0) / 1440);
   if (upDays >= 14) add("uptime_long", "low", { days: upDays }, "win-11-04", null, null, `The PC hasn't restarted in ${upDays} days`);
+  const uw = unwantedPrograms(d);
+  if (uw.pup.length) add("pup_found", "high", { count: uw.pup.length, names: uw.pup.slice(0, 4).map((x) => x.name).join(", ") }, "win-pup-01", "pua-sweep", "open-apps", `${uw.pup.length} adware / unwanted program(s): ${uw.pup.map((x) => x.name).join(", ")}`);
+  if (arr(d.puaThreats).length) add("pua_threats", "high", { count: arr(d.puaThreats).length, names: arr(d.puaThreats).slice(0, 3).join(", ") }, "win-pup-01", "pua-sweep", null, `Microsoft Defender found ${arr(d.puaThreats).length} unwanted app(s) still present`);
+  if (uw.bundled.length) add("bundled_extras", "low", { count: uw.bundled.length, names: uw.bundled.slice(0, 4).map((x) => x.name).join(", ") }, "win-pup-01", "open-apps", null, `${uw.bundled.length} extra(s) that usually come bundled with free downloads: ${uw.bundled.map((x) => x.name).join(", ")}`);
+  if (d.puaSetting === 0 && (uw.pup.length || uw.bundled.length)) add("pua_block_off", "medium", {}, "win-pup-01", "pua-sweep", null, "Windows isn't blocking potentially unwanted apps");
   if (typeof d.startupCount === "number" && d.startupCount > 15) add("startup_many", "low", { count: d.startupCount }, "win-11-04", "open-startup-apps", null, `${d.startupCount} startup programs configured`);
 
   if (d.netOnline === false) add("no_internet", "high", {}, "gen-net-01", "flush-dns", "release-renew-ip", "No route to the internet (1.1.1.1 unreachable)");
@@ -276,7 +348,7 @@ function buildSystemDiagnosis(d, findings) {
       plan: ["restart-wuauserv", "reset-windows-update", "dism-restore", "sfc-scan"], after: "dx_after_updates" });
   }
   if ((ev.whea || 0) > 0) {
-    out.push({ code: "dx_hardware", level: "high", params: { count: ev.whea }, explains: codes(["whea", "bsod", "kernel_power", "cpu_hot"]), plan: ["open-memory-test"], after: "dx_after_hardware" });
+    out.push({ code: "dx_hardware", level: "high", params: { count: ev.whea }, explains: codes(["whea", "bsod", "kernel_power", "cpu_hot"]), plan: ["memtest-schedule"], after: "dx_after_hardware" });
   } else if (has("bsod") || has("stability_low")) {
     out.push({ code: "dx_system_files", level: "medium", params: {}, explains: codes(["bsod", "stability_low", "app_crash", "driver_errors"]), plan: ["dism-restore", "sfc-scan", "rescan-devices"], after: "dx_after_restart" });
   }
@@ -289,9 +361,25 @@ function buildSystemDiagnosis(d, findings) {
   if (has("no_internet") || has("dns_fail")) {
     out.push({ code: "dx_network", level: "high", params: {}, explains: codes(["no_internet", "dns_fail", "wifi_weak"]), plan: ["flush-dns", "release-renew-ip", "winsock-reset"], after: "dx_after_network" });
   }
-  if ((has("mem_high") || has("pagefile_high")) && !(sysFreePct != null && sysFreePct < 10)) {
+  // Faulty RAM first: a failed memory test, memory-type blue screens or corrected RAM errors.
+  if (has("mem_test_failed") || has("mem_bsod") || has("mem_corrected")) {
+    out.push({ code: "dx_ram_faulty", level: has("mem_test_failed") ? "critical" : "high", params: {},
+      explains: codes(["mem_test_failed", "mem_bsod", "mem_corrected", "bsod", "app_crash", "stability_low", "whea"]),
+      plan: has("mem_test_failed") ? [] : ["memtest-schedule"], after: "dx_after_ram" });
+  }
+  if ((has("mem_high") || has("pagefile_high") || has("mem_low_events") || has("commit_high") || has("pagefile_off")) && !(sysFreePct != null && sysFreePct < 10)) {
     const top = arr(d.topMem).slice(0, 3).map((x) => `${x.name} (${x.mb} MB)`).join(", ");
-    out.push({ code: "dx_memory", level: "medium", params: { top }, explains: codes(["mem_high", "pagefile_high", "startup_many", "cpu_high"]), plan: ["open-startup-apps"], after: "dx_after_memory" });
+    const plan = ["memory-report"];
+    if (d.pagefileAuto === false) plan.push("pagefile-auto");
+    if (d.memCompression === false) plan.push("memory-compression-on");
+    plan.push("open-startup-apps");
+    out.push({ code: "dx_memory", level: has("mem_low_events") || has("commit_high") ? "high" : "medium", params: { top: top || "?" },
+      explains: codes(["mem_high", "pagefile_high", "mem_low_events", "commit_high", "pagefile_off", "mem_small", "startup_many", "cpu_high"]), plan, after: "dx_after_memory" });
+  }
+  if (has("pup_found") || has("pua_threats")) {
+    out.push({ code: "dx_adware", level: "high", params: { names: (findings.find((f) => f.code === "pup_found") || findings.find((f) => f.code === "pua_threats")).params.names },
+      explains: codes(["pup_found", "pua_threats", "bundled_extras", "pua_block_off", "mem_high", "pagefile_high", "startup_many", "cpu_high"]),
+      plan: ["pua-sweep", "open-apps", "open-startup-apps"], after: "dx_after_adware" });
   }
   return out;
 }

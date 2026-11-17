@@ -363,6 +363,31 @@ async function copyDir(src, dst) {
   }
 }
 
+// Latest Memtest86+ x86-64 ISO from memtest.org, checked against the published SHA-256.
+async function addMemtest(root, onProgress) {
+  const home = await fetchText("https://memtest.org/");
+  const m = /download\/v([\d.]+)\/mt86plus_\1_x86_64\.iso\.zip/.exec(home || "");
+  const ver = m ? m[1] : "9.00";
+  const base = `https://memtest.org/download/v${ver}/`;
+  const zipName = `mt86plus_${ver}_x86_64.iso.zip`;
+  const tmp = path.join(workDir(), zipName);
+  const dl = await download(base + zipName, tmp, onProgress, "Memtest86+ " + ver);
+  if (!dl.ok) return { ok: false, error: dl.error };
+  const sums = await fetchText(base + "sha256sum.txt");
+  const line = (sums || "").split(/\r?\n/).find((l) => l.includes(zipName));
+  if (!line || line.trim().split(/\s+/)[0].toLowerCase() !== dl.sha256) { try { fs.unlinkSync(tmp); } catch (_) {} return { ok: false, error: "checksum" }; }
+  const out = path.join(workDir(), "memtest-" + Date.now());
+  const q = (x) => "'" + String(x).replace(/'/g, "''") + "'";
+  await ps(`Expand-Archive -LiteralPath ${q(tmp)} -DestinationPath ${q(out)} -Force`, 120000);
+  try { fs.unlinkSync(tmp); } catch (_) {}
+  let iso = null;
+  try { iso = fs.readdirSync(out).find((f) => /\.iso$/i.test(f)); } catch (_) {}
+  if (!iso) return { ok: false, error: "no iso in zip" };
+  try { fs.copyFileSync(path.join(out, iso), path.join(root, `Memtest86plus-${ver}.iso`)); } catch (e) { return { ok: false, error: String(e.message || e) }; }
+  try { fs.rmSync(out, { recursive: true, force: true }); } catch (_) {}
+  return { ok: true, version: ver };
+}
+
 async function rescueKey(payload, onProgress, cfg) {
   if (!WIN) return V("failed", "pc_unsupported");
   const number = Number(payload.number), uid = String(payload.uid || ""), size = Number(payload.size);
@@ -402,16 +427,24 @@ async function rescueKey(payload, onProgress, cfg) {
       "     (F12, F11, F10, F9, F8 ou Échap selon la marque), puis choisis la clé USB. Le menu Ventoy affiche les systèmes",
       "     de secours présents (fichiers .iso à la racine de la clé). Hiren's BootCD PE ouvre un bureau Windows de secours :",
       "     ouvre ce dossier TechFix et « TechFix hors-ligne (offline) › index.html » dans le navigateur.",
+      "     Memtest86+ teste la mémoire (RAM) sans Windows : laisse-le faire au moins 4 passes ; une seule erreur = barrette défectueuse.",
       "     Tu peux ajouter d'autres fichiers .iso (Windows, Linux…) : copie-les simplement à la racine de la clé.",
       "     Sur un PC qui fonctionne : TechFix-Setup.exe installe TechFix (il se met ensuite à jour tout seul).",
       "EN — To boot a PC from this key: plug it in, power on and press the boot-menu key (F12, F11, F10, F9, F8 or Esc",
       "     depending on the brand), then pick the USB key. Ventoy lists the rescue systems (.iso files at the key's root).",
       "     Hiren's BootCD PE opens a Windows rescue desktop: open this TechFix folder and the offline page in the browser.",
+      "     Memtest86+ tests the RAM (memory) without Windows: let it run at least 4 passes; any error means a faulty stick.",
       "     Add any other .iso (Windows, Linux…) by copying it to the root of the key.",
       "     On a working PC: TechFix-Setup.exe installs TechFix (it then keeps itself up to date).",
       "", "Ventoy " + (v.version || "") + " — https://www.ventoy.net (GPLv3)", ""
     ].join("\r\n"), "utf8");
   } catch (_) {}
+  // Memtest86+ (GPLv2): tests the RAM without Windows — shows up in the Ventoy menu.
+  if (payload.memtest !== false) {
+    onProgress && onProgress({ phase: "step", step: "memtest" });
+    const m = await addMemtest(root, onProgress);
+    if (!m.ok) lines.push({ name: "Memtest86+", code: "rescue_memtest_failed", detail: m.error || "" });
+  }
   // Optional: Hiren's BootCD PE (free Windows 11 PE rescue desktop, about 3 GB).
   if (withHbcd) {
     onProgress && onProgress({ phase: "step", step: "hbcd" });
